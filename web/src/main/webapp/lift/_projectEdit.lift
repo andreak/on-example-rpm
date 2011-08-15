@@ -1,0 +1,26 @@
+<div>
+	<form class="lift:form.ajax">
+		<div class="lift:ProjectEditSnippet">
+			<div class="lift:ProjectEditSnippet.clearErrors">clearErrors</div>
+			<div class="project_color_radio">
+				Fisk
+			</div>
+			<div>
+				<div class="lift:i18n?bundle=PROJECT_V;key=label_chosenColor">The color you've chosen is a:</div>
+				<span class="nice_color_id lift:i18n.i?bundle=PROJECT_V" style="display: none">label_niceColor</span>
+				<span class="bad_color_id lift:i18n.i?bundle=PROJECT_V" style="display: none">label_badColor</span>
+			</div>
+			<table>
+				<tbody>
+				<tr class="projectName"></tr>
+				<tr class="projectDescription"></tr>
+				<tr class="projectType"></tr>
+				<tr class="budget"></tr>
+				<tr class="estimatedStart"></tr>
+				<tr class="petName"></tr>
+				</tbody>
+			</table>
+			<input type="submit" class="saveButton"/>
+		</div>
+	</form>
+</div>

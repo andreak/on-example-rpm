@@ -1,0 +1,30 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+	<title>Example Lift app with Spring+JPA+Validation</title>
+	<style class="lift:CSS.blueprint"></style>
+	<style class="lift:CSS.fancyType"></style>
+	<link class="lift:with-resource-id" type="text/css" media="all" rel="stylesheet" href="/resources/css/external/jquery-ui-1.8.15.custom.css" />
+	<link class="lift:with-resource-id" type="text/css" media="all" rel="stylesheet" href="/resources/css/Rolf.css" />
+
+	<script class="lift:with-resource-id" src="/resources/js/external/jquery-1.6.2.min.js" type="text/javascript"></script>
+	<script class="lift:with-resource-id" src="/resources/js/external/jquery-ui-1.8.15.custom.min.js" type="text/javascript"></script>
+	<script class="lift:with-resource-id" src="/classpath/json.js" type="text/javascript"></script>
+	<script type="text/javascript">
+		//<![CDATA[
+			jQuery.noConflict();
+		//]]>
+	</script>
+	<script class="lift:with-resource-id" src="/resources/js/external/prototype.js" type="text/javascript"></script>
+	<script class="lift:with-resource-id" src="/resources/js/Rolf.js" type="text/javascript"></script>
+	<script type="text/javascript" class="lift:ConfigSnippet.setGlobalJavaScript"></script>
+	<script type="text/javascript" class="lift:ConfigSnippet.setBaseURLInJavaScript"></script>
+</head>
+<body>
+<div class="container">
+	<div id="top_menu">The main menu goes here</div>
+	<div id="content">The main content will get bound here</div>
+</div>
+</body>
+</html>

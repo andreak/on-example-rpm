@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	   xmlns:context="http://www.springframework.org/schema/context"
+	   xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+	   xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+						   http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd
+						   http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+						   http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.0.xsd">
+
+	<context:property-placeholder location="classpath*:spring/props/*.properties"/>
+	<aop:aspectj-autoproxy/>
+	<context:spring-configured />
+	<context:load-time-weaver/>
+
+	<context:component-scan base-package="no.officenet.example.rpm"/>
+
+	<tx:annotation-driven/>
+
+	<bean id="persistenceUnitManagerRPM" class="no.officenet.example.rpm.support.infrastructure.jpa.MergePersistenceUnitManager">
+		<property name="persistenceXmlLocations">
+			<list>
+				<value>classpath*:META-INF/persistence-rpm.xml</value>
+			</list>
+		</property>
+		<property name="includedPersistenceUnits">
+			<set>
+				<value>RPM</value>
+			</set>
+		</property>
+		<property name="jtdDataSource" ref="dataSourceRPM"/>
+	</bean>
+
+	<bean id="transactionManagerHelper" class="no.officenet.example.rpm.support.infrastructure.spring.TransactionManagerHelper"
+		  factory-method="getInstance"/>
+
+	<bean id="jpaVendorAdapter"
+		  class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter" depends-on="transactionManagerHelper">
+		<property name="database" value="${infrastructure.database.vendor}"/>
+		<property name="databasePlatform" value="${infrastructure.database.platform}"/>
+		<property name="showSql" value="${infrastructure.jpa.showSql}"/>
+		<property name="generateDdl" value="${infrastructure.jpa.generateDdl}"/>
+	</bean>
+
+	<bean id="RPM"
+		  class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">
+		<property name="persistenceUnitName" value="RPM"/>
+		<property name="persistenceUnitManager" ref="persistenceUnitManagerRPM"/>
+		<property name="jpaVendorAdapter" ref="jpaVendorAdapter"/>
+		<property name="jpaDialect">
+			<bean class="org.springframework.orm.jpa.vendor.HibernateJpaDialect"/>
+		</property>
+		<property name="jpaProperties">
+			<props>
+				<prop key="javax.persistence.validation.mode">none</prop><!-- We do manual validation in repositories (+ field-validation) -->
+				<prop key="hibernate.transaction.manager_lookup_class">no.officenet.example.rpm.support.infrastructure.spring.TransactionManagerLookup</prop>
+			</props>
+		</property>
+	</bean>
+
+	<!-- Transform exceptions thrown by the persistence-provider to spring DataAccessExceptions  -->
+	<bean class="org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor"/>
+
+	<!-- Look for and process JPA annotations -->
+	<bean class="org.springframework.orm.jpa.support.PersistenceAnnotationBeanPostProcessor"/>
+
+	<bean id="validator" class="org.springframework.validation.beanvalidation.LocalValidatorFactoryBean" />
+
+	<bean id="validateRepositories" class="java.lang.Boolean">
+		<constructor-arg value="${infrastructure.validation.validate_repositories}"/>
+	</bean>
+
+</beans>

@@ -1,0 +1,11 @@
+tm.out
+tm.out.lck
+tmlog.lck
+tmlog*.log
+127.0*.epoch
+
+*.ids
+*.iml
+*.ipr
+*.iws
+*.log

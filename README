@@ -1,0 +1,82 @@
+Welcome to RPM - Rolf's Project Management.
+
+This project aims to demonstrate how to use The Lift-framework to implement
+an application with uses Domain Driven Design and technologies like
+Spring, Spring Security (with remember-me), JPA (Hibernate), JSR-303 Validation,
+jQuery-UI, JTA+XA and the PostgreSQL RDBMS.
+
+Features:
+- URI-based locale selection
+- Type-safe i18n
+- Modern (technical, not looks) and responsive GUI for editing entities in a jQuery-dialog
+- Execute custom JavaScript when different radio-buttons (in same group) are checked
+  - In this demo it just toggles the value of a text below the radio-buttons
+- In-place field-validation based on the JSR-303 Bean Validation standard
+- Modularize the code into functional domains by having a PersistenceUnit spread across multiple maven-modules
+  and have Spring wire it up correctly
+- Uses scala-jpa
+- JPA-entities written in Scala with Scala-based Enumerations in JPA-entities with custom Hibernate-converters
+- Spring Security with remember me and integration with Lift
+- 2 persistence-units using 2 separate data-sources (Spring-managed)
+- JTA+XA in Tomcat using Atomikos and Spring for transaction-management
+
+Bugs:
+- No in-place validation-error on invalid date
+
+What RPM doesn't want to address and therefore does not implement:
+- Exception-handling
+- Logging (except standard log4j-setup)
+- Nice GUI
+- Useful functionality
+- Testing
+
+Unresolved issues I'd like to get comments on:
+1 Is it possible to run Hibernate's hibernate-jpamodelgen to generate Meta-classes for the JPA-entities on entities written in Scala?
+  - It seems the plugin doesn't operate on class-files but on sources and doesn't recognize JPA-entities written in Scala.
+2 Setting the locale in Spring's LocaleContextHolder using S.addAround() in Boot.scala doesn't work, see thread: http://groups.google.com/group/liftweb/browse_frm/thread/2b44b5ad4d2ab57d/5eb3a2a166d0aa0d
+3 The list of projects shows empty cells (not TD) for projects without the fields "budget" or "estimatedStart" set. This is due to bug https://www.assembla.com/spaces/liftweb/tickets/1085
+
+Prerequisites:
+- PostgreSQL 9.0 or later is required to run this application.
+  - Make sure XA is enabled by setting max_prepared_transactions = 10 (or any other suitable value) in $PGDIR/data/postgresql.conf
+- A Maven-3 installation. Note that for some reason the build-process tries to access the deprecated jboss-repository, to overcome this, add a $HOME/.m2/settings.xml like this:
+{{{
+<settings xmlns="http://maven.apache.org/POM/4.0.0"
+	  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+			      http://maven.apache.org/xsd/settings-1.0.0.xsd">
+  <mirrors>
+    <mirror>
+      <id>jboss-public</id>
+      <name>JBoss Public Nexus Repository</name>
+      <url>https://repository.jboss.org/nexus/content/groups/public/</url>
+      <mirrorOf>repository.jboss.org</mirrorOf>
+    </mirror>
+  </mirrors>
+</settings>
+}}}
+
+Issue the following commands to bootstrap the application:
+{{{
+$ cd <checked out sources>
+$ createdb pets
+$ createdb rpm
+$ mvn install # have a cup of coffee while downloading the Internet if this is your 1st Maven-project.
+$ cd web
+$ MAVEN_OPTS="-XX:MaxPermSize=256m -Xmx512m -javaagent:$HOME/.m2/repository/org/springframework/spring-instrument/3.0.5.RELEASE/spring-instrument-3.0.5.RELEASE.jar" mvn tomcat:run
+$ psql -f bootstrap/sampledata.sql rpm
+}}}
+
+Notes on bootstrapping the application:
+It's crucial to run the sampledata.sql script *after* starting tomcat because Hibernate will generate the relevant tables upon boot.
+The Spring-context needs a loadtime-weaver to be able to inject Spring-beans into non-Spring-managed classes (like snippets), so ensure
+that spring-instrument gets added as a javaagent.
+
+Open a web-browser on http://localhost:8080/rpm/en/projects or http://localhost:8080/rpm/no/projects (for Norwegian) and login with:
+  username: admin
+  password: Fish123
+
+NB: Testing is completely non-existent, on purpose.
+
+Disclaimer: RPM is by no means a complete ProjectManagement-system.
+This file was modified by IntelliJ IDEA (Xena) IU-107.509 for binding GitHub repository

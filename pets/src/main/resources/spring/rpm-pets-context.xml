@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context"
+	   xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+	   http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+
+	<context:property-placeholder location="classpath*:spring/props/*.properties"/>
+
+	<bean id="persistenceUnitManagerPETS" class="no.officenet.example.rpm.support.infrastructure.jpa.MergePersistenceUnitManager">
+		<property name="persistenceXmlLocations">
+			<list>
+				<value>classpath*:META-INF/persistence-pets.xml</value>
+			</list>
+		</property>
+		<property name="includedPersistenceUnits">
+			<set>
+				<value>PETS</value>
+			</set>
+		</property>
+		<property name="jtdDataSource" ref="dataSourcePETS"/>
+	</bean>
+
+	<bean id="PETS"
+		  class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">
+		<property name="persistenceUnitName" value="PETS"/>
+		<property name="persistenceUnitManager" ref="persistenceUnitManagerPETS"/>
+		<property name="jpaVendorAdapter" ref="jpaVendorAdapter"/>
+		<property name="jpaDialect">
+			<bean class="org.springframework.orm.jpa.vendor.HibernateJpaDialect"/>
+		</property>
+		<property name="jpaProperties">
+			<props>
+				<prop key="javax.persistence.validation.mode">none</prop><!-- We do manual validation in repositories (+ field-validation) -->
+				<prop key="hibernate.transaction.manager_lookup_class">no.officenet.example.rpm.support.infrastructure.spring.TransactionManagerLookup</prop>
+			</props>
+		</property>
+	</bean>
+
+</beans>

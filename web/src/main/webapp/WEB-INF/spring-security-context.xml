@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+NOTE:
+This file is located in WEB-INF/ and not on the classpath on purpose.
+This is because Spring-Security barfs with "duplicate http-element" if it's present more than once in the classpath,
+which under JRebel it is.
+ -->
+<beans xmlns="http://www.springframework.org/schema/beans"
+	   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	   xmlns:p="http://www.springframework.org/schema/p"
+	   xmlns:security="http://www.springframework.org/schema/security"
+	   xmlns:context="http://www.springframework.org/schema/context"
+	   xmlns:utils="http://www.springframework.org/schema/util"
+	   xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+						   http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security-3.0.xsd
+						   http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+						   http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-3.0.xsd">
+
+	<security:http auto-config="false" entry-point-ref="authenticationProcessingFilterEntryPoint"
+		access-decision-manager-ref="accessDecisionManager">
+		<security:intercept-url pattern='/login.jsp*' filters='none'/>
+		<security:intercept-url pattern='/resources/**' filters='none'/>
+		<security:intercept-url pattern='/classpath/**' filters='none'/>
+<!--
+		<security:intercept-url pattern='/ajax_request/**' access='hasAnyAuthority'/>
+		<security:intercept-url pattern='/comet_request/**' access='hasAnyAuthority'/>
+-->
+		<security:intercept-url pattern='/**' access='IS_AUTHENTICATED_REMEMBERED'/><!-- No particular role required, only logged-in -->
+		<security:access-denied-handler error-page="/login.jsp?error=true"/>
+		<security:request-cache ref="requestCache"/>
+		<security:form-login login-page="/login.jsp" always-use-default-target="false"/>
+		<security:logout invalidate-session="true"/>
+		<security:remember-me user-service-ref="jdbcUserService" key="rpm"
+							  token-repository-ref="rememberMeTokenRepository"/>
+	</security:http>
+
+	<!-- Your application may use the PasswordEncryptor in several places, -->
+	<!-- like for example at new user sign-up.                             -->
+	<bean id="jasyptPasswordEncryptor" class="org.jasypt.util.password.StrongPasswordEncryptor" />
+
+	<!-- This Spring Security-friendly PasswordEncoder implementation will -->
+	<!-- wrap the PasswordEncryptor instance so that it can be used from   -->
+	<!-- the security framework.                                           -->
+	<bean id="passwordEncoder" class="org.jasypt.spring.security3.PasswordEncoder">
+		<property name="passwordEncryptor" ref="jasyptPasswordEncryptor"/>
+	</bean>
+
+	<bean id="requestCache" class="no.officenet.example.rpm.web.security.FilteredRequestCache"/>
+
+	<bean id="accessDecisionManager" class="org.springframework.security.access.vote.AffirmativeBased">
+		<property name="decisionVoters">
+			<list>
+				<bean class="org.springframework.security.access.vote.RoleVoter">
+					<property name="rolePrefix" value=""/>
+				</bean>
+				<bean class="org.springframework.security.access.vote.AuthenticatedVoter"/>
+			</list>
+		</property>
+	</bean>
+
+	<bean id="authenticationProcessingFilterEntryPoint" class="org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint"
+		  p:loginFormUrl="/login.jsp"
+		  p:forceHttps="false"
+		  p:useForward="false"
+		/>
+
+	<bean id="rememberMeAuthenticationProvider" class="org.springframework.security.authentication.RememberMeAuthenticationProvider"
+		  p:key="rpm"
+		/>
+
+	<bean id="rememberMeTokenRepository" class="org.springframework.security.web.authentication.rememberme.JdbcTokenRepositoryImpl">
+		<property name="dataSource" ref="dataSourceRPM"/>
+		<property name="createTableOnStartup" value="false"/>
+	</bean>
+
+	<security:authentication-manager alias="authenticationManager">
+		<!-- Included for development so that we always have a valid login in development, remove before going in production! -->
+		<security:authentication-provider>
+			<security:user-service>
+				<security:user name="developer" password="${infrastructure.user.password}" authorities="DEVELOPER" />
+			</security:user-service>
+		</security:authentication-provider>
+		<security:authentication-provider>
+			<security:password-encoder ref="passwordEncoder"/>
+			<security:jdbc-user-service id="jdbcUserService" data-source-ref="dataSourceRPM"
+										authorities-by-username-query="SELECT u.username, auth.role_name FROM t_user u, (SELECT * FROM unnest(ARRAY['DEVELOPER','USER','ADMIN']) AS role_name) auth WHERE u.username = ?"
+										users-by-username-query="SELECT username, password, true FROM t_user WHERE username = ?"/>
+		</security:authentication-provider>
+		<security:authentication-provider ref="rememberMeAuthenticationProvider"/>
+	</security:authentication-manager>
+
+</beans>

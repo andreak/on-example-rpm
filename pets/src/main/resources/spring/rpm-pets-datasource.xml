@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	   xmlns:util="http://www.springframework.org/schema/util"
+	   xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+						   http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-3.0.xsd">
+
+	<bean id="dataSourcePETS" class="com.atomikos.jdbc.AtomikosDataSourceBean" init-method="init" destroy-method="close">
+		<property name="uniqueResourceName" value="PETS"/>
+		<property name="xaDataSourceClassName" value="${pets.datasource.PETS.driver}"/>
+		<property name="xaProperties" ref="dataSourcePropertiesPostgreSQLPETS"/>
+		<property name="minPoolSize" value="${pets.datasource.PETS.minPoolSize}"/>
+		<property name="maxPoolSize" value="${pets.datasource.PETS.maxPoolSize}"/>
+	</bean>
+
+	<util:map id="dataSourcePropertiesPostgreSQLPETS" key-type="java.lang.String" value-type="java.lang.String">
+		<entry key="databaseName" value="${pets.datasource.PETS.databaseName}"/>
+		<entry key="serverName" value="${pets.datasource.PETS.serverName}"/>
+		<entry key="portNumber" value="${pets.datasource.PETS.port}"/>
+		<entry key="user" value="${pets.datasource.PETS.username}"/>
+		<entry key="password" value="${pets.datasource.PETS.password}"/>
+	</util:map>
+
+</beans>
