@@ -10,7 +10,14 @@ import java.text.{ParsePosition, SimpleDateFormat, DecimalFormatSymbols, Decimal
 import no.officenet.example.rpm.support.domain.util.{GlobalTexts, WithBundle, Bundle}
 import org.joda.time.DateTime
 
-class InvalidDateException(e: Throwable) extends RuntimeException(e)
+class InvalidDateException(message: String, t: Throwable) extends RuntimeException(message, t) {
+	def this(t: Throwable) {
+		this(null, t)
+	}
+	def this(message: String) {
+		this(message, null)
+	}
+}
 
 trait Localizable {
 
@@ -46,11 +53,14 @@ trait Localizable {
 	}
 
 	def formatDate(pattern: String, date: Date, locale: Locale): String = {
-		try {formatDateString(pattern, date, locale) match {
-			case s: String if !s.isEmpty => s
-			case _ => "Unable to format date: " + date + " with pattern: " + pattern
-		}} catch {
-			case e => "Unable to format date: " + date + " with pattern: " + pattern
+		if (date == null) throw new IllegalArgumentException("date cannot be null")
+		if (locale == null) throw new IllegalArgumentException("locale cannot be null")
+		try {
+			formatDateString(pattern, date, locale) match {
+				case s: String if !s.isEmpty => s
+			}
+		} catch {
+			case e => throw new InvalidDateException("Unable to format date: " + date + " with pattern: " + pattern)
 		}
 	}
 
@@ -65,7 +75,7 @@ trait Localizable {
 	def getDateFromString(pattern: String, dateString: String): Date = {
 		try {toDate(dateString, pattern) match {
 			case date: Date => date
-			case _ => null
+			case _ => throw new InvalidDateException("Invalid date-string: " + dateString)
 		}} catch {
 			case e => throw new InvalidDateException(e)
 		}
@@ -74,7 +84,7 @@ trait Localizable {
 	def getDateTimeFromString(pattern: String, dateString: String): DateTime = {
 		try {toDate(dateString, pattern) match {
 			case date: Date => new DateTime(date.getTime)
-			case _ => null
+			case _ => throw new InvalidDateException("Invalid date-string: " + dateString)
 		}} catch {
 			case e => throw new InvalidDateException(e)
 		}

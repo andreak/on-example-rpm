@@ -2,6 +2,7 @@ package no.officenet.example.rpm.support.domain.util
 
 object GlobalTexts extends ResourceBundleEnum {
 	val
+	logged_in_user,
 	dateformat_fullDate,
 	dateformat_fullDateTime,
 	select_noItemSelected,

@@ -2,7 +2,7 @@ package no.officenet.example.rpm.web.lib
 
 import net.liftweb._
 import common.{Empty, Full, Box}
-import http.js.JE.{Call}
+import http.js.JE._
 import http.js.JsCmd
 import http.js.JsCmds._
 import http.S.AFuncHolder
@@ -404,7 +404,7 @@ trait ValidatableScreen extends Loggable with Localizable {
 		}
 	}
 
-	private def validateInput[T <: AnyRef](s: String, bean: AnyRef, fieldName: String, func: (T) => Any, klass: Class[T]) {
+	private def validateInput[T <: AnyRef](s: String, bean: AnyRef, fieldName: String, func: (T) => Any, klass: Class[T]): Any = {
 		val newValue = if (s == null || s.trim().isEmpty) null else s.trim()
 		try {
 			val convertedValue: T = if (newValue == null) null.asInstanceOf[T]
@@ -415,14 +415,17 @@ trait ValidatableScreen extends Loggable with Localizable {
 			trace("Validating field: " + fieldName + " with value '" + convertedValue + "'")
 			registerFieldViolations(bean, fieldName, convertedValue)
 			registerBeanViolations(bean, fieldName)
+			convertedValue
 		} catch {
 			case e: javax.validation.ValidationException => throw e
 			case e: NumberFormatException =>
 				registerError(bean, fieldName, if (newValue != null) newValue.toString else null,
 							  L(GlobalTexts.validation_notANumber_number_text, s))
+				s
 			case e: InvalidDateException =>
 				registerError(bean, fieldName, if (newValue != null) newValue.toString else null,
 							  L(GlobalTexts.validation_invalidDate_text, s))
+				s
 		}
 	}
 
@@ -437,15 +440,21 @@ trait ValidatableScreen extends Loggable with Localizable {
 	private def onBlurForTextInput[T <: AnyRef](bean: AnyRef, fieldName: String, func: (T) => Any, inputId: String, containerId: String, klass: Class[T]) = {
 		SHtml.onEvent((s) => {
 			cleanErrorsForProperty(bean, fieldName) // Important to clear errors for this field in case previous action was "submit" on form
-			validateInput(s, bean, fieldName, func, klass)
+			val convertedValue = validateInput(s, bean, fieldName, func, klass)
 			val fieldErrors = getFieldErrors(bean, fieldName)
 			val errorSeq: NodeSeq = getErrorsSeq(fieldErrors)
 			cleanErrorsForProperty(bean, fieldName)
-			if (fieldErrors.isEmpty) {
+			val errorHandlerCmd = if (fieldErrors.isEmpty) {
 				Call("Rolf.removeFieldError", containerId, inputId)
 			} else {
 				Call("Rolf.attachFieldError", containerId, inputId, errorSeq.toString())
 			}
+			val extraCmd: JsCmd = convertedValue match {
+				case d: java.util.Date => JsRaw("$(%s).value=%s".format(inputId.encJs, formatDate(L(GlobalTexts.dateformat_fullDate), d, S.locale).encJs))
+				case d: DateTime => JsRaw("$(%s).value=%s".format(inputId.encJs, formatDateTime(L(GlobalTexts.dateformat_fullDate), Full(d), S.locale).open_!.encJs))
+				case _ => Noop
+			}
+			errorHandlerCmd & extraCmd
 		})._2.toJsCmd
 	}
 

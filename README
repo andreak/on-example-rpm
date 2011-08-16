@@ -21,7 +21,7 @@ Features:
 - JTA+XA in Tomcat using Atomikos and Spring for transaction-management
 
 Bugs:
-- No in-place validation-error on invalid date
+- No known bugs (except Lift-bugs, mentioned below)
 
 What RPM doesn't want to address and therefore does not implement:
 - Exception-handling
