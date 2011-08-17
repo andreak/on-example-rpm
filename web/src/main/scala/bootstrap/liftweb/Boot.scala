@@ -17,6 +17,8 @@ import no.officenet.example.rpm.support.infrastructure.logging.Loggable
 class Boot extends Loggable {
 	def boot() {
 
+		Logger.setup = Full(() => ()) // Do nothing. We don't want Lift to try to mess up our logging. Having log4j.xml in classpath is sufficient
+
 		LiftRules.templateSuffixes = "lift" :: LiftRules.templateSuffixes
 		LiftRules.snippetNamesToSearch.default.set(() => LiftRules.searchSnippetsWithRequestPath(_))
 		LiftRules.addToPackages("no.officenet.example.rpm.web")
