@@ -4,11 +4,12 @@ import java.io.Serializable
 import org.springframework.transaction.annotation.Transactional
 import collection.JavaConversions.asScalaBuffer
 import collection.JavaConversions.iterableAsScalaIterable
-import javax.persistence.criteria.CriteriaBuilder
 import javax.annotation.Resource
 import javax.validation.{ConstraintViolation, ConstraintViolationException, Validator}
 import validation.MethodValidationGroup
 import no.officenet.example.rpm.support.infrastructure.errorhandling.ObjectNotFoundByPrimaryKeyException
+import javax.persistence.criteria.{Order, CriteriaBuilder}
+import collection.mutable.{ListBuffer, Buffer}
 
 @Transactional
 trait WritableRepository[T <: AnyRef, PK <: Serializable] extends RepositorySupport {
@@ -42,17 +43,31 @@ trait ReadableRepository[T <: AnyRef, PK <: Serializable] extends RepositorySupp
 		case _ => throw new ObjectNotFoundByPrimaryKeyException(m.erasure.getSimpleName, id.toString)
 	}
 
-	def findAll(implicit m: Manifest[T]) = {
-		val query = entityManager.getCriteriaBuilder.createQuery[T](m.erasure.asInstanceOf[Class[T]])
-		query.from(m.erasure)
-		asScalaBuffer(entityManager.createQuery[T](query).getResultList)
+	def findAll(orderBy: OrderBy*)(implicit m: Manifest[T]): Buffer[T] = {
+		findAll(None, None, orderBy:_*)
 	}
 
-	def findAll(offset: Int, maxSize: Int)(implicit m: Manifest[T]) = {
-		val query = entityManager.getCriteriaBuilder.createQuery[T](m.erasure.asInstanceOf[Class[T]])
-		query.from(m.erasure)
-		asScalaBuffer(entityManager.createQuery[T](query).setFirstResult(offset).setMaxResults(maxSize)
-										  .getResultList)
+	def findAll(offset: Option[Int], maxSize: Option[Int], orderBy: OrderBy*)(implicit m: Manifest[T]) = {
+		val criteriaBuilder = entityManager.getCriteriaBuilder
+		val criteriaQuery = criteriaBuilder.createQuery[T](m.erasure.asInstanceOf[Class[T]])
+		val c = criteriaQuery.from(m.erasure)
+		val orderByList = new ListBuffer[Order]
+		for (ob <- orderBy) {
+			val orderByElement = ob.order match {
+				case no.officenet.example.rpm.support.infrastructure.jpa.Order.ASC => criteriaBuilder.asc(c.get(ob.fieldName))
+				case _ => criteriaBuilder.desc(c.get(ob.fieldName))
+			}
+			orderByList += orderByElement
+		}
+		criteriaQuery.orderBy(orderByList:_*)
+		val typedQuery = entityManager.createQuery[T](criteriaQuery)
+		for (o <- offset) {
+			typedQuery.setFirstResult(o)
+		}
+		for (l <- maxSize) {
+			typedQuery.setMaxResults(l)
+		}
+		asScalaBuffer(typedQuery.getResultList)
 	}
 
 	def size(implicit m: Manifest[T]) = {

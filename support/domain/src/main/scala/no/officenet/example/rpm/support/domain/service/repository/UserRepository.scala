@@ -22,7 +22,7 @@ trait UserRepository extends GenericRepository[User, java.lang.Long] {
 			.getResultList()
 	}
 
-	override def findAll(implicit m: Manifest[User]) = {
+	def findAll = {
 		entityManager.createQuery[User]("SELECT u FROM User u ORDER BY u.firstName ASC, u.lastName ASC, u.userName ASC")
 			.getResultList()
 	}
