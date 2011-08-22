@@ -22,7 +22,7 @@ Features:
 - JTA+XA in Tomcat using Atomikos and Spring for transaction-management
 
 Bugs:
-- No known bugs (except Lift-bugs, mentioned below)
+- Doesn't handle multiple simultaneous open dialogs
 
 What RPM doesn't want to address and therefore does not implement:
 - Exception-handling
