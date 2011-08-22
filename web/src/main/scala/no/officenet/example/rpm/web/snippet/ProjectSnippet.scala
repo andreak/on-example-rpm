@@ -94,6 +94,16 @@ class ProjectSnippet extends Localizable with Loggable {
 				Text(L(GlobalTexts.button_edit)))
 	}
 
+	/**
+	 * This function is passed as a callback to the ProjectEditSnippet. Its purpose is to update the editButtonContainer
+	 * (the last TD in the project-list) with an updated modified-timestamp after saving and closing the popup.
+	 * <p/>
+	 * todo: When {@link #renderButtonContainer} gets called as a callback (Line 116 in {@link ProjectEditSnippet#render}), it renders the link in the "ajax-context"
+	 * of the popup-dialog (backed by ProjectEditSnippet), not in the context of this project-listing (ProjectSnippet).
+	 * The result of this is that clicking on the (then updated) "Edit"-link after saving in the popup returns the same
+	 * instance of ProjectEditSnippet, which we don't want. We always want a new instance of ProjectEditSnippet
+	 * for each project we click "Edit" on.
+	 */
 	def refreshProject(buttonContainerId: String, ns:NodeSeq): (Project) => JsCmd = {
 		(project: Project) => {
 			RolfJsCmds.JqReplaceWith(buttonContainerId, renderButtonContainer(buttonContainerId, project, ns)(ns))
