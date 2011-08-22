@@ -3,6 +3,7 @@ package no.officenet.example.rpm.web.snippet
 import net.liftweb._
 import common.{Box, Full}
 import http._
+import js._
 import js.JsCmds._
 import js.jquery.JqJsCmds.{Show, Hide}
 import util.Helpers._
@@ -15,8 +16,6 @@ import no.officenet.example.rpm.projectmgmt.domain.model.entities.Project
 import no.officenet.example.rpm.projectmgmt.application.dto.ProjectDto
 import org.joda.time.DateTime
 import no.officenet.example.rpm.support.domain.service.UserService
-import org.springframework.security.core.context.SecurityContextHolder
-import no.officenet.example.rpm.pets.domain.model.entities.Pet
 import xml.NodeSeq
 import no.officenet.example.rpm.projectmgmt.domain.model.enums.{ProjectColor, ProjectType, ProjectTexts}
 import no.officenet.example.rpm.support.domain.util.{GlobalTexts, Bundle}
@@ -29,6 +28,10 @@ object DisplayRadioWithLabelHorizontallyTemplate {
 		holder.flatMap(buildElement _)
 }
 
+object projectUpdatedCallbackFuncVar extends RequestVar[Project => JsCmd]((project: Project) => Noop)
+object editProjectDialogVar extends RequestVar[JQueryDialog](null)
+object projectVar extends RequestVar[ProjectDto](null)
+
 @Configurable
 class ProjectEditSnippet extends ValidatableScreen {
 
@@ -40,22 +43,14 @@ class ProjectEditSnippet extends ValidatableScreen {
 	@Resource
 	val userService: UserService = null
 
-	var editProjectDialog: JQueryDialog = null
+	var projectDto = projectVar.get
 
-	def openNewProjectDialog = {
-		val newProjectTemplate = "lift/_projectEdit"
-		".openNewProjectDialog" #> SHtml.ajaxButton(L(ProjectTexts.V.button_newProjectDialog_text), () => {
-			editProjectDialog = JQueryDialog(S.runTemplate(List(newProjectTemplate)).openOr(<div>Template {newProjectTemplate} not found</div>),
-											 L(ProjectTexts.V.projectDialog_title_newProject))
-			editProjectDialog.open
-		}
-		)
-	}
+	def isNewEntity = projectDto.project.id == null
+
+	trace("\n\n********************** ctor: " + this + " + project: " + projectDto.project)
 
 	def render = {
-		val project = new Project(new DateTime, userService.findByUserName(SecurityContextHolder.getContext.getAuthentication.getName).get)
-		project.projectType = ProjectType.scrum
-		val pet = new Pet(new DateTime)
+		trace("\n\n***** this: " + this)
 		val projectTypes: Seq[ProjectType.ExtendedValue] = ProjectType.getValues
 		var selectedColor = ProjectColor.BLACK.name
 		val radioValues = ProjectColor.getValues.map(st => (st.name, L(st.wrapped)))
@@ -79,6 +74,8 @@ class ProjectEditSnippet extends ValidatableScreen {
 			else "display: none"
 		}
 
+		val project = projectDto.project
+		val pet = projectDto.pet
 		"*" #> SHtml.idMemoize(id => {
 			".projectName *" #> labelTextInput(L(ProjectTexts.D.name), project, "name", project.name, (s: String) => project.name = s, false) &
 			".projectDescription *" #> labelTextAreaInput(L(ProjectTexts.D.description), project, "description", project.description, (s: String) => project.description = s, false) &
@@ -109,8 +106,15 @@ class ProjectEditSnippet extends ValidatableScreen {
 			".saveButton" #> SHtml.ajaxSubmit(L(ProjectTexts.V.projectDialog_button_save), () => {
 				trace("Saving")
 				if (S.errors.isEmpty) {
-					projectAppService.create(new ProjectDto(project, pet))
-					editProjectDialog.close
+					projectDto = if (isNewEntity) {
+						projectAppService.create(projectDto)
+					} else {
+						projectAppService.update(projectDto)
+					}
+					projectVar.set(projectDto)
+					// TODO: This function is run in "ajax-scope" of ProjectEditSnippet, make it run in "caller's ajax-scope".
+					projectUpdatedCallbackFuncVar.apply(projectDto.project) &
+					editProjectDialogVar.get.close
 				} else {
 					trace("errors found, re-rendering form")
 					id.setHtml()

@@ -7,6 +7,9 @@ object Bundle extends ResourceBundleNameEnum {
 	// Holds texts for Project (D) domain object fields. Used in ProjectTexts.D
 	val PROJECT_D = BundleName("no.officenet.example.rpm.resources.projectDomainResources")
 
+	// Holds texts for Project (D) domain object fields. Used in ProjectTexts.D
+	val PET_D = BundleName("no.officenet.example.rpm.resources.petDomainResources")
+
 	// Holds texts for Project (V) views (project-related pages). Used in ProjectTexts.V
 	val PROJECT_V = BundleName("no.officenet.example.rpm.resources.projectViewResources")
 

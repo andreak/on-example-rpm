@@ -5,6 +5,7 @@ object GlobalTexts extends ResourceBundleEnum {
 	logged_in_user,
 	dateformat_fullDate,
 	dateformat_fullDateTime,
+	dateformat_fullDateTimeSeconds,
 	select_noItemSelected,
 
 	validation_notANumber_number_text,
@@ -16,7 +17,9 @@ object GlobalTexts extends ResourceBundleEnum {
 	numberFormat_groupingSeparator,
 	numberFormat_decimalSeparator,
 
-	error_userNotFound
+	error_userNotFound,
+
+	button_edit
 	
 	= BundleEnum(Bundle.GLOBAL)
 }

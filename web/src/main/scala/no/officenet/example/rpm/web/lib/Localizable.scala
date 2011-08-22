@@ -68,6 +68,10 @@ trait Localizable {
 		date.map(d => formatDate(pattern, d, locale))
 	}
 
+	def formatDateTime(pattern: String, date: Box[DateTime]): Box[String] = {
+		date.map(d => formatDate(pattern, d.toDate, S.locale))
+	}
+
 	def formatDateTime(pattern: String, date: Box[DateTime], locale: Locale): Box[String] = {
 		date.map(d => formatDate(pattern, d.toDate, locale))
 	}

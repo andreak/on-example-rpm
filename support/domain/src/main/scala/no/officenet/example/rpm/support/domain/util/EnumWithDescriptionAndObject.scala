@@ -34,13 +34,7 @@ abstract class EnumWithDescriptionAndObject[T] extends Enumeration {
 		}
 	}
 
-	def Value(inWrapped: T): ExtendedValue = {
-		new Val(nextId) with ValueWithDescription[T] {
-			def description = ""
-			def name = toString()
-			def wrapped = inWrapped
-		}
-	}
+	def Value(inWrapped: T): ExtendedValue = Value("", inWrapped)
 
 	def getValues = {
 		super.values.map(v => v.asInstanceOf[ExtendedValue]).asInstanceOf[Set[ExtendedValue]].toSeq

@@ -13,8 +13,10 @@ object ProjectTexts {
 		createdBy,
 		modified,
 		modifiedBy,
+		projectEstimatedStart,
 		type_scrum,
-		type_sales
+		type_sales,
+		petId
 		= BundleEnum(Bundle.PROJECT_D)
 	}
 
