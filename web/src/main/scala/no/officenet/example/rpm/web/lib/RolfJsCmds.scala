@@ -9,10 +9,6 @@ import js.jquery.JqJE
 import js.JsCmds._
 import xml.NodeSeq
 
-/**
- * Copyright © SG Finans
- */
-
 object RolfJqJE {
 
 	case class JqInsertAtCaret(text: String) extends JsExp with JsMember {
