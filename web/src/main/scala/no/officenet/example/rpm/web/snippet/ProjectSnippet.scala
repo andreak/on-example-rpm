@@ -21,7 +21,6 @@ import no.officenet.example.rpm.support.infrastructure.logging.Loggable
 import xml.{Elem, NodeSeq, Text}
 import no.officenet.example.rpm.web.lib.{RolfJsCmds, JQueryDialog, Localizable}
 import no.officenet.example.rpm.pets.domain.model.entities.Pet
-import no.officenet.example.rpm.pets.domain.service.repository.PetRepository
 
 @Configurable
 class ProjectSnippet extends Localizable with Loggable {
@@ -33,9 +32,6 @@ class ProjectSnippet extends Localizable with Loggable {
 
 	@Resource
 	val userService: UserService = null
-
-	@Resource
-	val petRepository: PetRepository = null
 
 	val newProjectTemplate = "lift/_projectEdit"
 
@@ -66,7 +62,7 @@ class ProjectSnippet extends Localizable with Loggable {
 																				S.locale) &
 								   ".createdBy *" #> project.createdBy.displayName &
 								   ".petId *" #> petIdBox.map(_.toString) &
-								   ".petName *" #> petIdBox.map(id => petRepository.retrieve(id).petName) /* How to load this from repository using parallel snippets?? */ &
+								   ".petName *" #> petIdBox.map(id => <lift:GetPetName petId={id.toString} parallel="true" />) &
 								   ".editButtonContainer" #> ((ns:NodeSeq) =>
 									   renderButtonContainer(buttonContainerId,
 														 project,
