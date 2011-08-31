@@ -8,7 +8,7 @@ import javax.annotation.Resource
 import javax.validation.{ConstraintViolation, ConstraintViolationException, Validator}
 import validation.MethodValidationGroup
 import no.officenet.example.rpm.support.infrastructure.errorhandling.ObjectNotFoundByPrimaryKeyException
-import javax.persistence.criteria.{Order, CriteriaBuilder}
+import javax.persistence.criteria.CriteriaBuilder
 import collection.mutable.{ListBuffer, Buffer}
 
 @Transactional
@@ -51,10 +51,10 @@ trait ReadableRepository[T <: AnyRef, PK <: Serializable] extends RepositorySupp
 		val criteriaBuilder = entityManager.getCriteriaBuilder
 		val criteriaQuery = criteriaBuilder.createQuery[T](m.erasure.asInstanceOf[Class[T]])
 		val c = criteriaQuery.from(m.erasure)
-		val orderByList = new ListBuffer[Order]
+		val orderByList = new ListBuffer[javax.persistence.criteria.Order]
 		for (ob <- orderBy) {
 			val orderByElement = ob.order match {
-				case no.officenet.example.rpm.support.infrastructure.jpa.Order.ASC => criteriaBuilder.asc(c.get(ob.fieldName))
+				case Order.ASC => criteriaBuilder.asc(c.get(ob.fieldName))
 				case _ => criteriaBuilder.desc(c.get(ob.fieldName))
 			}
 			orderByList += orderByElement
