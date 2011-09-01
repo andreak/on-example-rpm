@@ -49,7 +49,7 @@ class ProjectSnippet extends Localizable with Loggable {
 	}
 
 	def list = {
-		val snapshot = SomeRequestVar.generateSnapshotRestorer[Project => JsCmd]()
+		val snapshot = SomeRequestVar.generateSnapshotRestorer[JsCmd]()
 
 		".projectListTable" #> (
 							   ".projectBodyRow" #> projectAppService.findAll.map(project => {
@@ -75,17 +75,17 @@ class ProjectSnippet extends Localizable with Loggable {
 							   }))
 	}
 
-	private def renderButtonContainer(buttonContainerId: String, project: Project, ns:NodeSeq, snapshot: (() => (Project) => JsCmd) => (Project) => JsCmd) = {
+	private def renderButtonContainer(buttonContainerId: String, project: Project, ns:NodeSeq, snapshot: (() => JsCmd) => JsCmd) = {
 		".lastModified *" #> formatDateTime(L(GlobalTexts.dateformat_fullDateTimeSeconds),
 											Box.legacyNullTest(project.modified)).openOr("<not-modified>") &
 		".editButton" #> getEditButtonLink(buttonContainerId, project.id, ns, snapshot)
 	}
 
-	private def getEditButtonLink(buttonContainerId: String, projectId: java.lang.Long, ns:NodeSeq, snapshot: (() => (Project) => JsCmd) => (Project) => JsCmd) = {
+	private def getEditButtonLink(buttonContainerId: String, projectId: java.lang.Long, ns:NodeSeq, snapshot: (() => JsCmd) => JsCmd) = {
 		SHtml.a(() => {
 			trace("retrieving projectId: " + projectId)
 			projectVar.set(projectAppService.retrieve(projectId)) // The popup uses this to access the selected project
-			projectUpdatedCallbackFuncVar.set(snapshot(() => refreshProject(buttonContainerId, ns, snapshot))) // The callback-func to run after successfully saving in popup
+			projectUpdatedCallbackFuncVar.set(refreshProject(buttonContainerId, ns, snapshot)) // The callback-func to run after successfully saving in popup
 			// Put the handle for the popup in a request-var so that the pop is able to close itself.
 			editProjectDialogVar.set(JQueryDialog(S.runTemplate(List(newProjectTemplate)).openOr(<div>Template {newProjectTemplate} not found</div>),
 												  L(ProjectTexts.V.projectDialog_title_newProject)))
@@ -104,9 +104,10 @@ class ProjectSnippet extends Localizable with Loggable {
 	 * instance of ProjectEditSnippet, which we don't want. We always want a new instance of ProjectEditSnippet
 	 * for each project we click "Edit" on.
 	 */
-	def refreshProject(buttonContainerId: String, ns:NodeSeq, snapshot: (() => (Project) => JsCmd) => (Project) => JsCmd): (Project) => JsCmd = {
+	def refreshProject(buttonContainerId: String, ns:NodeSeq, snapshot: (() => JsCmd) => JsCmd): (Project) => JsCmd = {
 		(project: Project) => {
-			RolfJsCmds.JqReplaceWith(buttonContainerId, renderButtonContainer(buttonContainerId, project, ns, snapshot)(ns))
+			val jsCmd = snapshot(() => RolfJsCmds.JqReplaceWith(buttonContainerId, renderButtonContainer(buttonContainerId, project, ns, snapshot)(ns)))
+			jsCmd
 		}
 	}
 
