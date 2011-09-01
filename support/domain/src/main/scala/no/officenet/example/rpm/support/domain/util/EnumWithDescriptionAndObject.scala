@@ -22,8 +22,6 @@ sealed trait NamedValue  {
 
 abstract class EnumWithDescriptionAndObject[T] extends Enumeration {
 
-	val enum = new Enumeration(){}
-
 	type ExtendedValue = Value with ValueWithDescription[T]
 
 	def Value(inDescription: String, inWrapped: T): ExtendedValue = {
