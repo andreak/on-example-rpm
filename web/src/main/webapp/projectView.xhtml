@@ -1,0 +1,104 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+	  xmlns:f="http://java.sun.com/jsf/core" xmlns:h="http://java.sun.com/jsf/html"
+	>
+<head>
+	<link type="text/css" media="screen, projection" rel="stylesheet" href="${facesContext.externalContext.requestContextPath}/classpath/blueprint/screen.css" />
+	<link type="text/css" media="print" rel="stylesheet" href="${facesContext.externalContext.requestContextPath}/classpath/blueprint/print.css" />
+
+	<!--[if IE]><link rel="stylesheet" href="${facesContext.externalContext.requestContextPath}/classpath/blueprint/ie.css" type="text/css" media="screen, projection"><![endif]-->
+
+	<link type="text/css" media="screen, projection" rel="stylesheet" href="${facesContext.externalContext.requestContextPath}/classpath/blueprint/plugins/fancy-type/screen.css" />
+
+	<link rel="stylesheet" media="all" type="text/css" href="${facesContext.externalContext.requestContextPath}/resources/css/external/jquery-ui-1.8.15.custom.css" />
+	<link rel="stylesheet" media="all" type="text/css" href="${facesContext.externalContext.requestContextPath}/resources/css/Rolf.css" />
+
+	<script type="text/javascript" src="${facesContext.externalContext.requestContextPath}/resources/js/external/jquery-1.6.2.min.js"></script>
+	<script type="text/javascript" src="${facesContext.externalContext.requestContextPath}/resources/js/external/jquery-ui-1.8.15.custom.min.js"></script>
+	<script type="text/javascript" src="${facesContext.externalContext.requestContextPath}/classpath/json.js"></script>
+
+	<script type="text/javascript">
+		jQuery.noConflict();
+	</script>
+	<h:outputScript name="prototype.js" library="js/external"/>
+	<script type="text/javascript" src="${facesContext.externalContext.requestContextPath}/resources/js/Rolf.js"></script>
+
+</head>
+<body>
+<f:view contentType="text/html" encoding="UTF-8" locale="#{configController.locale}">
+	<f:metadata>
+		<f:viewParam id="projectIdent" name="id" value="#{projectViewController.id}">
+			<f:validateLongRange minimum="0"/>
+		</f:viewParam>
+	</f:metadata>
+	<script type="text/javascript">
+		//<![CDATA[
+		function sayHi(id, content) {
+//			var fisk = (id + ": " + new Date().getTime());
+//			alert("Replacing id: " + id + " with content: " + fisk);
+//			jQuery('#'+id).replaceWith(fisk);
+			jQuery('#'+id).empty().append(content);
+		}
+		//]]>
+	</script>
+
+	<h:link outcome="/projectView.xhtml">
+		<f:param name="lang" value="no"/>
+		<f:param name="id" value="#{projectViewController.id}"/>
+		<h:outputText value="#{PROJECT_V['jsf_viewNorwegianList']}"/>
+	</h:link>
+	<h:link outcome="/projectView.xhtml">
+		<f:param name="lang" value="en"/>
+		<f:param name="id" value="#{projectViewController.id}"/>
+		<h:outputText value="#{PROJECT_V['jsf_viewEnglishList']}"/>
+	</h:link>
+	<h:link outcome="/projectList.xhtml">
+		Project List
+	</h:link>
+
+	<p/>
+
+	<script src="${facesContext.externalContext.requestContextPath}/#{configController.liftAjaxPath}/liftAjax.js" type="text/javascript"></script>
+
+	<script type="text/javascript">
+		//<![CDATA[
+		jQuery(document).ready(function() {liftAjax.lift_successRegisterGC();});
+		var lift_page = "NO_PAGE";
+		Rolf.setBaseUrl('${facesContext.externalContext.requestContextPath}');
+
+		function openLiftPopup(template, params) {
+			var queryString = Object.isUndefined(params) ? "" : "?" + $H(params).toQueryString();
+			var req = new Ajax.Request(Rolf.getBaseUrl() + "/lift/" + template+queryString, {
+				onSuccess: function(transport) {
+					var responseText = transport.responseText || "no response text";
+					jQuery("<div id='snobel' class='dialog_box'></div>").appendTo("body").html(responseText).
+						dialog({title: "Edit project", width: 600, height: 650, resizable: true, show: "drop", hide: "drop"}).
+						dialog("open");
+//					DialogHelper.createMovableDialogFromHtml(responseText);
+				},
+				onFailure: function() {
+					alert("Failed");
+//					DialogHelper.createErrorDialogWithCloseButton("Failed loading template: "+template);
+				},
+				parameters: {}, evalScripts: true}
+			);
+		}
+
+		//]]>
+	</script>
+	<a href="javascript:void(0)" onclick="openLiftPopup('project/projectEditDialogWrapperForJSF', {id: #{projectViewController.project.id}}); return false">
+		EDIT (Lift-popup)
+	</a>
+
+	<div id="bolle">content of project from comet here</div>
+
+	<iframe id="project_view_jsf_iframe" name="project_view_jsf_iframe"
+			src="${facesContext.externalContext.requestContextPath}/lift/project/projectViewWrapperForJSF?locale=${configController.locale}&amp;id=#{projectViewController.id}"
+			height="0"
+			width="0"
+			frameborder="0"
+		><!-- --></iframe>
+</f:view>
+</body>
+</html>

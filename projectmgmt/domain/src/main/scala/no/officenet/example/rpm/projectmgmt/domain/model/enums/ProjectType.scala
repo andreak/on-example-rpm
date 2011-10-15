@@ -1,6 +1,7 @@
 package no.officenet.example.rpm.projectmgmt.domain.model.enums
 
-import no.officenet.example.rpm.support.domain.util.{EnumUserType, EnumWithDescriptionAndObject}
+import no.officenet.example.rpm.support.infrastructure.jpa.EnumUserType
+import no.officenet.example.rpm.support.infrastructure.enums.EnumWithDescriptionAndObject
 
 class ProjectUserType extends EnumUserType(ProjectType)
 

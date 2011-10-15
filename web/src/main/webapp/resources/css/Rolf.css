@@ -50,3 +50,9 @@ select.value_error {
 .warning {
 	color: red;
 }
+
+.exceptionLink {
+	cursor: pointer;
+	font-weight: bold;
+	text-decoration: underline;
+}

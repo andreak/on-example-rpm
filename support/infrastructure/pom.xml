@@ -140,41 +140,6 @@
 		</dependency>
 
 	</dependencies>
-	<profiles>
-		<profile>
-			<id>windows</id>
-			<activation>
-				<os>
-					<family>windows</family>
-				</os>
-			</activation>
-			<build>
-				<plugins>
-					<plugin>
-						<groupId>org.codehaus.mojo</groupId>
-						<artifactId>buildnumber-maven-plugin</artifactId>
-						<version>1.0-beta-4</version>
-						<executions>
-							<execution>
-								<phase>validate</phase>
-								<goals>
-									<goal>create</goal>
-								</goals>
-							</execution>
-						</executions>
-						<configuration>
-							<doCheck>false</doCheck>
-							<doUpdate>false</doUpdate>
-							<providerImplementations>
-								<svn>javasvn</svn>
-							</providerImplementations>
-							<revisionOnScmFailure>${project.version}</revisionOnScmFailure>
-						</configuration>
-					</plugin>
-				</plugins>
-			</build>
-		</profile>
-	</profiles>
 
 	<build>
 		<plugins>
@@ -183,8 +148,17 @@
 				<artifactId>maven-scala-plugin</artifactId>
 				<executions>
 					<execution>
+						<id>scala-compile-first</id>
+						<phase>process-resources</phase>
 						<goals>
+							<goal>add-source</goal>
 							<goal>compile</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>scala-test-compile</id>
+						<phase>process-test-resources</phase>
+						<goals>
 							<goal>testCompile</goal>
 						</goals>
 					</execution>

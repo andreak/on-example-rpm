@@ -1,0 +1,32 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<faces-config version="2.0"
+			  xmlns="http://java.sun.com/xml/ns/javaee"
+			  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+			  xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-facesconfig_2_0.xsd">
+	<application>
+		<!-- This makes JSF resolve el-expressions to Spring-beans, enabling spring-beans to act as spring-managed JSF-controllers -->
+		<el-resolver>org.springframework.web.jsf.el.SpringBeanFacesELResolver</el-resolver>
+		<locale-config>
+			<default-locale>en</default-locale>
+			<supported-locale>no</supported-locale>
+			<supported-locale>en</supported-locale>
+		</locale-config>
+		<!-- Message properties components-->
+		<resource-bundle>
+			 <base-name>no.officenet.example.rpm.resources.globalResources</base-name>
+			 <var>GLOBAL</var>
+		</resource-bundle>
+		<resource-bundle>
+			 <base-name>no.officenet.example.rpm.resources.projectDomainResources</base-name>
+			 <var>PROJECT_D</var>
+		</resource-bundle>
+		<resource-bundle>
+			 <base-name>no.officenet.example.rpm.resources.projectViewResources</base-name>
+			 <var>PROJECT_V</var>
+		</resource-bundle>
+	</application>
+	<converter>
+		<converter-for-class>java.lang.Enum</converter-for-class>
+		<converter-class>javax.faces.convert.EnumConverter</converter-class>
+	</converter>
+</faces-config>

@@ -1,6 +1,6 @@
 package no.officenet.example.rpm.pets.domain.model.enums
 
-import no.officenet.example.rpm.support.domain.util.{Bundle, ResourceBundleEnum}
+import no.officenet.example.rpm.support.domain.i18n.{Bundle, ResourceBundleEnum}
 
 object PetTexts {
 

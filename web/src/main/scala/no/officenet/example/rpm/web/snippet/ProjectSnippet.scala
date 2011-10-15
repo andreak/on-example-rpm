@@ -10,7 +10,6 @@ import js.JsCmds._
 import org.springframework.beans.factory.annotation.Configurable
 import no.officenet.example.rpm.projectmgmt.application.service.ProjectAppService
 import javax.annotation.Resource
-import no.officenet.example.rpm.support.domain.util.{GlobalTexts, Bundle}
 import no.officenet.example.rpm.projectmgmt.domain.model.entities.Project
 import no.officenet.example.rpm.projectmgmt.domain.model.enums.{ProjectType, ProjectTexts}
 import org.springframework.security.core.context.SecurityContextHolder
@@ -19,13 +18,18 @@ import no.officenet.example.rpm.support.domain.service.UserService
 import no.officenet.example.rpm.projectmgmt.application.dto.ProjectDto
 import no.officenet.example.rpm.support.infrastructure.logging.Loggable
 import xml.{Elem, NodeSeq, Text}
-import no.officenet.example.rpm.web.lib.{RolfJsCmds, JQueryDialog, Localizable}
+import no.officenet.example.rpm.web.lib.{RolfJsCmds, JQueryDialog}
+import no.officenet.example.rpm.web.lib.ContextVars._
 import no.officenet.example.rpm.pets.domain.model.entities.Pet
+import no.officenet.example.rpm.support.domain.i18n.{GlobalTexts, Localizer}
+import no.officenet.example.rpm.support.domain.i18n.Localizer.L
+import no.officenet.example.rpm.support.domain.i18n.Localizer.L_!
+import no.officenet.example.rpm.web.menu.{ProjectLoc, ProjectViewParam}
+import no.officenet.example.rpm.web.comet.ProjectDetailCometRenderer
+import scala.collection.JavaConversions.iterableAsScalaIterable
 
 @Configurable
-class ProjectSnippet extends Localizable with Loggable {
-
-	val defaultBundle = Bundle.PROJECT_D
+class ProjectSnippet extends Loggable {
 
 	@Resource
 	val projectAppService: ProjectAppService = null
@@ -33,16 +37,14 @@ class ProjectSnippet extends Localizable with Loggable {
 	@Resource
 	val userService: UserService = null
 
-	val newProjectTemplate = "lift/_projectEdit"
-
 	object SomeRequestVar extends RequestVar("Hello")
 
 	def openNewProjectDialog = {
 		".openNewProjectDialog" #> SHtml.ajaxButton(L(ProjectTexts.V.button_newProjectDialog_text), () => {
-			val project = new Project(new DateTime, userService.findByUserName(SecurityContextHolder.getContext.getAuthentication.getName).get)
+			val project = new Project(new DateTime, userService.findByUserName(SecurityContextHolder.getContext.getAuthentication.getName).getOrElse(null))
 			project.projectType = ProjectType.scrum
 			projectVar.set(new ProjectDto(project, new Pet()))
-			editProjectDialogVar.set(JQueryDialog(S.runTemplate(List(newProjectTemplate)).openOr(<div>Template {newProjectTemplate} not found</div>),
+			editProjectDialogVar.set(JQueryDialog(S.runTemplate(List(ProjectDetailCometRenderer.newProjectTemplate)).openOr(<div>Template {ProjectDetailCometRenderer.newProjectTemplate} not found</div>),
 												  L(ProjectTexts.V.projectDialog_title_newProject)))
 			editProjectDialogVar.get.open
 		})
@@ -56,12 +58,13 @@ class ProjectSnippet extends Localizable with Loggable {
 								   val buttonContainerId = nextFuncName
 								   val petIdBox = Box.legacyNullTest(project.petId)
 								   "tr [data-json]" #> ("{'id': " + project.id + ", 'name':"+ project.name.encJs + "}") &
-								   ".projectName *" #> project.name &
+								   ".projectName *" #> ProjectLoc.createLink(ProjectViewParam(project.id.toString)).map(l => SHtml.link(l.toString(), () => (), Text(project.name))) &
 								   ".projectType *" #> L(project.projectType.wrapped) &
-								   ".createdDate *" #> formatDate(L(GlobalTexts.dateformat_fullDateTime), project.created.toDate,
+								   ".showActivitiesButton *" #> SHtml.ajaxButton(L(ProjectTexts.V.button_showActivities_text), () => showActivitiesForProject(project)) &
+								   ".createdDate *" #> Localizer.formatDate(L(GlobalTexts.dateformat_fullDateTime), project.created.toDate,
 																  S.locale) &
-								   ".projectBudget *" #> formatLong(Box.legacyNullTest(project.budget)) &
-								   ".projectEstimatedStart *" #> formatDateTime(L(GlobalTexts.dateformat_fullDateTime),
+								   ".projectBudget *" #> Localizer.formatLong(project.budget) &
+								   ".projectEstimatedStart *" #> Localizer.formatDateTime(L(GlobalTexts.dateformat_fullDateTime),
 																				Box.legacyNullTest(project.estimatedStartDate),
 																				S.locale) &
 								   ".createdBy *" #> project.createdBy.displayName &
@@ -75,9 +78,28 @@ class ProjectSnippet extends Localizable with Loggable {
 							   }))
 	}
 
+	private def showActivitiesForProject(project: Project): JsCmd = {
+		val template = "templates-hidden/project/activitiesForProject"
+		val nodeSeq = S.runTemplate(List(template)).map(xhtml => {
+			(
+			if (project.activityList.isEmpty) {
+				"*" #> L_!(ProjectTexts.V.activityListIsEmpty, project.name)
+			} else {
+				".activitiesForProjectHeader" #> L_!(ProjectTexts.V.header_activitiesForProject_text,
+													 project.activityList.size.asInstanceOf[AnyRef], project.name) &
+				"tbody" #> (
+						   ".activityRow" #> project.activityList.map(activity => {
+							   ".activityName *" #> activity.name
+						   })
+						   )
+			}
+			).apply(xhtml)}).openOr(<div>Template {template} not found</div>)
+		JQueryDialog(nodeSeq).open
+	}
+
 	private def renderButtonContainer(buttonContainerId: String, project: Project, ns:NodeSeq, snapshot: (() => JsCmd) => JsCmd) = {
-		".lastModified *" #> formatDateTime(L(GlobalTexts.dateformat_fullDateTimeSeconds),
-											Box.legacyNullTest(project.modified)).openOr("<not-modified>") &
+		".lastModified *" #> Localizer.formatDateTime(L(GlobalTexts.dateformat_fullDateTimeSeconds),
+											Option(project.modified)).getOrElse("<not-modified>") &
 		".editButton" #> getEditButtonLink(buttonContainerId, project.id, ns, snapshot)
 	}
 
@@ -87,7 +109,7 @@ class ProjectSnippet extends Localizable with Loggable {
 			projectVar.set(projectAppService.retrieve(projectId)) // The popup uses this to access the selected project
 			projectUpdatedCallbackFuncVar.set(refreshProject(buttonContainerId, ns, snapshot)) // The callback-func to run after successfully saving in popup
 			// Put the handle for the popup in a request-var so that the pop is able to close itself.
-			editProjectDialogVar.set(JQueryDialog(S.runTemplate(List(newProjectTemplate)).openOr(<div>Template {newProjectTemplate} not found</div>),
+			editProjectDialogVar.set(JQueryDialog(S.runTemplate(List(ProjectDetailCometRenderer.newProjectTemplate)).openOr(<div>Template {ProjectDetailCometRenderer.newProjectTemplate} not found</div>),
 												  L(ProjectTexts.V.projectDialog_title_newProject)))
 			editProjectDialogVar.get.open
 		},

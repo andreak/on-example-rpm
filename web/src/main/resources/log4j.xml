@@ -16,6 +16,18 @@
 		<level value="TRACE"/>
 	</logger>
 
+	<logger name="no.officenet.example.rpm.web.filter.RegexpMappingFilter">
+		<level value="ERROR"/>
+	</logger>
+
+	<logger name="no.officenet.example.rpm.web.security.FilteredRequestCache">
+		<level value="ERROR"/>
+	</logger>
+
+	<logger name="net.liftweb.util.TimeHelpers">
+		<level value="ERROR"/>
+	</logger>
+
 	<logger name="com.atomikos">
 		<level value="ERROR"/>
 	</logger>

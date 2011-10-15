@@ -1,0 +1,48 @@
+<div class="lift:surround?with=main">
+	<div id="top_menu" class="lift:bind-at?name=top_menu">
+		<span class="lift:i18n?bundle=GLOBAL">logged_in_user</span>
+		<span class="lift:UserSnippet.displayName"></span>(userName: <span class="lift:UserSnippet.username"></span>)
+	</div>
+	<div class="lift:bind-at?name=content">
+		<div class="lift:ProjectSnippet.openNewProjectDialog">
+			<button class="openNewProjectDialog">New project</button>
+		</div>
+		<div class="lift:ProjectSnippet.list">
+			<table class="projectListTable">
+				<thead>
+				<tr>
+					<th><span class="lift:i18n?bundle=PROJECT_D;key=name">Name</span></th>
+					<th><span class="lift:i18n?bundle=PROJECT_D;key=projectType">Type</span></th>
+					<th><span class="lift:i18n?bundle=PROJECT_V;key=button_showActivities_text">Show activities</span></th>
+					<th><span class="lift:i18n?bundle=PROJECT_D;key=created">created</span></th>
+					<th><span class="lift:i18n?bundle=PROJECT_D;key=createdBy">createdBy</span></th>
+					<th><span class="lift:i18n?bundle=PROJECT_D;key=budget">budget</span></th>
+					<th><span class="lift:i18n?bundle=PROJECT_D;key=projectEstimatedStart">projectEstimatedStart</span></th>
+					<th><span class="lift:i18n?bundle=PROJECT_D;key=petId">petId</span></th>
+					<th><span class="lift:i18n?bundle=PET_D;key=petName">petName</span></th>
+					<th>&nbsp;</th>
+				</tr>
+				</thead>
+				<tbody>
+				<tr class="projectBodyRow">
+					<td class="projectName">Project for dummies</td>
+					<td class="projectType">type1</td>
+					<td class="showActivitiesButton"><button>Show activities</button></td>
+					<td class="createdDate">01.01.2000</td>
+					<td class="createdBy">Rolf</td>
+					<td class="projectBudget">budget</td>
+					<td class="projectEstimatedStart">projectEstimatedStart</td>
+					<td class="petId">2</td>
+					<td class="petName">Felix the cat</td>
+					<td>
+						<div class="editButtonContainer">
+							<div class="lastModified" style="display: inline;">01.01.2011</div>
+							<div class="editButton">Edig</div>
+						</div>
+					</td>
+				</tr>
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>

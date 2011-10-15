@@ -1,0 +1,17 @@
+<div class="projectListContainer" xmlns="http://www.w3.org/1999/xhtml">
+
+	<span class="activitiesForProjectHeader">Showing activities for project HEY</span>
+	<table>
+		<thead>
+		<tr>
+			<th><span class="lift:i18n?bundle=PROJECT_D;key=name">Naaaaaaaaaaame</span></th>
+		</tr>
+		</thead>
+		<tbody>
+		<tr class="activityRow">
+			<td class="activityName">Activity name</td>
+		</tr>
+		</tbody>
+	</table>
+
+</div>

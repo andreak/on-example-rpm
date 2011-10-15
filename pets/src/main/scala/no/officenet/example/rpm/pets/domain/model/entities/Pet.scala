@@ -4,6 +4,7 @@ import org.apache.commons.lang.builder.ToStringBuilder
 import org.joda.time.DateTime
 import no.officenet.example.rpm.support.domain.model.entities.AbstractModel
 import javax.persistence._
+import no.officenet.example.rpm.support.infrastructure.jpa.types.StringField
 
 @Entity
 @Table(name = "t_pet")
@@ -42,4 +43,8 @@ class Pet(_created: DateTime) extends AbstractModel[java.lang.Long] {
 
 	override def toString = new ToStringBuilder(this).append("id", id).append("petName", petName).toString
 
+}
+
+object Pet {
+	object petName extends StringField[Pet]
 }

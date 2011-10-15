@@ -1,0 +1,64 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+	  xmlns:ui="http://java.sun.com/jsf/facelets"
+	  xmlns:f="http://java.sun.com/jsf/core" xmlns:h="http://java.sun.com/jsf/html"
+	>
+<head>
+
+	<link type="text/css" media="screen, projection" rel="stylesheet" href="${facesContext.externalContext.requestContextPath}/classpath/blueprint/screen.css" />
+	<link type="text/css" media="print" rel="stylesheet" href="${facesContext.externalContext.requestContextPath}/classpath/blueprint/print.css" />
+
+	<!--[if IE]><link rel="stylesheet" href="${facesContext.externalContext.requestContextPath}/classpath/blueprint/ie.css" type="text/css" media="screen, projection"><![endif]-->
+
+	<link type="text/css" media="screen, projection" rel="stylesheet" href="${facesContext.externalContext.requestContextPath}/classpath/blueprint/plugins/fancy-type/screen.css" />
+
+	<link rel="stylesheet" media="all" type="text/css" href="${facesContext.externalContext.requestContextPath}/resources/css/external/jquery-ui-1.8.15.custom.css" />
+	<link rel="stylesheet" media="all" type="text/css" href="${facesContext.externalContext.requestContextPath}/resources/css/Rolf.css" />
+
+	<script type="text/javascript" src="${facesContext.externalContext.requestContextPath}/resources/js/external/jquery-1.6.2.min.js"></script>
+	<script type="text/javascript" src="${facesContext.externalContext.requestContextPath}/resources/js/external/jquery-ui-1.8.15.custom.min.js"></script>
+	<script type="text/javascript" src="${facesContext.externalContext.requestContextPath}/classpath/json.js"></script>
+
+	<script type="text/javascript">
+		jQuery.noConflict();
+	</script>
+	<h:outputScript name="prototype.js" library="js/external"/>
+	<script type="text/javascript" src="${facesContext.externalContext.requestContextPath}/resources/js/Rolf.js"></script>
+
+</head>
+<f:view contentType="text/html" encoding="UTF-8" locale="#{configController.locale}">
+	<table>
+		<thead>
+		<tr>
+			<th>id</th>
+			<th>Name</th>
+			<th>Description</th>
+			<th>Created</th>
+			<th>Created by</th>
+		</tr>
+		</thead>
+		<tbody>
+		<ui:repeat var="project" value="#{projectListController.projectList}">
+			<tr>
+				<td>#{project.id}</td>
+				<td>
+					<h:link outcome="/projectView.xhtml" includeViewParams="true">
+						<f:param name="id" value="#{project.id}"/>
+						#{project.name}
+					</h:link>
+				</td>
+				<td>#{project.description}</td>
+				<td>
+					<h:outputText value="#{project.created}">
+						<f:convertDateTime pattern="#{GLOBAL['dateformat_fullDateTimeSeconds']}" />
+					</h:outputText>
+
+				</td>
+				<td>#{project.createdBy}</td>
+			</tr>
+		</ui:repeat>
+		</tbody>
+	</table>
+</f:view>
+</html>

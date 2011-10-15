@@ -20,12 +20,16 @@ import no.officenet.example.rpm.support.infrastructure.scala.lang.IdentityHashMa
 import javax.annotation.Resource
 import no.officenet.example.rpm.support.infrastructure.jpa.validation.MethodValidationGroup
 import no.officenet.example.rpm.support.infrastructure.jpa.util.ReflectionUtils
-import no.officenet.example.rpm.support.domain.util.GlobalTexts
 import org.joda.time.DateTime
+import java.lang.reflect.ParameterizedType
+import no.officenet.example.rpm.support.domain.i18n.GlobalTexts
+import no.officenet.example.rpm.support.domain.i18n.Localizer
+import no.officenet.example.rpm.support.domain.i18n.Localizer.L
+import no.officenet.example.rpm.support.infrastructure.errorhandling.InvalidDateException
 
 case class FieldError(fieldName: String, errorValue: String, errorId: String, errorMessage: String)
 
-trait ValidatableScreen extends Loggable with Localizable {
+trait ValidatableScreen extends Loggable {
 
 	// Needed for pattern-matching as one cannot use classOf[SomeType] as an extractor
 	val stringCls = classOf[String]
@@ -36,17 +40,26 @@ trait ValidatableScreen extends Loggable with Localizable {
 	val bigDcmlCls = classOf[java.math.BigDecimal]
 	val dateCls = classOf[java.util.Date]
 	val dateTimeCls = classOf[DateTime]
+	val optionCls = classOf[Option[_]]
 
-	private def convert[T](value: String, klass: Class[T]): T = klass match {
-		case `stringCls` => value.asInstanceOf[T]
-		case `intCls` => value.toInt.asInstanceOf[T]
-		case `longCls` => value.toLong.asInstanceOf[T]
-		case `floatCls` => value.toFloat.asInstanceOf[T]
-		case `doubleCls` => value.toDouble.asInstanceOf[T]
-		case `bigDcmlCls` => new java.math.BigDecimal(value).asInstanceOf[T]
-		case `dateCls` => getDateFromString(L(GlobalTexts.dateformat_fullDate), value).asInstanceOf[T]
-		case `dateTimeCls` => getDateTimeFromString(L(GlobalTexts.dateformat_fullDate), value).asInstanceOf[T]
-		case _ => throw new IllegalArgumentException("Don't know how to convert value " + value + " of type " + klass.getName)
+	private def convert[T](value: String, klass: Class[_], isOption: Boolean = false): T = {
+		val converted = klass match {
+			case `stringCls` => value.asInstanceOf[T]
+			case `intCls` => value.toInt.asInstanceOf[T]
+			case `longCls` => value.toLong.asInstanceOf[T]
+			case `floatCls` => value.toFloat.asInstanceOf[T]
+			case `doubleCls` => value.toDouble.asInstanceOf[T]
+			case `bigDcmlCls` => new java.math.BigDecimal(value).asInstanceOf[T]
+			case `dateCls` => Localizer.getDateFromString(L(GlobalTexts.dateformat_fullDate), value).asInstanceOf[T]
+			case `dateTimeCls` => Localizer.getDateTimeFromString(L(GlobalTexts.dateformat_fullDate), value).asInstanceOf[T]
+			case _ => throw new IllegalArgumentException("Don't know how to convert value " + value + " of type " + klass.getName)
+		}
+		val retValue: T = if (isOption) {
+			Some(converted).asInstanceOf[T]
+		} else {
+			converted
+		}
+		retValue
 	}
 
 	val errorsMap = new IdentityHashMap[AnyRef, HashMap[String, Buffer[FieldError]]]()
@@ -119,14 +132,14 @@ trait ValidatableScreen extends Loggable with Localizable {
 		renderInlineInputContainer(fieldErrors, containerId, textElement, isMandatory, errorSeq)
 	}
 
-	def labelTextAreaInput(label: String, bean: AnyRef, field: javax.persistence.metamodel.Attribute[_, String], value: String,
-									func: String => Any, isMandatory: Boolean, attrs: SHtml.ElemAttr*): NodeSeq = {
-		labelTextAreaInput(label, bean, field.getName, value, func, isMandatory, attrs: _*)
+	def labelTextAreaInput[T <: AnyRef](label: String, bean: AnyRef, field: javax.persistence.metamodel.Attribute[_, String], value: String,
+									func: T => Any, isMandatory: Boolean, attrs: SHtml.ElemAttr*)(implicit m: Manifest[T]): NodeSeq = {
+		labelTextAreaInput[T](label, bean, field.getName, value, func, isMandatory, attrs: _*)(m)
 	}
 
-	def labelTextAreaInput(label:String, bean: AnyRef, fieldName: String, value: String, func: String => Any,
-					   isMandatory:Boolean, attrs: SHtml.ElemAttr*): NodeSeq = {
-		val r = getTextAreaInputElement(bean, fieldName, value, func, attrs:_*)
+	def labelTextAreaInput[T <: AnyRef](label:String, bean: AnyRef, fieldName: String, value: String, func: T => Any,
+					   isMandatory:Boolean, attrs: SHtml.ElemAttr*)(implicit m: Manifest[T]): NodeSeq = {
+		val r = getTextAreaInputElement(bean, fieldName, value, func, m, attrs:_*)
 		val inputId: String = r._1
 		val containerId: String = r._2
 		val fieldErrors: Buffer[FieldError] = r._3
@@ -137,14 +150,14 @@ trait ValidatableScreen extends Loggable with Localizable {
 		renderTextInputContainer(containerId, textElement, isMandatory, errorSeq, fieldErrors)
 	}
 
-	def textAreaInput(bean: AnyRef, field: javax.persistence.metamodel.Attribute[_, String], value: String, func: String => Any,
-					  isMandatory:Boolean, attrs: SHtml.ElemAttr*): NodeSeq = {
-		textAreaInput(bean, field.getName, value, func, isMandatory, attrs:_*)
+	def textAreaInput[T <: AnyRef](bean: AnyRef, field: javax.persistence.metamodel.Attribute[_, String], value: String, func: T => Any,
+					  isMandatory:Boolean, attrs: SHtml.ElemAttr*)(implicit m: Manifest[T]): NodeSeq = {
+		textAreaInput[T](bean, field.getName, value, func, isMandatory, attrs:_*)(m)
 	}
 
-	def textAreaInput(bean: AnyRef, fieldName: String, value: String, func: String => Any,
-					  isMandatory:Boolean, attrs: SHtml.ElemAttr*): NodeSeq = {
-		val r = getTextAreaInputElement(bean, fieldName, value, func, attrs:_*)
+	def textAreaInput[T <: AnyRef](bean: AnyRef, fieldName: String, value: String, func: T => Any,
+					  isMandatory:Boolean, attrs: SHtml.ElemAttr*)(implicit m: Manifest[T]): NodeSeq = {
+		val r = getTextAreaInputElement(bean, fieldName, value, func, m, attrs:_*)
 		val containerId: String = r._2
 		val fieldErrors: Buffer[FieldError] = r._3
 		val textElement: NodeSeq = r._4
@@ -407,8 +420,21 @@ trait ValidatableScreen extends Loggable with Localizable {
 	private def validateInput[T <: AnyRef](s: String, bean: AnyRef, fieldName: String, func: (T) => Any, klass: Class[T]): Any = {
 		val newValue = if (s == null || s.trim().isEmpty) null else s.trim()
 		try {
-			val convertedValue: T = if (newValue == null) null.asInstanceOf[T]
-			else convert(newValue, klass)
+			val isOption = klass == optionCls
+			val converterClass: Class[_] = if (isOption) {
+				val tmp = bean.getClass.getDeclaredField(fieldName).
+					getGenericType.asInstanceOf[ParameterizedType].getActualTypeArguments()(0).asInstanceOf[Class[_]]
+				tmp
+			} else {
+				klass
+			}
+			val convertedValue: T = if (newValue == null) klass match {
+				case `optionCls` => None.asInstanceOf[T]
+				case _ => null.asInstanceOf[T]
+			}
+			else {
+				convert(newValue, converterClass, isOption = isOption)
+			}
 			func(convertedValue)
 			trace("dateformat_fullDate: " + L(GlobalTexts.dateformat_fullDate))
 			trace("S.locale: " + S.locale)
@@ -450,8 +476,8 @@ trait ValidatableScreen extends Loggable with Localizable {
 				Call("Rolf.attachFieldError", containerId, inputId, errorSeq.toString())
 			}
 			val extraCmd: JsCmd = convertedValue match {
-				case d: java.util.Date => JsRaw("$(%s).value=%s".format(inputId.encJs, formatDate(L(GlobalTexts.dateformat_fullDate), d, S.locale).encJs))
-				case d: DateTime => JsRaw("$(%s).value=%s".format(inputId.encJs, formatDateTime(L(GlobalTexts.dateformat_fullDate), Full(d), S.locale).open_!.encJs))
+				case d: java.util.Date => JsRaw("$(%s).value=%s".format(inputId.encJs, Localizer.formatDate(L(GlobalTexts.dateformat_fullDate), d, S.locale).encJs))
+				case d: DateTime => JsRaw("$(%s).value=%s".format(inputId.encJs, Localizer.formatDateTime(L(GlobalTexts.dateformat_fullDate), Full(d), S.locale).get.encJs))
 				case _ => Noop
 			}
 			errorHandlerCmd & extraCmd
@@ -560,7 +586,7 @@ trait ValidatableScreen extends Loggable with Localizable {
 		(inputId, containerId, fieldErrors, textElement, errorSeq)
 	}
 
-	private def getTextAreaInputElement(bean: AnyRef, fieldName: String, value: String, func: (String) => Any,
+	private def getTextAreaInputElement[T <: AnyRef](bean: AnyRef, fieldName: String, value: String, func: (T) => Any, m: Manifest[T],
 												 attrs: SHtml.ElemAttr*): (String, String, Buffer[FieldError], NodeSeq, NodeSeq) = {
 		val inputId = nextFuncName
 		val containerId = nextFuncName
@@ -570,11 +596,11 @@ trait ValidatableScreen extends Loggable with Localizable {
 		val maxLength = getMaxLengthOfProperty(bean, fieldName)
 
 		var inputSeq = SHtml.textarea(tryo {fieldErrors(0).errorValue}.getOrElse(nullSafeString(value)), (s) => {
-			validateInput(s, bean, fieldName, func, classOf[String])
+			validateInput(s, bean, fieldName, func, m.erasure.asInstanceOf[Class[T]])
 		}, attrs: _*) % ("id" -> inputId) % maxLength.map(length => ("maxlength" -> length.toString):MetaData).getOrElse(Null)
 
 		val oldOnBlurAttribute = inputSeq.attribute("onblur")
-		val validationOnBlur = onBlurForTextInput(bean, fieldName, func, inputId, containerId, classOf[String])
+		val validationOnBlur = onBlurForTextInput(bean, fieldName, func, inputId, containerId, m.erasure.asInstanceOf[Class[T]])
 
 		if (oldOnBlurAttribute.isDefined) {
 			val oldOnBlur = oldOnBlurAttribute.get.text

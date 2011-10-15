@@ -17,7 +17,7 @@ trait UserService extends GenericDomainService[User] {
 
 	val userRepository: UserRepository
 
-	repository = userRepository
+	repository = userRepository // Note: *MUST* use constructor-injection for this to be set
 
 	@Resource
 	val passwordEncryptor: StrongPasswordEncryptor = null

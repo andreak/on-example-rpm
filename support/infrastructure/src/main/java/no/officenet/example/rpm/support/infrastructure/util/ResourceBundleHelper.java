@@ -41,17 +41,18 @@ public class ResourceBundleHelper {
 		Map<String, MessageFormat> formatsForBundle = formats.get(resourceBundleName);
 		if (formatsForBundle == null) {
 			synchronized (formats) {
-				formatsForBundle = formats.get(resourceBundleName);
-				if (formatsForBundle == null) {
-					formatsForBundle = new HashMap<String, MessageFormat>();
-					formats.put(resourceBundleName, formatsForBundle);
-				}
+				formatsForBundle = getFormatsForBundle(resourceBundleName);
 			}
 		}
 		MessageFormat format = formatsForBundle.get(formatKey);
 		if (format == null) {
 			synchronized (formats) {
+
 				formatsForBundle = formats.get(resourceBundleName);
+				if (formatsForBundle == null) {
+					formatsForBundle = getFormatsForBundle(resourceBundleName);
+				}
+
 				format = formatsForBundle.get(formatKey);
 				if (format == null) {
 					String formatString = getFormatMessage(resourceBundleName, locale, resourceKey);
@@ -64,22 +65,32 @@ public class ResourceBundleHelper {
 		return format.format(arguments);
 	}
 
+	private static Map<String, MessageFormat> getFormatsForBundle(String resourceBundleName) {
+		Map<String, MessageFormat> formatsForBundle = formats.get(resourceBundleName);
+		if (formatsForBundle == null) {
+			formatsForBundle = new HashMap<String, MessageFormat>();
+			formats.put(resourceBundleName, formatsForBundle);
+		}
+		return formatsForBundle;
+	}
+
 	public static Map<String, MessageFormat> getMessages(ResourceBundleNameProvider bundle, Locale locale) {
 		String bundleName = bundle.path();
 		Map<String, Map<String, MessageFormat>> mapForLocale = formatsForLocale.get(locale);
 		if (mapForLocale == null) {
 			synchronized (formatsForLocale) {
-				mapForLocale = formatsForLocale.get(locale); // Someone might have slipped in so check again in sync-context
-				if (mapForLocale == null) {
-					mapForLocale = new HashMap<String, Map<String, MessageFormat>>();
-					formatsForLocale.put(locale, mapForLocale);
-				}
+				mapForLocale = getMapForLocale(locale);
 			}
 		}
 		Map<String, MessageFormat> mapForBundle = mapForLocale.get(bundleName);
 		if (mapForBundle == null) {
 			synchronized (formatsForLocale) {
+
 				mapForLocale = formatsForLocale.get(locale);
+				if (mapForLocale == null) {
+					mapForLocale = getMapForLocale(locale);
+				}
+
 				mapForBundle = mapForLocale.get(bundleName); // Someone might have slipped in formatsForLocale in another thread so check again in sync-context
 				if (mapForBundle == null) {
 					mapForBundle = new HashMap<String, MessageFormat>();
@@ -101,6 +112,17 @@ public class ResourceBundleHelper {
 		return locale;
 	}
 
+	private static Map<String, Map<String, MessageFormat>> getMapForLocale(Locale locale) {
+		Map<String, Map<String, MessageFormat>> mapForLocale;
+		mapForLocale = formatsForLocale.get(locale); // Someone might have slipped in so check again in sync-context
+		if (mapForLocale == null) {
+			mapForLocale = new HashMap<String, Map<String, MessageFormat>>();
+			formatsForLocale.put(locale, mapForLocale);
+		}
+		return mapForLocale;
+	}
+
+
 	private static String getFormatMessage(String resourceBundleName, Locale locale, String resourceKey) {
 		ResourceBundle bundle = ResourceBundle.getBundle(resourceBundleName, locale);
 		if (bundle == null) {
@@ -109,7 +131,8 @@ public class ResourceBundleHelper {
 		try {
 			return bundle.getString(resourceKey);
 		} catch (MissingResourceException e) {
-			throw new MissingResourceException("Missing resource for locale '" + locale + "'.", resourceBundleName, resourceKey);
+			throw new MissingResourceException(String.format("Missing resource for locale='%s', bundle='%s', key='%s'.",
+															 locale, resourceBundleName, resourceKey), resourceBundleName, resourceKey);
 		}
 	}
 

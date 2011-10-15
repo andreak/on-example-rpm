@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<!--
+	AspectJ load-time weaving config file
+-->
+<aspectj>
+
+	<weaver options="-verbose -showWeaveInfo">
+		<include within="no.officenet.example.rpm..*"/>
+	</weaver>
+
+	<aspects>
+
+        <!-- weave in just this aspect -->
+        <aspect name="no.officenet.example.rpm.support.infrastructure.jpa.LazyInitAspect"/>
+
+    </aspects>
+
+</aspectj>

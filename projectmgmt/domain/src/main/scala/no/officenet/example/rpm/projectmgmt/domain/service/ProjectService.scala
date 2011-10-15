@@ -7,6 +7,8 @@ import no.officenet.example.rpm.projectmgmt.domain.model.entities.Project
 import repository.ProjectRepository
 import org.springframework.beans.factory.annotation.Autowired
 import no.officenet.example.rpm.support.infrastructure.jpa.{Order, OrderBy}
+import no.officenet.example.rpm.projectmgmt.domain.events.ProjectUpdatedEvent
+import no.officenet.example.rpm.support.domain.events.{OperationType, DomainEventDispatcher}
 
 @Service
 @Transactional
@@ -16,10 +18,15 @@ trait ProjectService extends GenericDomainService[Project] {
 
 	val projectRepository: ProjectRepository
 
-	repository = projectRepository
+	repository = projectRepository // Note: *MUST* use constructor-injection for this to be set
 
 	def findAll = {
-		super.findAll(OrderBy("created", Order.ASC))
+		super.findAll(OrderBy(Project.name, Order.ASC))
 	}
 
+	override def update(project: Project) = {
+		val updated = super.update(project)
+		DomainEventDispatcher.raiseEvent(new ProjectUpdatedEvent(updated, OperationType.UPDATE))
+		updated
+	}
 }

@@ -1,0 +1,50 @@
+<div class="lift:children">
+	<h1><span class="lift:i18n?bundle=PROJECT_D">name</span>: <span class="projectName">name</span></h1>
+	<div class="editButton">Edit me (comet)</div>
+	<table>
+		<thead>
+		<tr>
+			<th>Property</th>
+			<th>Value</th>
+		</tr>
+		</thead>
+		<tbody>
+		<tr>
+			<td class="lift:i18n.i?bundle=PROJECT_D">description</td>
+			<td class="description">description</td>
+		</tr>
+		<tr>
+			<td class="lift:i18n.i?bundle=PROJECT_D">created</td>
+			<td class="created">created</td>
+		</tr>
+		<tr>
+			<td class="lift:i18n.i?bundle=PROJECT_D">createdBy</td>
+			<td class="createdBy">createdBy</td>
+		</tr>
+		<tr>
+			<td class="lift:i18n.i?bundle=PROJECT_D">modified</td>
+			<td class="modified">modified</td>
+		</tr>
+		<tr>
+			<td class="lift:i18n.i?bundle=PROJECT_D">modifiedBy</td>
+			<td class="modifiedBy">modifiedBy</td>
+		</tr>
+		<tr>
+			<td class="lift:i18n.i?bundle=PROJECT_D">projectType</td>
+			<td class="projectType">projectType</td>
+		</tr>
+		<tr>
+			<td class="lift:i18n.i?bundle=PROJECT_D">budget</td>
+			<td class="budget">budget</td>
+		</tr>
+		<tr>
+			<td class="lift:i18n.i?bundle=PROJECT_D">projectEstimatedStart</td>
+			<td class="projectEstimatedStart">projectEstimatedStart</td>
+		</tr>
+		<tr>
+			<td class="lift:i18n.i?bundle=PROJECT_D">petId</td>
+			<td class="petId">petId</td>
+		</tr>
+		</tbody>
+	</table>
+</div>

@@ -6,7 +6,9 @@ import no.officenet.example.rpm.support.domain.model.entities.{AbstractDomainObj
 import java.util.ArrayList
 import javax.persistence._
 import no.officenet.example.rpm.projectmgmt.domain.model.enums.ProjectType
-import no.officenet.example.rpm.support.infrastructure.jpa.validation.{MethodValidationGroup, ValidateWithMethod}
+import no.officenet.example.rpm.support.infrastructure.jpa.validation.{OptionalMax, OptionalPattern, MethodValidationGroup, ValidateWithMethod}
+
+import no.officenet.example.rpm.support.infrastructure.jpa.types.{DateTimeField, LongField, StringField}
 
 @Entity
 @Table(name = "t_project")
@@ -26,8 +28,9 @@ class Project(_created: DateTime, _createdBy: User) extends AbstractDomainObject
 	var name: String = null
 
 	@Column(name = "description")
-	@javax.validation.constraints.Pattern(regexp = "\\D*")
-	var description: String = null
+	@OptionalPattern(regexp = "\\D*")
+	@org.hibernate.annotations.Type(`type` = "no.officenet.example.rpm.support.infrastructure.jpa.StringOptionUserType")
+	var description: Option[String] = None
 
 	@OneToMany(fetch = FetchType.LAZY, mappedBy = "project", orphanRemoval = true)
 	var activityList: java.util.List[Activity] = new ArrayList[Activity]()
@@ -38,8 +41,9 @@ class Project(_created: DateTime, _createdBy: User) extends AbstractDomainObject
 	var projectType: ProjectType.ExtendedValue = null
 
 	@Column(name = "budget")
-	@javax.validation.constraints.Max(value = 999999L)
-	var budget: java.lang.Long = null
+	@OptionalMax(value = 999999L)
+	@org.hibernate.annotations.Type(`type` = "no.officenet.example.rpm.support.infrastructure.jpa.LongOptionUserType")
+	var budget: Option[java.lang.Long] = None
 
 	@Column(name = "estimated_start_date")
 	@org.hibernate.annotations.Type(`type` = "org.jadira.usertype.dateandtime.joda.PersistentDateTime",
@@ -52,6 +56,13 @@ class Project(_created: DateTime, _createdBy: User) extends AbstractDomainObject
 	override def toString = new ToStringBuilder(this).append("id", id).append("name", name).toString
 
 	private def validateDescription(): Boolean = {
-		!(description.contains("nisse"))
+		description.map(!_.contains("nisse")).getOrElse(true)
 	}
+}
+
+object Project {
+	object name extends StringField[Project]
+	object description extends StringField[Project]
+	object budget extends LongField[Project]
+	object estimatedStartDate extends DateTimeField[Project]
 }

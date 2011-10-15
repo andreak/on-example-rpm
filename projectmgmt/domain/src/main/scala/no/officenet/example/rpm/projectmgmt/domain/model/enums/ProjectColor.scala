@@ -1,6 +1,6 @@
 package no.officenet.example.rpm.projectmgmt.domain.model.enums
 
-import no.officenet.example.rpm.support.domain.util.{EnumWithDescriptionAndObject, EnumWithDescription}
+import no.officenet.example.rpm.support.infrastructure.enums.EnumWithDescriptionAndObject
 
 object ProjectColor extends EnumWithDescriptionAndObject[ProjectTexts.V.ExtendedValue] {
 	val BLACK = Value(ProjectTexts.V.color_black)

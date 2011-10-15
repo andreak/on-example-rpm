@@ -15,7 +15,7 @@ trait ActivityService extends GenericDomainService[Activity] {
 
 	val activityRepository: ActivityRepository
 
-	repository = activityRepository
+	repository = activityRepository // Note: *MUST* use constructor-injection for this to be set
 
 	
 

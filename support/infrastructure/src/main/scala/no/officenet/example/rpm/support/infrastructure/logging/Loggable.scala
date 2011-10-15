@@ -3,7 +3,7 @@ package no.officenet.example.rpm.support.infrastructure.logging
 import org.apache.commons.logging.{Log, LogFactory}
 
 trait Loggable {
-	def log: Log = LogFactory.getLog(getClass)
+	val log: Log = LogFactory.getLog(getClass)
 
 	def trace(msg: => Any) {
 		try {

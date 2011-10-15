@@ -3,21 +3,20 @@ package no.officenet.example.rpm.web.snippet
 import net.liftweb._
 import util.Helpers._
 
-import no.officenet.example.rpm.web.lib.Localizable
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.beans.factory.annotation.Configurable
 import javax.annotation.Resource
-import no.officenet.example.rpm.support.domain.util.{GlobalTexts, Bundle}
 import xml.Text
 import no.officenet.example.rpm.support.domain.service.UserService
+import no.officenet.example.rpm.support.domain.i18n.GlobalTexts
+import no.officenet.example.rpm.support.domain.i18n.Localizer.L_!
+import no.officenet.example.rpm.support.domain.i18n.Localizer.L
 
 @Configurable
-class UserSnippet extends Localizable {
+class UserSnippet {
 
 	@Resource
 	val userService: UserService = null
-
-	val defaultBundle = Bundle.GLOBAL
 
 	def username = "* *" #> getUserName
 

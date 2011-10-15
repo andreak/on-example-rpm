@@ -83,7 +83,7 @@ which under JRebel it is.
 		<security:authentication-provider>
 			<security:password-encoder ref="passwordEncoder"/>
 			<security:jdbc-user-service id="jdbcUserService" data-source-ref="dataSourceRPM"
-										authorities-by-username-query="SELECT u.username, auth.role_name FROM t_user u, (SELECT * FROM unnest(ARRAY['DEVELOPER','USER','ADMIN']) AS role_name) auth WHERE u.username = ?"
+										authorities-by-username-query="SELECT u.username, auth.role_name FROM t_user u, (SELECT * FROM unnest(ARRAY['DEVELOPER','USER','ADMIN', 'PROJECT_MANAGER']) AS role_name) auth WHERE u.username = ?"
 										users-by-username-query="SELECT username, password, true FROM t_user WHERE username = ?"/>
 		</security:authentication-provider>
 		<security:authentication-provider ref="rememberMeAuthenticationProvider"/>

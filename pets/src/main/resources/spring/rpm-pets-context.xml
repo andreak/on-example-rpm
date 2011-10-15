@@ -25,9 +25,7 @@
 		<property name="persistenceUnitName" value="PETS"/>
 		<property name="persistenceUnitManager" ref="persistenceUnitManagerPETS"/>
 		<property name="jpaVendorAdapter" ref="jpaVendorAdapter"/>
-		<property name="jpaDialect">
-			<bean class="org.springframework.orm.jpa.vendor.HibernateJpaDialect"/>
-		</property>
+		<property name="jpaDialect" ref="jpaDialect"/>
 		<property name="jpaProperties">
 			<props>
 				<prop key="javax.persistence.validation.mode">none</prop><!-- We do manual validation in repositories (+ field-validation) -->

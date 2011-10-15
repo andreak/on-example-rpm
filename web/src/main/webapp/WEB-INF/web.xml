@@ -16,6 +16,11 @@
 	<listener>
 		<listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
 	</listener>
+	<listener>
+		<listener-class>
+			org.springframework.web.context.request.RequestContextListener
+		</listener-class>
+	</listener>
 
 	<!--
 			   The HttpSessionEventPublisher will publish
@@ -25,6 +30,39 @@
 	<listener>
 		<listener-class>org.springframework.security.web.session.HttpSessionEventPublisher</listener-class>
 	</listener>
+
+	<context-param>
+		<param-name>javax.faces.PROJECT_STAGE</param-name>
+		<param-value>Development</param-value>
+	</context-param>
+	<context-param>
+		<description>State saving method: 'client' or 'server' (=default). See JSF Specification 2.5.2</description>
+		<param-name>javax.faces.STATE_SAVING_METHOD</param-name>
+		<param-value>server</param-value>
+	</context-param>
+	<context-param>
+		<param-name>javax.faces.PARTIAL_STATE_SAVING</param-name>
+		<param-value>true</param-value>
+	</context-param>
+	<context-param>
+		<description>Might hide problems with login</description>
+		<param-name>com.sun.faces.enableRestoreView11Compatibility</param-name>
+		<param-value>true</param-value>
+	</context-param>
+	<context-param>
+		<description>Default timezone</description>
+		<param-name>javax.faces.DATETIMECONVERTER_DEFAULT_TIMEZONE_IS_SYSTEM_TIMEZONE</param-name>
+		<param-value>true</param-value>
+	</context-param>
+	<servlet>
+		<servlet-name>Faces Servlet</servlet-name>
+		<servlet-class>javax.faces.webapp.FacesServlet</servlet-class>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>Faces Servlet</servlet-name>
+		<url-pattern>*.xhtml</url-pattern>
+	</servlet-mapping>
 
 	<filter>
 		<filter-name>jpaFilter</filter-name>
@@ -51,11 +89,21 @@
 	</filter>
 
 	<filter>
-		<description>The Filter that intercepts lift calls</description>
-		<display-name>Lift Filter</display-name>
-		<filter-name>LiftFilter</filter-name>
-		<filter-class>net.liftweb.http.LiftFilter</filter-class>
+		<description>The Proxy that intercepts lift calls</description>
+		<display-name>Lift proxy Filter</display-name>
+		<filter-name>LiftProxyFilter</filter-name>
+		<filter-class>no.officenet.example.rpm.web.filter.RegexpMappingFilter</filter-class>
+		<init-param>
+			<param-name>filterClass</param-name>
+			<param-value>net.liftweb.http.LiftFilter</param-value>
+		</init-param>
+		<init-param>
+			<!-- Match URIs not ending with .xhtml -->
+			<param-name>matchPattern</param-name>
+			<param-value>^(?!.*\.xhtml$).+$</param-value>
+		</init-param>
 	</filter>
+
 
 	<!-- Order matters! -->
 	<filter-mapping>
@@ -74,7 +122,7 @@
 	</filter-mapping>
 
 	<filter-mapping>
-		<filter-name>LiftFilter</filter-name>
+		<filter-name>LiftProxyFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
 

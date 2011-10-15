@@ -4,8 +4,10 @@
 	   xmlns:context="http://www.springframework.org/schema/context"
 	   xmlns:tx="http://www.springframework.org/schema/tx"
        xmlns:aop="http://www.springframework.org/schema/aop"
+	   xmlns:security="http://www.springframework.org/schema/security"
 	   xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
 						   http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd
+						   http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security-3.0.xsd
 						   http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
 						   http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.0.xsd">
 
@@ -14,9 +16,13 @@
 	<context:spring-configured />
 	<context:load-time-weaver/>
 
-	<context:component-scan base-package="no.officenet.example.rpm"/>
+	<security:global-method-security jsr250-annotations="enabled" order="6"/>
 
-	<tx:annotation-driven/>
+	<context:component-scan base-package="no.officenet.example.rpm" scope-resolver="no.officenet.example.rpm.support.infrastructure.spring.CdiScopeMetadataResolver"/>
+
+	<tx:annotation-driven order="5"/>
+
+	<bean id="lazyInitAspect" class="no.officenet.example.rpm.support.infrastructure.jpa.LazyInitAspect" factory-method="aspectOf"/>
 
 	<bean id="persistenceUnitManagerRPM" class="no.officenet.example.rpm.support.infrastructure.jpa.MergePersistenceUnitManager">
 		<property name="persistenceXmlLocations">
@@ -48,15 +54,17 @@
 		<property name="persistenceUnitName" value="RPM"/>
 		<property name="persistenceUnitManager" ref="persistenceUnitManagerRPM"/>
 		<property name="jpaVendorAdapter" ref="jpaVendorAdapter"/>
-		<property name="jpaDialect">
-			<bean class="org.springframework.orm.jpa.vendor.HibernateJpaDialect"/>
-		</property>
+		<property name="jpaDialect" ref="jpaDialect"/>
 		<property name="jpaProperties">
 			<props>
 				<prop key="javax.persistence.validation.mode">none</prop><!-- We do manual validation in repositories (+ field-validation) -->
 				<prop key="hibernate.transaction.manager_lookup_class">no.officenet.example.rpm.support.infrastructure.spring.TransactionManagerLookup</prop>
 			</props>
 		</property>
+	</bean>
+
+	<bean id="jpaDialect" class="no.officenet.example.rpm.support.infrastructure.jpa.RpmPersistenceExceptionTranslator">
+		<property name="vendorAdapter" ref="jpaVendorAdapter"/>
 	</bean>
 
 	<!-- Transform exceptions thrown by the persistence-provider to spring DataAccessExceptions  -->

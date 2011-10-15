@@ -14,18 +14,20 @@
 	</modules>
 
 	<properties>
+		<version.jsf>2.0.4-b09</version.jsf>
 		<timestamp>${maven.build.timestamp}</timestamp>
 		<version.postgresql>9.0-801.jdbc4</version.postgresql>
-		<version.spring>3.0.5.RELEASE</version.spring>
-		<version.spring-security>3.0.5.RELEASE</version.spring-security>
+		<version.aspectj>1.6.11</version.aspectj>
+		<version.spring>3.0.6.RELEASE</version.spring>
+		<version.spring-security>3.0.7.RELEASE</version.spring-security>
 		<version.org.hibernate>3.6.6.Final</version.org.hibernate>
 		<version.usertype>1.8</version.usertype>
 		<version.jodatime>1.6.2</version.jodatime>
 		<version.surefire>2.8</version.surefire>
 		<version.atomikos>3.7.0</version.atomikos>
-		<version.lift>2.4-M3</version.lift>
+		<version.lift>2.4-M4</version.lift>
 		<version.maven-scala-plugin>2.15.2</version.maven-scala-plugin>
-		<version.scala>2.9.0-1</version.scala>
+		<version.scala>2.9.1</version.scala>
 		<version.scalajpa>1.4</version.scalajpa>
 		<jpa.generateDdl/>
 	</properties>
@@ -185,9 +187,25 @@
 			<!-- External dependencies -->
 
 			<dependency>
+				<groupId>com.sun.faces</groupId>
+				<artifactId>jsf-api</artifactId>
+				<version>${version.jsf}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.sun.faces</groupId>
+				<artifactId>jsf-impl</artifactId>
+				<version>${version.jsf}</version>
+			</dependency>
+
+			<dependency>
 				<groupId>org.aspectj</groupId>
 				<artifactId>aspectjweaver</artifactId>
-				<version>1.6.8</version>
+				<version>${version.aspectj}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.aspectj</groupId>
+				<artifactId>aspectjrt</artifactId>
+				<version>${version.aspectj}</version>
 			</dependency>
 
 			<dependency>

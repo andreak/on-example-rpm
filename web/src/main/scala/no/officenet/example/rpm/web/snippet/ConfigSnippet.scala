@@ -7,7 +7,7 @@ import js.JsCmds._
 import util.Helpers._
 import collection.JavaConversions._
 import no.officenet.example.rpm.support.infrastructure.util.ResourceBundleHelper
-import no.officenet.example.rpm.support.domain.util.Bundle
+import no.officenet.example.rpm.support.domain.i18n.Bundle
 
 class ConfigSnippet {
 

@@ -12,13 +12,16 @@ import org.springframework.beans.factory.annotation.Configurable
 import no.officenet.example.rpm.projectmgmt.application.service.ProjectAppService
 import javax.annotation.Resource
 import no.officenet.example.rpm.web.lib.{ValidatableScreen, JQueryDialog}
+import no.officenet.example.rpm.web.lib.ContextVars._
 import no.officenet.example.rpm.projectmgmt.domain.model.entities.Project
 import no.officenet.example.rpm.projectmgmt.application.dto.ProjectDto
 import org.joda.time.DateTime
 import no.officenet.example.rpm.support.domain.service.UserService
 import xml.NodeSeq
 import no.officenet.example.rpm.projectmgmt.domain.model.enums.{ProjectColor, ProjectType, ProjectTexts}
-import no.officenet.example.rpm.support.domain.util.{GlobalTexts, Bundle}
+import no.officenet.example.rpm.support.infrastructure.scala.lang.ControlHelpers.?
+import no.officenet.example.rpm.support.domain.i18n.{Bundle, GlobalTexts, Localizer}
+import no.officenet.example.rpm.support.domain.i18n.Localizer.L
 
 object DisplayRadioWithLabelHorizontallyTemplate {
 	def buildElement(item: SHtml.ChoiceItem[(String, String)]): NodeSeq = {
@@ -30,7 +33,6 @@ object DisplayRadioWithLabelHorizontallyTemplate {
 
 object projectUpdatedCallbackFuncVar extends RequestVar[Project => JsCmd]((project: Project) => Noop)
 object editProjectDialogVar extends RequestVar[JQueryDialog](null)
-object projectVar extends RequestVar[ProjectDto](null)
 
 @Configurable
 class ProjectEditSnippet extends ValidatableScreen {
@@ -74,11 +76,11 @@ class ProjectEditSnippet extends ValidatableScreen {
 			else "display: none"
 		}
 
-		val project = projectDto.project
+		val project: Project = projectDto.project
 		val pet = projectDto.pet
 		"*" #> SHtml.idMemoize(id => {
-			".projectName *" #> labelTextInput(L(ProjectTexts.D.name), project, "name", project.name, (s: String) => project.name = s, false) &
-			".projectDescription *" #> labelTextAreaInput(L(ProjectTexts.D.description), project, "description", project.description, (s: String) => project.description = s, false) &
+			".projectName *" #> labelTextInput(L(ProjectTexts.D.name), project, Project.name, project.name, (s: String) => project.name = s, false) &
+			".projectDescription *" #> labelTextAreaInput(L(ProjectTexts.D.description), project, Project.description, project.description.getOrElse(""), (s: Option[String]) => project.description = s, false) &
 			".projectType *" #> labelSelect(L(ProjectTexts.D.projectType), project, "projectType", projectTypes, project.projectType,
 											(pt: ProjectType.ExtendedValue) => project.projectType = pt,
 											(pt: ProjectType.ExtendedValue) => L(pt.wrapped), false) &
@@ -97,10 +99,10 @@ class ProjectEditSnippet extends ValidatableScreen {
 			".bad_color_id [id]" #> badColorIdKey &
 			".bad_color_id [style]" #> getStyleForLabel(badColorIdKey) &
 			".budget *" #> labelTextInput(L(ProjectTexts.V.projectDialog_details_label_budget), project, "budget",
-										  Box.legacyNullTest(project.budget).map(d => d.toString).openOr(""), (s: java.lang.Long) => project.budget = s, false) &
+										  project.budget.map(d => d.toString).getOrElse(""), (s:Option[java.lang.Long]) => project.budget = s, false) &
 			".estimatedStart *" #> labelTextInput(L(ProjectTexts.V.projectDialog_details_label_estimatedStartDate) +
 												  "(%s)".format(L(GlobalTexts.dateformat_fullDate)), project, "estimatedStartDate",
-												  formatDateTime(L(GlobalTexts.dateformat_fullDate), Box.legacyNullTest(project.estimatedStartDate), S.locale).openOr(""),
+												  Localizer.formatDateTime(L(GlobalTexts.dateformat_fullDate), Box.legacyNullTest(project.estimatedStartDate), S.locale).getOrElse(""),
 												  (s: DateTime) => project.estimatedStartDate = s, false) &
 			".petName *" #> labelTextInput(L(ProjectTexts.V.projectDialog_details_label_petName), pet, "petName", pet.petName, (s: String) => pet.petName = s, false) &
 			".saveButton" #> SHtml.ajaxSubmit(L(ProjectTexts.V.projectDialog_button_save), () => {
@@ -114,7 +116,7 @@ class ProjectEditSnippet extends ValidatableScreen {
 					projectVar.set(projectDto)
 					// TODO: This function is run in "ajax-scope" of ProjectEditSnippet, make it run in "caller's ajax-scope".
 					projectUpdatedCallbackFuncVar.apply(projectDto.project) &
-					editProjectDialogVar.get.close
+					(if (editProjectDialogVar.set_?) editProjectDialogVar.get.close else Noop) // editProjectDialogVar is not set when accessed from JSF
 				} else {
 					trace("errors found, re-rendering form")
 					id.setHtml()
