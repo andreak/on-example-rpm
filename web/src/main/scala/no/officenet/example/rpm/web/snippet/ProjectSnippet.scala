@@ -76,7 +76,10 @@ class ProjectSnippet extends Loggable {
 					RolfJsCmds.JqReplaceWith(buttonContainerId, renderButtonContainer(buttonContainerId, project, ns).apply(ns))
 			})}
 	}
+
 	def list = {
+
+		generateDeferredFunc()
 
 		".projectListTable" #> (
 							   ".projectBodyRow" #> projectAppService.findAll.map(project => {
@@ -132,7 +135,6 @@ class ProjectSnippet extends Loggable {
 		SHtml.a(() => {
 			trace("retrieving projectId: " + projectId)
 			projectVar.set(projectAppService.retrieve(projectId)) // The popup uses this to access the selected project
-			generateDeferredFunc()
 			projectUpdatedCallbackFuncVar.set(refreshProject(buttonContainerId, ns)) // The callback-func to run after successfully saving in popup
 			// Put the handle for the popup in a request-var so that the pop is able to close itself.
 			editProjectDialogVar.set(JQueryDialog(S.runTemplate(List(ProjectDetailCometRenderer.newProjectTemplate)).openOr(<div>Template {ProjectDetailCometRenderer.newProjectTemplate} not found</div>),
