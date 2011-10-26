@@ -35,7 +35,6 @@ Unresolved issues I'd like to get comments on:
 1 Is it possible to run Hibernate's hibernate-jpamodelgen to generate Meta-classes for the JPA-entities on entities written in Scala?
   - It seems the plugin doesn't operate on class-files but on sources and doesn't recognize JPA-entities written in Scala.
 2 Setting the locale in Spring's LocaleContextHolder using S.addAround() in Boot.scala doesn't work, see thread: http://groups.google.com/group/liftweb/browse_frm/thread/2b44b5ad4d2ab57d/5eb3a2a166d0aa0d
-3 The list of projects shows empty cells (not TD) for projects without the fields "budget" or "estimatedStart" set. This is due to bug https://www.assembla.com/spaces/liftweb/tickets/1085
 
 Prerequisites:
 - PostgreSQL 9.0 or later is required to run this application.
@@ -55,6 +54,16 @@ Prerequisites:
     </mirror>
   </mirrors>
 </settings>
+}}}
+
+DB-configuration:
+Ensure these properties are set to match your DB-settings, configured in /spring/props/infrastructure.properties
+
+{{{
+infrastructure.datasource.RPM.serverName=localhost
+infrastructure.datasource.RPM.port=5432
+infrastructure.datasource.RPM.username=your-username
+infrastructure.datasource.RPM.password=xxx
 }}}
 
 Issue the following commands to bootstrap the application:
