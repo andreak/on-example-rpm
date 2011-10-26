@@ -39,7 +39,7 @@ class ProjectSnippet extends Loggable {
 
 	object SomeRequestVar extends RequestVar("Hello")
 
-	var deferredFunc:() => (Project, String, NodeSeq) => JsCmd = null
+	var deferredFunc:() => JsCmd = null
 
 	def openNewProjectDialog = {
 		".openNewProjectDialog" #> SHtml.ajaxButton(L(ProjectTexts.V.button_newProjectDialog_text), () => {
@@ -63,18 +63,24 @@ class ProjectSnippet extends Loggable {
 	 * for each project we click "Edit" on.
 	 */
 	def refreshProject(buttonContainerId: String, ns:NodeSeq): (Project) => JsCmd = {
-		(p: Project) => deferredFunc().apply(p, buttonContainerId, ns)
+
+		(project: Project) => {
+			snabel = () => ((project: Project, buttonContainerId: String, ns:NodeSeq) =>
+				RolfJsCmds.JqReplaceWith(buttonContainerId, renderButtonContainer(buttonContainerId, project, ns).apply(ns))
+						   ).apply(project, buttonContainerId, ns)
+			deferredFunc()
+		}
+	}
+
+	var snabel:() => JsCmd = () => Alert("I'm not overridden!")
+
+	def getUpdatedStuff: JsCmd = {
+		trace("Returning updated JsCmd")
+		snabel()
 	}
 
 	def generateDeferredFunc() {
-		S.session.foreach{session =>
-			println("Building deferredFunc")
-			deferredFunc = session.buildDeferredFunction(() => {
-				println("Executing deferredFunc")
-				(project:Project, buttonContainerId: String, ns:NodeSeq) =>
-					println("Replacing DOM")
-					RolfJsCmds.JqReplaceWith(buttonContainerId, renderButtonContainer(buttonContainerId, project, ns).apply(ns))
-			})}
+		S.session.foreach(session => deferredFunc = session.buildDeferredFunction[JsCmd](() => getUpdatedStuff))
 	}
 
 	def list = {
@@ -90,18 +96,18 @@ class ProjectSnippet extends Loggable {
 								   ".projectType *" #> L(project.projectType.wrapped) &
 								   ".showActivitiesButton *" #> SHtml.ajaxButton(L(ProjectTexts.V.button_showActivities_text), () => showActivitiesForProject(project)) &
 								   ".createdDate *" #> Localizer.formatDate(L(GlobalTexts.dateformat_fullDateTime), project.created.toDate,
-																  S.locale) &
+																			S.locale) &
 								   ".projectBudget *" #> Localizer.formatLong(project.budget) &
 								   ".projectEstimatedStart *" #> Localizer.formatDateTime(L(GlobalTexts.dateformat_fullDateTime),
-																				Box.legacyNullTest(project.estimatedStartDate),
-																				S.locale) &
+																						  Box.legacyNullTest(project.estimatedStartDate),
+																						  S.locale) &
 								   ".createdBy *" #> project.createdBy.displayName &
 								   ".petId *" #> petIdBox.map(_.toString) &
 								   ".petName *" #> petIdBox.map(id => <lift:GetPetName petId={id.toString} parallel="true" />) &
 								   ".editButtonContainer" #> ((ns:NodeSeq) =>
 									   renderButtonContainer(buttonContainerId,
-														 project,
-														 ns.asInstanceOf[Elem] % ("id" -> buttonContainerId))
+															 project,
+															 ns.asInstanceOf[Elem] % ("id" -> buttonContainerId))
 										   (ns.asInstanceOf[Elem] % ("id" -> buttonContainerId)))
 							   }))
 	}
@@ -127,7 +133,7 @@ class ProjectSnippet extends Loggable {
 
 	private def renderButtonContainer(buttonContainerId: String, project: Project, ns:NodeSeq) = {
 		".lastModified *" #> Localizer.formatDateTime(L(GlobalTexts.dateformat_fullDateTimeSeconds),
-											Option(project.modified)).getOrElse("<not-modified>") &
+													  Option(project.modified)).getOrElse("<not-modified>") &
 		".editButton" #> getEditButtonLink(buttonContainerId, project.id, ns)
 	}
 
