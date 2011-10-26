@@ -39,7 +39,7 @@ class ProjectSnippet extends Loggable {
 
 	object SomeRequestVar extends RequestVar("Hello")
 
-	var deferredFunc:() => JsCmd = null
+	var snapshot: (() => JsCmd) => JsCmd = null
 
 	def openNewProjectDialog = {
 		".openNewProjectDialog" #> SHtml.ajaxButton(L(ProjectTexts.V.button_newProjectDialog_text), () => {
@@ -63,29 +63,13 @@ class ProjectSnippet extends Loggable {
 	 * for each project we click "Edit" on.
 	 */
 	def refreshProject(buttonContainerId: String, ns:NodeSeq): (Project) => JsCmd = {
-
-		(project: Project) => {
-			snabel = () => ((project: Project, buttonContainerId: String, ns:NodeSeq) =>
-				RolfJsCmds.JqReplaceWith(buttonContainerId, renderButtonContainer(buttonContainerId, project, ns).apply(ns))
-						   ).apply(project, buttonContainerId, ns)
-			deferredFunc()
-		}
-	}
-
-	var snabel:() => JsCmd = () => Alert("I'm not overridden!")
-
-	def getUpdatedStuff: JsCmd = {
-		trace("Returning updated JsCmd")
-		snabel()
-	}
-
-	def generateDeferredFunc() {
-		S.session.foreach(session => deferredFunc = session.buildDeferredFunction[JsCmd](() => getUpdatedStuff))
+		(project: Project) =>
+			snapshot(() => RolfJsCmds.JqReplaceWith(buttonContainerId, renderButtonContainer(buttonContainerId, project, ns).apply(ns)))
 	}
 
 	def list = {
 
-		generateDeferredFunc()
+		snapshot = SomeRequestVar.generateSnapshotRestorer[JsCmd]()
 
 		".projectListTable" #> (
 							   ".projectBodyRow" #> projectAppService.findAll.map(project => {
