@@ -39,6 +39,8 @@ class ProjectSnippet extends Loggable {
 
 	object SomeRequestVar extends RequestVar("Hello")
 
+	var deferredFunc:() => (Project, String, NodeSeq) => JsCmd = null
+
 	def openNewProjectDialog = {
 		".openNewProjectDialog" #> SHtml.ajaxButton(L(ProjectTexts.V.button_newProjectDialog_text), () => {
 			val project = new Project(new DateTime, userService.findByUserName(SecurityContextHolder.getContext.getAuthentication.getName).getOrElse(null))
@@ -50,8 +52,31 @@ class ProjectSnippet extends Loggable {
 		})
 	}
 
+	/**
+	 * This function is passed as a callback to the ProjectEditSnippet. Its purpose is to update the editButtonContainer
+	 * (the last TD in the project-list) with an updated modified-timestamp after saving and closing the popup.
+	 * <p/>
+	 * todo: When {@link #renderButtonContainer} gets called as a callback (Line 116 in {@link ProjectEditSnippet#render}), it renders the link in the "ajax-context"
+	 * of the popup-dialog (backed by ProjectEditSnippet), not in the context of this project-listing (ProjectSnippet).
+	 * The result of this is that clicking on the (then updated) "Edit"-link after saving in the popup returns the same
+	 * instance of ProjectEditSnippet, which we don't want. We always want a new instance of ProjectEditSnippet
+	 * for each project we click "Edit" on.
+	 */
+	def refreshProject(buttonContainerId: String, ns:NodeSeq): (Project) => JsCmd = {
+		(p: Project) => deferredFunc().apply(p, buttonContainerId, ns)
+	}
+
+	def generateDeferredFunc() {
+		S.session.foreach{session =>
+			println("Building deferredFunc")
+			deferredFunc = session.buildDeferredFunction(() => {
+				println("Executing deferredFunc")
+				(project:Project, buttonContainerId: String, ns:NodeSeq) =>
+					println("Replacing DOM")
+					RolfJsCmds.JqReplaceWith(buttonContainerId, renderButtonContainer(buttonContainerId, project, ns).apply(ns))
+			})}
+	}
 	def list = {
-		val snapshot = SomeRequestVar.generateSnapshotRestorer[JsCmd]()
 
 		".projectListTable" #> (
 							   ".projectBodyRow" #> projectAppService.findAll.map(project => {
@@ -73,7 +98,7 @@ class ProjectSnippet extends Loggable {
 								   ".editButtonContainer" #> ((ns:NodeSeq) =>
 									   renderButtonContainer(buttonContainerId,
 														 project,
-														 ns.asInstanceOf[Elem] % ("id" -> buttonContainerId), snapshot)
+														 ns.asInstanceOf[Elem] % ("id" -> buttonContainerId))
 										   (ns.asInstanceOf[Elem] % ("id" -> buttonContainerId)))
 							   }))
 	}
@@ -97,17 +122,18 @@ class ProjectSnippet extends Loggable {
 		JQueryDialog(nodeSeq).open
 	}
 
-	private def renderButtonContainer(buttonContainerId: String, project: Project, ns:NodeSeq, snapshot: (() => JsCmd) => JsCmd) = {
+	private def renderButtonContainer(buttonContainerId: String, project: Project, ns:NodeSeq) = {
 		".lastModified *" #> Localizer.formatDateTime(L(GlobalTexts.dateformat_fullDateTimeSeconds),
 											Option(project.modified)).getOrElse("<not-modified>") &
-		".editButton" #> getEditButtonLink(buttonContainerId, project.id, ns, snapshot)
+		".editButton" #> getEditButtonLink(buttonContainerId, project.id, ns)
 	}
 
-	private def getEditButtonLink(buttonContainerId: String, projectId: java.lang.Long, ns:NodeSeq, snapshot: (() => JsCmd) => JsCmd) = {
+	private def getEditButtonLink(buttonContainerId: String, projectId: java.lang.Long, ns:NodeSeq) = {
 		SHtml.a(() => {
 			trace("retrieving projectId: " + projectId)
 			projectVar.set(projectAppService.retrieve(projectId)) // The popup uses this to access the selected project
-			projectUpdatedCallbackFuncVar.set(refreshProject(buttonContainerId, ns, snapshot)) // The callback-func to run after successfully saving in popup
+			generateDeferredFunc()
+			projectUpdatedCallbackFuncVar.set(refreshProject(buttonContainerId, ns)) // The callback-func to run after successfully saving in popup
 			// Put the handle for the popup in a request-var so that the pop is able to close itself.
 			editProjectDialogVar.set(JQueryDialog(S.runTemplate(List(ProjectDetailCometRenderer.newProjectTemplate)).openOr(<div>Template {ProjectDetailCometRenderer.newProjectTemplate} not found</div>),
 												  L(ProjectTexts.V.projectDialog_title_newProject)))
@@ -115,23 +141,5 @@ class ProjectSnippet extends Loggable {
 		},
 				Text(L(GlobalTexts.button_edit)))
 	}
-
-	/**
-	 * This function is passed as a callback to the ProjectEditSnippet. Its purpose is to update the editButtonContainer
-	 * (the last TD in the project-list) with an updated modified-timestamp after saving and closing the popup.
-	 * <p/>
-	 * todo: When {@link #renderButtonContainer} gets called as a callback (Line 116 in {@link ProjectEditSnippet#render}), it renders the link in the "ajax-context"
-	 * of the popup-dialog (backed by ProjectEditSnippet), not in the context of this project-listing (ProjectSnippet).
-	 * The result of this is that clicking on the (then updated) "Edit"-link after saving in the popup returns the same
-	 * instance of ProjectEditSnippet, which we don't want. We always want a new instance of ProjectEditSnippet
-	 * for each project we click "Edit" on.
-	 */
-	def refreshProject(buttonContainerId: String, ns:NodeSeq, snapshot: (() => JsCmd) => JsCmd): (Project) => JsCmd = {
-		(project: Project) => {
-			val jsCmd = snapshot(() => RolfJsCmds.JqReplaceWith(buttonContainerId, renderButtonContainer(buttonContainerId, project, ns, snapshot)(ns)))
-			jsCmd
-		}
-	}
-
 
 }
