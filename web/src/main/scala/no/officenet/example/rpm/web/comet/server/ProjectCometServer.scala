@@ -57,6 +57,8 @@ object ProjectCometMasterServer extends Loggable {
 
 	def registerWithProjectCometServer(id: Long): ProjectCometServer = {
 		val key = ProjectCometServerKey(id)
-		projectCometServers.synchronized(projectCometServers.getOrElseUpdate(key, new ProjectCometServer(id)))
+		projectCometServers.get(key).getOrElse(
+			projectCometServers.synchronized(projectCometServers.getOrElseUpdate(key, new ProjectCometServer(id)))
+		)
 	}
 }
