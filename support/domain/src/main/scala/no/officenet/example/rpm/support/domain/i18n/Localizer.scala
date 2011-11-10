@@ -107,7 +107,7 @@ object Localizer {
 
 	def formatLong(value:Long) = formatDouble(value.toDouble)
 
-	def formatLong(value: Option[java.lang.Long]): Option[String] = value.map(v => formatLong(v))
+	def formatLong(value: Option[Long]): Option[String] = value.map(v => formatLong(v))
 
 	def formatInteger(value:Int) = formatDouble(value.toDouble)
 	def formatInteger(value: Option[java.lang.Integer]): Option[String] = value.map(v => formatInteger(v))

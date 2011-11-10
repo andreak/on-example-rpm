@@ -98,8 +98,8 @@ class ProjectEditSnippet extends ValidatableScreen {
 			".nice_color_id [style]" #> getStyleForLabel(niceColorIdKey) &
 			".bad_color_id [id]" #> badColorIdKey &
 			".bad_color_id [style]" #> getStyleForLabel(badColorIdKey) &
-			".budget *" #> labelTextInput(L(ProjectTexts.V.projectDialog_details_label_budget), project, "budget",
-										  project.budget.map(d => d.toString).getOrElse(""), (s:Option[java.lang.Long]) => project.budget = s, false) &
+			".budget *" #> labelTextInput(L(ProjectTexts.V.projectDialog_details_label_budget), project, Project.budget,
+										  project.budget.map(d => d.toString).getOrElse(""), (s:Option[Long]) => project.budget = s, false) &
 			".estimatedStart *" #> labelTextInput(L(ProjectTexts.V.projectDialog_details_label_estimatedStartDate) +
 												  "(%s)".format(L(GlobalTexts.dateformat_fullDate)), project, "estimatedStartDate",
 												  Localizer.formatDateTime(L(GlobalTexts.dateformat_fullDate), Box.legacyNullTest(project.estimatedStartDate), S.locale).getOrElse(""),

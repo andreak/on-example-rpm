@@ -25,7 +25,7 @@
 		<version.jodatime>1.6.2</version.jodatime>
 		<version.surefire>2.8</version.surefire>
 		<version.atomikos>3.7.0</version.atomikos>
-		<version.lift>2.4-M4</version.lift>
+		<version.lift>2.4-M5</version.lift>
 		<version.maven-scala-plugin>2.15.2</version.maven-scala-plugin>
 		<version.scala>2.9.1</version.scala>
 		<version.scalajpa>1.4</version.scalajpa>

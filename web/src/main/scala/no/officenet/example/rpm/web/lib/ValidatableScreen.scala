@@ -34,6 +34,7 @@ trait ValidatableScreen extends Loggable {
 	// Needed for pattern-matching as one cannot use classOf[SomeType] as an extractor
 	val stringCls = classOf[String]
 	val intCls = classOf[java.lang.Integer]
+	val longPrimitiveCls = java.lang.Long.TYPE
 	val longCls = classOf[java.lang.Long]
 	val floatCls = classOf[java.lang.Float]
 	val doubleCls = classOf[java.lang.Double]
@@ -44,22 +45,22 @@ trait ValidatableScreen extends Loggable {
 
 	private def convert[T](value: String, klass: Class[_], isOption: Boolean = false): T = {
 		val converted = klass match {
-			case `stringCls` => value.asInstanceOf[T]
-			case `intCls` => value.toInt.asInstanceOf[T]
-			case `longCls` => value.toLong.asInstanceOf[T]
-			case `floatCls` => value.toFloat.asInstanceOf[T]
-			case `doubleCls` => value.toDouble.asInstanceOf[T]
-			case `bigDcmlCls` => new java.math.BigDecimal(value).asInstanceOf[T]
-			case `dateCls` => Localizer.getDateFromString(L(GlobalTexts.dateformat_fullDate), value).asInstanceOf[T]
-			case `dateTimeCls` => Localizer.getDateTimeFromString(L(GlobalTexts.dateformat_fullDate), value).asInstanceOf[T]
+			case `stringCls` => value
+			case `intCls` => value.toInt
+			case `longCls` | `longPrimitiveCls` => value.toLong
+			case `floatCls` => value.toFloat
+			case `doubleCls` => value.toDouble
+			case `bigDcmlCls` => new java.math.BigDecimal(value)
+			case `dateCls` => Localizer.getDateFromString(L(GlobalTexts.dateformat_fullDate), value)
+			case `dateTimeCls` => Localizer.getDateTimeFromString(L(GlobalTexts.dateformat_fullDate), value)
 			case _ => throw new IllegalArgumentException("Don't know how to convert value " + value + " of type " + klass.getName)
 		}
-		val retValue: T = if (isOption) {
-			Some(converted).asInstanceOf[T]
+		val retValue = if (isOption) {
+			Some(converted)
 		} else {
 			converted
 		}
-		retValue
+		retValue.asInstanceOf[T]
 	}
 
 	val errorsMap = new IdentityHashMap[AnyRef, HashMap[String, Buffer[FieldError]]]()
@@ -73,7 +74,7 @@ trait ValidatableScreen extends Loggable {
 		))
 	}
 
-	def labelDateInput[T <: AnyRef](label:String, bean: AnyRef, field: javax.persistence.metamodel.Attribute[_, T], value: String, func: T => Any,
+	def labelDateInput[T](label:String, bean: AnyRef, field: javax.persistence.metamodel.Attribute[_, T], value: String, func: T => Any,
 					   isMandatory:Boolean, attrs: SHtml.ElemAttr*)(implicit m: Manifest[T]): NodeSeq = {
 		val r = getTextInputElement(bean, field.getName, value, func, m, attrs:_*)
 		val inputId: String = r._1
@@ -86,7 +87,7 @@ trait ValidatableScreen extends Loggable {
 		renderTextInputContainer(containerId, textElement, isMandatory, errorSeq, fieldErrors)
 	}
 
-	def dateInput[T <: AnyRef](bean: AnyRef, field: javax.persistence.metamodel.Attribute[_, T], value: String, func: T => Any,
+	def dateInput[T](bean: AnyRef, field: javax.persistence.metamodel.Attribute[_, T], value: String, func: T => Any,
 					   isMandatory:Boolean, attrs: SHtml.ElemAttr*)(implicit m: Manifest[T]): NodeSeq = {
 		val r = getTextInputElement(bean, field.getName, value, func, m, attrs:_*)
 		val containerId: String = r._2
@@ -97,13 +98,13 @@ trait ValidatableScreen extends Loggable {
 		renderInlineInputContainer(fieldErrors, containerId, textElement, isMandatory, errorSeq)
 	}
 
-	def labelTextInput[T <: AnyRef](label: String, bean: AnyRef, field: javax.persistence.metamodel.Attribute[_, T], value: String,
+	def labelTextInput[T](label: String, bean: AnyRef, field: javax.persistence.metamodel.Attribute[_, T], value: String,
 									func: T => Any, isMandatory: Boolean, attrs: SHtml.ElemAttr*)
 								   (implicit m: Manifest[T]): NodeSeq = {
 		labelTextInput[T](label, bean, field.getName, value, func, isMandatory, attrs: _*)(m)
 	}
 
-	def labelTextInput[T <: AnyRef](label:String, bean: AnyRef, fieldName: String, value: String, func: T => Any,
+	def labelTextInput[T](label:String, bean: AnyRef, fieldName: String, value: String, func: T => Any,
 					   isMandatory:Boolean, attrs: SHtml.ElemAttr*)(implicit m: Manifest[T]): NodeSeq = {
 		val r = getTextInputElement(bean, fieldName, value, func, m, attrs:_*)
 		val inputId: String = r._1
@@ -116,12 +117,12 @@ trait ValidatableScreen extends Loggable {
 		renderTextInputContainer(containerId, textElement, isMandatory, errorSeq, fieldErrors)
 	}
 
-	def textInput[T <: AnyRef](bean: AnyRef, field: javax.persistence.metamodel.Attribute[_, T], value: String, func: T => Any,
+	def textInput[T](bean: AnyRef, field: javax.persistence.metamodel.Attribute[_, T], value: String, func: T => Any,
 							   isMandatory:Boolean, attrs: SHtml.ElemAttr*)(implicit m: Manifest[T]): NodeSeq = {
 		textInput[T](bean, field.getName, value, func, isMandatory, attrs:_*)(m)
 	}
 
-	def textInput[T <: AnyRef](bean: AnyRef, fieldName: String, value: String, func: T => Any,
+	def textInput[T](bean: AnyRef, fieldName: String, value: String, func: T => Any,
 					isMandatory:Boolean, attrs: SHtml.ElemAttr*)(implicit m: Manifest[T]): NodeSeq = {
 		val r = getTextInputElement(bean, fieldName, value, func, m, attrs:_*)
 		val containerId: String = r._2
@@ -132,12 +133,12 @@ trait ValidatableScreen extends Loggable {
 		renderInlineInputContainer(fieldErrors, containerId, textElement, isMandatory, errorSeq)
 	}
 
-	def labelTextAreaInput[T <: AnyRef](label: String, bean: AnyRef, field: javax.persistence.metamodel.Attribute[_, String], value: String,
+	def labelTextAreaInput[T](label: String, bean: AnyRef, field: javax.persistence.metamodel.Attribute[_, String], value: String,
 									func: T => Any, isMandatory: Boolean, attrs: SHtml.ElemAttr*)(implicit m: Manifest[T]): NodeSeq = {
 		labelTextAreaInput[T](label, bean, field.getName, value, func, isMandatory, attrs: _*)(m)
 	}
 
-	def labelTextAreaInput[T <: AnyRef](label:String, bean: AnyRef, fieldName: String, value: String, func: T => Any,
+	def labelTextAreaInput[T](label:String, bean: AnyRef, fieldName: String, value: String, func: T => Any,
 					   isMandatory:Boolean, attrs: SHtml.ElemAttr*)(implicit m: Manifest[T]): NodeSeq = {
 		val r = getTextAreaInputElement(bean, fieldName, value, func, m, attrs:_*)
 		val inputId: String = r._1
@@ -150,12 +151,12 @@ trait ValidatableScreen extends Loggable {
 		renderTextInputContainer(containerId, textElement, isMandatory, errorSeq, fieldErrors)
 	}
 
-	def textAreaInput[T <: AnyRef](bean: AnyRef, field: javax.persistence.metamodel.Attribute[_, String], value: String, func: T => Any,
+	def textAreaInput[T](bean: AnyRef, field: javax.persistence.metamodel.Attribute[_, String], value: String, func: T => Any,
 					  isMandatory:Boolean, attrs: SHtml.ElemAttr*)(implicit m: Manifest[T]): NodeSeq = {
 		textAreaInput[T](bean, field.getName, value, func, isMandatory, attrs:_*)(m)
 	}
 
-	def textAreaInput[T <: AnyRef](bean: AnyRef, fieldName: String, value: String, func: T => Any,
+	def textAreaInput[T](bean: AnyRef, fieldName: String, value: String, func: T => Any,
 					  isMandatory:Boolean, attrs: SHtml.ElemAttr*)(implicit m: Manifest[T]): NodeSeq = {
 		val r = getTextAreaInputElement(bean, fieldName, value, func, m, attrs:_*)
 		val containerId: String = r._2
@@ -202,13 +203,13 @@ trait ValidatableScreen extends Loggable {
 		renderTextInputContainer(containerId, textElement, isMandatory, errorSeq, fieldErrors)
 	}
 
-	def labelSelect[T <: AnyRef](label: String, bean: AnyRef, field: javax.persistence.metamodel.Attribute[_, T], options: Seq[T],
+	def labelSelect[T](label: String, bean: AnyRef, field: javax.persistence.metamodel.Attribute[_, T], options: Seq[T],
 								 default: T, func: (T) => Any, valueLabel: (T) => String, isMandatory: Boolean, attrs: SHtml.ElemAttr*)
 								(implicit m: Manifest[T]): NodeSeq = {
 		labelSelect[T](label, bean, field.getName, options, default, func, valueLabel, isMandatory, attrs: _*)(m)
 	}
 
-	def labelSelect[T <: AnyRef](label: String, bean: AnyRef, fieldName: String, options: Seq[T], default: T, func: (T) => Any,
+	def labelSelect[T](label: String, bean: AnyRef, fieldName: String, options: Seq[T], default: T, func: (T) => Any,
 								 valueLabel: (T) => String, isMandatory: Boolean, attrs: SHtml.ElemAttr*)(implicit m: Manifest[T]): NodeSeq = {
 		val allOptions:Seq[(T, String)] = (null.asInstanceOf[T] , L(GlobalTexts.select_noItemSelected)) :: options.map(t => (t, valueLabel(t))).toList
 		val inputId = nextFuncName
@@ -269,6 +270,44 @@ trait ValidatableScreen extends Loggable {
 		def apply(in: Elem): Elem = in % (name -> ((s:T) => value(s)))
 		def apply(in: T): SHtml.ElemAttr = (name -> value(in))
 	}
+
+/*
+	private def selected(in: Boolean) = if (in) new UnprefixedAttribute("selected", "selected", Null) else Null
+
+	private def ritchSelect_*(opts: Seq[(String, String, List[SHtml.ElemAttr])], deflt: Box[String],
+							  func: AFuncHolder, attrs: SHtml.ElemAttr*): Elem = {
+		val vals = opts.map(_._1)
+		val testFunc = LFuncHolder(in => in.filter(v => vals.contains(v)) match {case Nil => false case xs => func(xs)}, func.owner)
+
+		attrs.foldLeft(S.fmapFunc(testFunc)(fn => <select name={fn}>{opts.flatMap {case (value, text, optAttrs) =>
+			optAttrs.foldLeft(<option value={value}>{text}</option>)(_ % _) % selected(deflt.exists(_ == value)) }}</select>))(_ % _)
+	}
+
+	def labelSelect[T](label: String, bean: AnyRef, fieldName: String, options: Seq[(T, List[SHtml.ElemAttr])], default: T, func: (T) => Any,
+								 valueLabel: (T) => String, isMandatory:Boolean, attrs: SHtml.ElemAttr*)(implicit m: Manifest[T]): NodeSeq = {
+		val allOptions:Seq[(T, String)] = (null.asInstanceOf[T] , L(GlobalTexts.select_noItemSelected)) :: options.map(t => (t, valueLabel(t))).toList
+		val inputId = nextFuncName
+		val containerId = nextFuncName
+		val fieldErrors = getFieldErrors(bean, fieldName)
+		val errorSeq = getErrorsSeq(fieldErrors)
+
+		val secure = allOptions.map {case (obj, txt) => (obj, randomString(20), txt)}
+
+		val textElement = addErrorClass(fieldErrors, {
+			val (nonces, defaultNonce, secureOnSubmit) =
+				secureOptions(secure, Full(default), (selectedItem:T) => {
+					func(selectedItem)
+					registerPropertyViolations(bean, fieldName)
+					registerBeanViolations(bean, fieldName)
+				})
+
+			ritchSelect_*(nonces, defaultNonce, secureOnSubmit, attrs: _*) % ("id" -> inputId) %
+			("onchange" -> onChangeForSelect(secure, bean, fieldName, func, inputId, containerId, m.erasure.asInstanceOf[Class[T]]))
+		})
+		<td><label for={inputId}>{label}</label></td> ++
+		renderTextInputContainer(containerId, textElement, isMandatory, errorSeq, fieldErrors)
+	}
+*/
 
 	def ritchRadioElem[T](opts: Seq[T], deflt: Box[T], attrs: SHtml.ElemAttr*)
 				   (onSubmit: Box[T] => Any): SHtml.ChoiceHolder[T] = {
@@ -343,7 +382,7 @@ trait ValidatableScreen extends Loggable {
 		(nonces, defaultNonce, S.SFuncHolder(process))
 	}
 
-	private def registerFieldViolations(bean: AnyRef, fieldName: String, newValue: AnyRef) {
+	private def registerFieldViolations(bean: AnyRef, fieldName: String, newValue: Any) {
 		val fieldErrors = validator.validateValue(bean.getClass, fieldName, newValue)
 		for (fieldError <- fieldErrors) {
 			trace("Validation-violation for "+bean.getClass.getName+ "("+System.identityHashCode(bean)+") field: "+fieldName+": "+fieldError)
@@ -417,23 +456,17 @@ trait ValidatableScreen extends Loggable {
 		}
 	}
 
-	private def validateInput[T <: AnyRef](s: String, bean: AnyRef, fieldName: String, func: (T) => Any, klass: Class[T]): Any = {
+	private def validateInput[T](s: String, bean: AnyRef, fieldName: String, func: (T) => Any, klass: Class[_], isOption: Boolean): Any = {
 		val newValue = if (s == null || s.trim().isEmpty) null else s.trim()
 		try {
-			val isOption = klass == optionCls
-			val converterClass: Class[_] = if (isOption) {
-				val tmp = bean.getClass.getDeclaredField(fieldName).
-					getGenericType.asInstanceOf[ParameterizedType].getActualTypeArguments()(0).asInstanceOf[Class[_]]
-				tmp
+			val convertedValue: T = if (newValue == null) {
+				if (isOption) {
+					None.asInstanceOf[T]
+				} else {
+					null.asInstanceOf[T]
+				}
 			} else {
-				klass
-			}
-			val convertedValue: T = if (newValue == null) klass match {
-				case `optionCls` => None.asInstanceOf[T]
-				case _ => null.asInstanceOf[T]
-			}
-			else {
-				convert(newValue, converterClass, isOption = isOption)
+				convert(newValue, klass, isOption = isOption)
 			}
 			func(convertedValue)
 			trace("dateformat_fullDate: " + L(GlobalTexts.dateformat_fullDate))
@@ -463,10 +496,10 @@ trait ValidatableScreen extends Loggable {
 		 </td>)
 	}
 
-	private def onBlurForTextInput[T <: AnyRef](bean: AnyRef, fieldName: String, func: (T) => Any, inputId: String, containerId: String, klass: Class[T]) = {
+	private def onBlurForTextInput[T](bean: AnyRef, fieldName: String, func: (T) => Any, inputId: String, containerId: String, klass: Class[_], isOption: Boolean) = {
 		SHtml.onEvent((s) => {
 			cleanErrorsForProperty(bean, fieldName) // Important to clear errors for this field in case previous action was "submit" on form
-			val convertedValue = validateInput(s, bean, fieldName, func, klass)
+			val convertedValue = validateInput(s, bean, fieldName, func, klass, isOption)
 			val fieldErrors = getFieldErrors(bean, fieldName)
 			val errorSeq: NodeSeq = getErrorsSeq(fieldErrors)
 			cleanErrorsForProperty(bean, fieldName)
@@ -484,7 +517,7 @@ trait ValidatableScreen extends Loggable {
 		})._2.toJsCmd
 	}
 
-	private def onChangeForSelect[T <: AnyRef](secure: Seq[(T, String, String)], bean: AnyRef, fieldName: String, func: (T) => Any,
+	private def onChangeForSelect[T](secure: Seq[(T, String, String)], bean: AnyRef, fieldName: String, func: (T) => Any,
 											   inputId: String, containerId: String, klass: Class[T]) = {
 		SHtml.onEvent((s) => {
 			cleanErrorsForProperty(bean, fieldName) // Important to clear errors for this field in case previous action was "submit" on form
@@ -557,7 +590,7 @@ trait ValidatableScreen extends Loggable {
 		None
 	}
 
-	private def getTextInputElement[T <: AnyRef](bean: AnyRef, fieldName: String, value: String, func: (T) => Any, m: Manifest[T],
+	private def getTextInputElement[T](bean: AnyRef, fieldName: String, value: String, func: (T) => Any, m: Manifest[T],
 												 attrs: SHtml.ElemAttr*): (String, String, Buffer[FieldError], NodeSeq, NodeSeq) = {
 		val inputId = nextFuncName
 		val containerId = nextFuncName
@@ -565,13 +598,15 @@ trait ValidatableScreen extends Loggable {
 		val errorSeq = getErrorsSeq(fieldErrors)
 
 		val maxLength = getMaxLengthOfProperty(bean, fieldName)
-
+		val klass = m.erasure
+		val isOption: Boolean = klass == optionCls
+		val fish = if (isOption && m.typeArguments.length > 0) m.typeArguments.head.erasure else klass
 		var inputSeq = SHtml.text(tryo {fieldErrors(0).errorValue}.getOrElse(nullSafeString(value)), (s) => {
-			validateInput(s, bean, fieldName, func, m.erasure.asInstanceOf[Class[T]])
+			validateInput(s, bean, fieldName, func, fish, isOption)
 		}, attrs: _*) % ("id" -> inputId) % maxLength.map(length => ("maxlength" -> length.toString):MetaData).getOrElse(Null)
 
 		val oldOnBlurAttribute = inputSeq.attribute("onblur")
-		val validationOnBlur = onBlurForTextInput(bean, fieldName, func, inputId, containerId, m.erasure.asInstanceOf[Class[T]])
+		val validationOnBlur = onBlurForTextInput(bean, fieldName, func, inputId, containerId, fish, isOption)
 
 		if (oldOnBlurAttribute.isDefined) {
 			val oldOnBlur = oldOnBlurAttribute.get.text
@@ -586,7 +621,7 @@ trait ValidatableScreen extends Loggable {
 		(inputId, containerId, fieldErrors, textElement, errorSeq)
 	}
 
-	private def getTextAreaInputElement[T <: AnyRef](bean: AnyRef, fieldName: String, value: String, func: (T) => Any, m: Manifest[T],
+	private def getTextAreaInputElement[T](bean: AnyRef, fieldName: String, value: String, func: (T) => Any, m: Manifest[T],
 												 attrs: SHtml.ElemAttr*): (String, String, Buffer[FieldError], NodeSeq, NodeSeq) = {
 		val inputId = nextFuncName
 		val containerId = nextFuncName
@@ -594,13 +629,16 @@ trait ValidatableScreen extends Loggable {
 		val errorSeq = getErrorsSeq(fieldErrors)
 
 		val maxLength = getMaxLengthOfProperty(bean, fieldName)
+		val klass = m.erasure
+		val isOption: Boolean = klass == optionCls
+		val fish = if (isOption && m.typeArguments.length > 0) m.typeArguments.head.erasure else klass
 
 		var inputSeq = SHtml.textarea(tryo {fieldErrors(0).errorValue}.getOrElse(nullSafeString(value)), (s) => {
-			validateInput(s, bean, fieldName, func, m.erasure.asInstanceOf[Class[T]])
+			validateInput(s, bean, fieldName, func, fish, isOption)
 		}, attrs: _*) % ("id" -> inputId) % maxLength.map(length => ("maxlength" -> length.toString):MetaData).getOrElse(Null)
 
 		val oldOnBlurAttribute = inputSeq.attribute("onblur")
-		val validationOnBlur = onBlurForTextInput(bean, fieldName, func, inputId, containerId, m.erasure.asInstanceOf[Class[T]])
+		val validationOnBlur = onBlurForTextInput(bean, fieldName, func, inputId, containerId, fish, isOption)
 
 		if (oldOnBlurAttribute.isDefined) {
 			val oldOnBlur = oldOnBlurAttribute.get.text
