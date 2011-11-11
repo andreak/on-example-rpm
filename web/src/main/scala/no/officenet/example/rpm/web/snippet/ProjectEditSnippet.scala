@@ -11,7 +11,6 @@ import util.Helpers._
 import org.springframework.beans.factory.annotation.Configurable
 import no.officenet.example.rpm.projectmgmt.application.service.ProjectAppService
 import javax.annotation.Resource
-import no.officenet.example.rpm.web.lib.{ValidatableScreen, JQueryDialog}
 import no.officenet.example.rpm.web.lib.ContextVars._
 import no.officenet.example.rpm.projectmgmt.domain.model.entities.Project
 import no.officenet.example.rpm.projectmgmt.application.dto.ProjectDto
@@ -22,6 +21,7 @@ import no.officenet.example.rpm.projectmgmt.domain.model.enums.{ProjectColor, Pr
 import no.officenet.example.rpm.support.infrastructure.scala.lang.ControlHelpers.?
 import no.officenet.example.rpm.support.domain.i18n.{Bundle, GlobalTexts, Localizer}
 import no.officenet.example.rpm.support.domain.i18n.Localizer.L
+import no.officenet.example.rpm.web.lib.{NullElemAttr, ValidatableScreen, JQueryDialog}
 
 object DisplayRadioWithLabelHorizontallyTemplate {
 	def buildElement(item: SHtml.ChoiceItem[(String, String)]): NodeSeq = {
@@ -53,7 +53,10 @@ class ProjectEditSnippet extends ValidatableScreen {
 
 	def render = {
 		trace("\n\n***** this: " + this)
-		val projectTypes: Seq[ProjectType.ExtendedValue] = ProjectType.getValues
+		val projectTypes: Seq[(ProjectType.ExtendedValue, List[SHtml.ElemAttr])] = ProjectType.getValues.map{v => {
+			val attrs: List[SHtml.ElemAttr] = if (v.name.length % 2 == 0) List[SHtml.ElemAttr]("disabled" -> "disabled") else Nil
+			(v, attrs)
+		}}
 		var selectedColor = ProjectColor.BLACK.name
 		val radioValues = ProjectColor.getValues.map(st => (st.name, L(st.wrapped)))
 		val niceColorIdKey = nextFuncName
@@ -81,7 +84,7 @@ class ProjectEditSnippet extends ValidatableScreen {
 		"*" #> SHtml.idMemoize(id => {
 			".projectName *" #> labelTextInput(L(ProjectTexts.D.name), project, Project.name, project.name, (s: String) => project.name = s, false) &
 			".projectDescription *" #> labelTextAreaInput(L(ProjectTexts.D.description), project, Project.description, project.description.getOrElse(""), (s: Option[String]) => project.description = s, false) &
-			".projectType *" #> labelSelect(L(ProjectTexts.D.projectType), project, "projectType", projectTypes, project.projectType,
+			".projectType *" #> labelSelect2(L(ProjectTexts.D.projectType), project, "projectType", projectTypes, project.projectType,
 											(pt: ProjectType.ExtendedValue) => project.projectType = pt,
 											(pt: ProjectType.ExtendedValue) => L(pt.wrapped), false) &
 			".project_color_radio *" #> DisplayRadioWithLabelHorizontallyTemplate.toForm(

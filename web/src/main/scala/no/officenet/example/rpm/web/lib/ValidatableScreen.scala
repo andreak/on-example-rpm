@@ -21,7 +21,6 @@ import javax.annotation.Resource
 import no.officenet.example.rpm.support.infrastructure.jpa.validation.MethodValidationGroup
 import no.officenet.example.rpm.support.infrastructure.jpa.util.ReflectionUtils
 import org.joda.time.DateTime
-import java.lang.reflect.ParameterizedType
 import no.officenet.example.rpm.support.domain.i18n.GlobalTexts
 import no.officenet.example.rpm.support.domain.i18n.Localizer
 import no.officenet.example.rpm.support.domain.i18n.Localizer.L
@@ -29,7 +28,17 @@ import no.officenet.example.rpm.support.infrastructure.errorhandling.InvalidDate
 
 case class FieldError(fieldName: String, errorValue: String, errorId: String, errorMessage: String)
 
+case object NullElemAttr extends SHtml.ElemAttr {
+	def apply(in: Elem): Elem = in % Null
+}
+
+final class ApplicableElem(in: Elem) {
+	def %(attr: SHtml.ElemAttr): Elem = attr.apply(in)
+}
+
 trait ValidatableScreen extends Loggable {
+
+	implicit def elemToApplicable(e: Elem): ApplicableElem = new ApplicableElem(e)
 
 	// Needed for pattern-matching as one cannot use classOf[SomeType] as an extractor
 	val stringCls = classOf[String]
@@ -271,7 +280,6 @@ trait ValidatableScreen extends Loggable {
 		def apply(in: T): SHtml.ElemAttr = (name -> value(in))
 	}
 
-/*
 	private def selected(in: Boolean) = if (in) new UnprefixedAttribute("selected", "selected", Null) else Null
 
 	private def ritchSelect_*(opts: Seq[(String, String, List[SHtml.ElemAttr])], deflt: Box[String],
@@ -283,8 +291,9 @@ trait ValidatableScreen extends Loggable {
 			optAttrs.foldLeft(<option value={value}>{text}</option>)(_ % _) % selected(deflt.exists(_ == value)) }}</select>))(_ % _)
 	}
 
-	def labelSelect[T](label: String, bean: AnyRef, fieldName: String, options: Seq[(T, List[SHtml.ElemAttr])], default: T, func: (T) => Any,
+	def labelSelect2[T](label: String, bean: AnyRef, fieldName: String, options: Seq[(T, List[SHtml.ElemAttr])], default: T, func: (T) => Any,
 								 valueLabel: (T) => String, isMandatory:Boolean, attrs: SHtml.ElemAttr*)(implicit m: Manifest[T]): NodeSeq = {
+/*
 		val allOptions:Seq[(T, String)] = (null.asInstanceOf[T] , L(GlobalTexts.select_noItemSelected)) :: options.map(t => (t, valueLabel(t))).toList
 		val inputId = nextFuncName
 		val containerId = nextFuncName
@@ -306,17 +315,12 @@ trait ValidatableScreen extends Loggable {
 		})
 		<td><label for={inputId}>{label}</label></td> ++
 		renderTextInputContainer(containerId, textElement, isMandatory, errorSeq, fieldErrors)
-	}
 */
+		NodeSeq.Empty
+	}
 
 	def ritchRadioElem[T](opts: Seq[T], deflt: Box[T], attrs: SHtml.ElemAttr*)
 				   (onSubmit: Box[T] => Any): SHtml.ChoiceHolder[T] = {
-
-		final class ApplicableElem(in: Elem) {
-			def %(attr: SHtml.ElemAttr): Elem = attr.apply(in)
-		}
-
-		implicit def elemToApplicable(e: Elem): ApplicableElem = new ApplicableElem(e)
 
 		def checked(in: Boolean) = if (in) new UnprefixedAttribute("checked", "checked", Null) else Null
 
