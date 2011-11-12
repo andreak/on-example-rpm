@@ -13,15 +13,13 @@ import no.officenet.example.rpm.projectmgmt.application.service.ProjectAppServic
 import javax.annotation.Resource
 import no.officenet.example.rpm.web.lib.ContextVars._
 import no.officenet.example.rpm.projectmgmt.domain.model.entities.Project
-import no.officenet.example.rpm.projectmgmt.application.dto.ProjectDto
 import org.joda.time.DateTime
 import no.officenet.example.rpm.support.domain.service.UserService
 import xml.NodeSeq
 import no.officenet.example.rpm.projectmgmt.domain.model.enums.{ProjectColor, ProjectType, ProjectTexts}
-import no.officenet.example.rpm.support.infrastructure.scala.lang.ControlHelpers.?
 import no.officenet.example.rpm.support.domain.i18n.{Bundle, GlobalTexts, Localizer}
 import no.officenet.example.rpm.support.domain.i18n.Localizer.L
-import no.officenet.example.rpm.web.lib.{NullElemAttr, ValidatableScreen, JQueryDialog}
+import no.officenet.example.rpm.web.lib.{ValidatableScreen, JQueryDialog}
 
 object DisplayRadioWithLabelHorizontallyTemplate {
 	def buildElement(item: SHtml.ChoiceItem[(String, String)]): NodeSeq = {
@@ -53,8 +51,8 @@ class ProjectEditSnippet extends ValidatableScreen {
 
 	def render = {
 		trace("\n\n***** this: " + this)
-		val projectTypes: Seq[(ProjectType.ExtendedValue, List[SHtml.ElemAttr])] = ProjectType.getValues.map{v => {
-			val attrs: List[SHtml.ElemAttr] = if (v.name.length % 2 == 0) List[SHtml.ElemAttr]("disabled" -> "disabled") else Nil
+		val projectTypes: Seq[(ProjectType.ExtendedValue, List[SHtml.ElemAttr])] = ProjectType.getValues.zipWithIndex.map{case (v,index) => {
+			val attrs: List[SHtml.ElemAttr] = if (index % 2 == 0) List[SHtml.ElemAttr]("disabled" -> "disabled") else Nil
 			(v, attrs)
 		}}
 		var selectedColor = ProjectColor.BLACK.name
@@ -78,15 +76,17 @@ class ProjectEditSnippet extends ValidatableScreen {
 			if (labelKeyForSelectedSuretyType == label) ""
 			else "display: none"
 		}
+		val firstOption: (ProjectType.ExtendedValue, scala.List[SHtml.ElemAttr]) =
+			(null.asInstanceOf[ProjectType.ExtendedValue], List[SHtml.ElemAttr]("disabled" -> "disabled"))
 
 		val project: Project = projectDto.project
 		val pet = projectDto.pet
 		"*" #> SHtml.idMemoize(id => {
 			".projectName *" #> labelTextInput(L(ProjectTexts.D.name), project, Project.name, project.name, (s: String) => project.name = s, false) &
 			".projectDescription *" #> labelTextAreaInput(L(ProjectTexts.D.description), project, Project.description, project.description.getOrElse(""), (s: Option[String]) => project.description = s, false) &
-			".projectType *" #> labelSelect2(L(ProjectTexts.D.projectType), project, "projectType", projectTypes, project.projectType,
+			".projectType *" #> labelSelect2(L(ProjectTexts.D.projectType), project, "projectType", firstOption :: projectTypes.toList, project.projectType,
 											(pt: ProjectType.ExtendedValue) => project.projectType = pt,
-											(pt: ProjectType.ExtendedValue) => L(pt.wrapped), false) &
+											(pt: ProjectType.ExtendedValue) => if (pt == null /*happens for the first element*/) L(GlobalTexts.select_noItemSelected) else L(pt.wrapped), false) &
 			".project_color_radio *" #> DisplayRadioWithLabelHorizontallyTemplate.toForm(
 				ritchRadioElem(radioValues,
 						 checkedColor,

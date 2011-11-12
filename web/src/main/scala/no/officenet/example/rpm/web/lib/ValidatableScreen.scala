@@ -220,7 +220,7 @@ trait ValidatableScreen extends Loggable {
 
 	def labelSelect[T](label: String, bean: AnyRef, fieldName: String, options: Seq[T], default: T, func: (T) => Any,
 								 valueLabel: (T) => String, isMandatory: Boolean, attrs: SHtml.ElemAttr*)(implicit m: Manifest[T]): NodeSeq = {
-		val allOptions:Seq[(T, String)] = (null.asInstanceOf[T] , L(GlobalTexts.select_noItemSelected)) :: options.map(t => (t, valueLabel(t))).toList
+		val allOptions:Seq[(T, String)] = options.map(t => (t, valueLabel(t))).toList
 		val inputId = nextFuncName
 		val containerId = nextFuncName
 		val fieldErrors = getFieldErrors(bean, fieldName)
@@ -293,30 +293,37 @@ trait ValidatableScreen extends Loggable {
 
 	def labelSelect2[T](label: String, bean: AnyRef, fieldName: String, options: Seq[(T, List[SHtml.ElemAttr])], default: T, func: (T) => Any,
 								 valueLabel: (T) => String, isMandatory:Boolean, attrs: SHtml.ElemAttr*)(implicit m: Manifest[T]): NodeSeq = {
-/*
-		val allOptions:Seq[(T, String)] = (null.asInstanceOf[T] , L(GlobalTexts.select_noItemSelected)) :: options.map(t => (t, valueLabel(t))).toList
+		val allOptions:Seq[(T, String, List[SHtml.ElemAttr])] = options.map{case (t, oattrs) => (t, valueLabel(t), oattrs)}.toList
 		val inputId = nextFuncName
 		val containerId = nextFuncName
 		val fieldErrors = getFieldErrors(bean, fieldName)
 		val errorSeq = getErrorsSeq(fieldErrors)
 
-		val secure = allOptions.map {case (obj, txt) => (obj, randomString(20), txt)}
+		val secure = allOptions.map {case (obj, txt, oattrs) => (obj, randomString(20), txt, oattrs)}
+
+		val (nonces, defaultNonce, secureOnSubmit) =
+			secureOptionsWithDrus(secure, Full(default), (selectedItem:T) => {
+				func(selectedItem)
+				registerPropertyViolations(bean, fieldName)
+				registerBeanViolations(bean, fieldName)
+			})
 
 		val textElement = addErrorClass(fieldErrors, {
-			val (nonces, defaultNonce, secureOnSubmit) =
-				secureOptions(secure, Full(default), (selectedItem:T) => {
-					func(selectedItem)
-					registerPropertyViolations(bean, fieldName)
-					registerBeanViolations(bean, fieldName)
-				})
-
 			ritchSelect_*(nonces, defaultNonce, secureOnSubmit, attrs: _*) % ("id" -> inputId) %
-			("onchange" -> onChangeForSelect(secure, bean, fieldName, func, inputId, containerId, m.erasure.asInstanceOf[Class[T]]))
+			("onchange" -> onChangeForSelect(secure.map{case (obj, nonce, txt, oattrs) => (obj, nonce, txt)}, bean, fieldName, func, inputId, containerId, m.erasure.asInstanceOf[Class[T]]))
 		})
 		<td><label for={inputId}>{label}</label></td> ++
 		renderTextInputContainer(containerId, textElement, isMandatory, errorSeq, fieldErrors)
-*/
-		NodeSeq.Empty
+	}
+
+	private def secureOptionsWithDrus[T](secure: Seq[(T, String, String, List[SHtml.ElemAttr])], default: Box[T],
+								 onSubmit: T => Any): (Seq[(String, String, List[SHtml.ElemAttr])], Box[String], AFuncHolder) = {
+		val defaultNonce = default.flatMap(d => secure.find(_._1 == d).map(_._2))
+		val nonces = secure.map {case (obj, nonce, txt, oattrs) => (nonce, txt, oattrs)}
+		def process(nonce: String) {
+			secure.find(_._2 == nonce).map(x => onSubmit(x._1))
+		}
+		(nonces, defaultNonce, S.SFuncHolder(process))
 	}
 
 	def ritchRadioElem[T](opts: Seq[T], deflt: Box[T], attrs: SHtml.ElemAttr*)
