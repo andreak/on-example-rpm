@@ -20,6 +20,7 @@ import no.officenet.example.rpm.projectmgmt.domain.model.enums.{ProjectColor, Pr
 import no.officenet.example.rpm.support.domain.i18n.{Bundle, GlobalTexts, Localizer}
 import no.officenet.example.rpm.support.domain.i18n.Localizer.L
 import no.officenet.example.rpm.web.lib.{ValidatableScreen, JQueryDialog}
+import no.officenet.example.rpm.pets.domain.model.entities.Pet
 
 object DisplayRadioWithLabelHorizontallyTemplate {
 	def buildElement(item: SHtml.ChoiceItem[(String, String)]): NodeSeq = {
@@ -82,11 +83,14 @@ class ProjectEditSnippet extends ValidatableScreen {
 		val project: Project = projectDto.project
 		val pet = projectDto.pet
 		"*" #> SHtml.idMemoize(id => {
-			".projectName *" #> labelTextInput(L(ProjectTexts.D.name), project, Project.name, project.name, (s: String) => project.name = s, false) &
-			".projectDescription *" #> labelTextAreaInput(L(ProjectTexts.D.description), project, Project.description, project.description.getOrElse(""), (s: Option[String]) => project.description = s, false) &
-			".projectType *" #> labelSelect2(L(ProjectTexts.D.projectType), project, "projectType", firstOption :: projectTypes.toList, project.projectType,
+			".projectName *" #> TextField(project, Project.name, project.name, (v:String) => project.name = v).
+				withContainer(TdInputContainer(L(ProjectTexts.D.name))) &
+			".projectDescription *" #> TextAreaField(project, Project.description, project.description.getOrElse(""), (v: Option[String]) => project.description = v).
+				withContainer(TdInputContainer(L(ProjectTexts.D.description))) &
+			".projectType *" #> SelectField(project, Project.projectType, firstOption :: projectTypes.toList, project.projectType,
 											(pt: ProjectType.ExtendedValue) => project.projectType = pt,
-											(pt: ProjectType.ExtendedValue) => if (pt == null /*happens for the first element*/) L(GlobalTexts.select_noItemSelected) else L(pt.wrapped), false) &
+											(pt: ProjectType.ExtendedValue, idx) => if (idx == 0) L(GlobalTexts.select_noItemSelected) else L(pt.wrapped)).
+				withContainer(TdInputContainer(L(ProjectTexts.D.projectType))) &
 			".project_color_radio *" #> DisplayRadioWithLabelHorizontallyTemplate.toForm(
 				ritchRadioElem(radioValues,
 						 checkedColor,
@@ -101,13 +105,16 @@ class ProjectEditSnippet extends ValidatableScreen {
 			".nice_color_id [style]" #> getStyleForLabel(niceColorIdKey) &
 			".bad_color_id [id]" #> badColorIdKey &
 			".bad_color_id [style]" #> getStyleForLabel(badColorIdKey) &
-			".budget *" #> labelTextInput(L(ProjectTexts.V.projectDialog_details_label_budget), project, Project.budget,
-										  project.budget.map(d => d.toString).getOrElse(""), (s:Option[Long]) => project.budget = s, false) &
-			".estimatedStart *" #> labelTextInput(L(ProjectTexts.V.projectDialog_details_label_estimatedStartDate) +
-												  "(%s)".format(L(GlobalTexts.dateformat_fullDate)), project, "estimatedStartDate",
-												  Localizer.formatDateTime(L(GlobalTexts.dateformat_fullDate), Box.legacyNullTest(project.estimatedStartDate), S.locale).getOrElse(""),
-												  (s: DateTime) => project.estimatedStartDate = s, false) &
-			".petName *" #> labelTextInput(L(ProjectTexts.V.projectDialog_details_label_petName), pet, "petName", pet.petName, (s: String) => pet.petName = s, false) &
+			".budget *" #> TextField(project, Project.budget, project.budget.map(d => d.toString).getOrElse(""), (v: Option[Long]) => project.budget = v).
+				withContainer(TdInputContainer(L(ProjectTexts.V.projectDialog_details_label_budget)))&
+			".estimatedStart *" #> TextField(project, Project.estimatedStartDate,
+											 Localizer.formatDateTime(L(GlobalTexts.dateformat_fullDate),
+																	  Box.legacyNullTest(project.estimatedStartDate)).getOrElse(""),
+											 (v: DateTime) => project.estimatedStartDate = v).
+				withContainer(TdInputContainer(L(ProjectTexts.V.projectDialog_details_label_estimatedStartDate) +
+											   "(%s)".format(L(GlobalTexts.dateformat_fullDate)))) &
+			".petName *" #> TextField(pet, Pet.petName, pet.petName, (s: String) => pet.petName = s).
+				withContainer(TdInputContainer(L(ProjectTexts.V.projectDialog_details_label_petName))) &
 			".saveButton" #> SHtml.ajaxSubmit(L(ProjectTexts.V.projectDialog_button_save), () => {
 				trace("Saving")
 				if (S.errors.isEmpty) {

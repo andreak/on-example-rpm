@@ -8,8 +8,7 @@ import javax.persistence._
 import no.officenet.example.rpm.projectmgmt.domain.model.enums.ProjectType
 import no.officenet.example.rpm.support.infrastructure.jpa.validation.{OptionalMax, OptionalPattern, MethodValidationGroup, ValidateWithMethod}
 
-import no.officenet.example.rpm.support.infrastructure.jpa.types.{OptionLongField, DateTimeField, StringField}
-
+import no.officenet.example.rpm.support.infrastructure.jpa.types._
 
 @Entity
 @Table(name = "t_project")
@@ -63,7 +62,8 @@ class Project(_created: DateTime, _createdBy: User) extends AbstractDomainObject
 
 object Project {
 	object name extends StringField[Project]
-	object description extends StringField[Project]
+	object description extends OptionStringField[Project]
 	object budget extends OptionLongField[Project]
 	object estimatedStartDate extends DateTimeField[Project]
+	object projectType extends JpaField[Project, ProjectType.ExtendedValue]
 }

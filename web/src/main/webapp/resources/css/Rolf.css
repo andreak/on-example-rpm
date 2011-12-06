@@ -56,3 +56,10 @@ select.value_error {
 	font-weight: bold;
 	text-decoration: underline;
 }
+
+.mandatory {
+	padding-left: 2px;
+	display: inline-block;
+	color: red;
+	font-size: 12px;
+}

@@ -36,34 +36,47 @@ final class ApplicableElem(in: Elem) {
 	def %(attr: SHtml.ElemAttr): Elem = attr.apply(in)
 }
 
-trait ValidatableScreen extends Loggable {
+private[lib] object ValidationCache {
+	val sizeMap = new HashMap[String, Option[Long]]
+	val mandatoryMap = new HashMap[String, Boolean]
+}
 
-	implicit def elemToApplicable(e: Elem): ApplicableElem = new ApplicableElem(e)
+trait ValidatableScreen extends Loggable {
 
 	// Needed for pattern-matching as one cannot use classOf[SomeType] as an extractor
 	val stringCls = classOf[String]
+	val shortCls = classOf[java.lang.Short]
+	val shortPrimitiveCls = java.lang.Short.TYPE
 	val intCls = classOf[java.lang.Integer]
-	val longPrimitiveCls = java.lang.Long.TYPE
+	val intPrimitiveCls = java.lang.Integer.TYPE
 	val longCls = classOf[java.lang.Long]
+	val longPrimitiveCls = java.lang.Long.TYPE
 	val floatCls = classOf[java.lang.Float]
+	val floatPrimitiveCls = java.lang.Float.TYPE
 	val doubleCls = classOf[java.lang.Double]
-	val bigDcmlCls = classOf[java.math.BigDecimal]
+	val doublePrimitiveCls = java.lang.Double.TYPE
+	val javaBigDcmlCls = classOf[java.math.BigDecimal]
+	val bigDcmlCls = classOf[BigDecimal]
 	val dateCls = classOf[java.util.Date]
 	val dateTimeCls = classOf[DateTime]
 	val optionCls = classOf[Option[_]]
 
 	private def convert[T](value: String, klass: Class[_], isOption: Boolean = false): T = {
+		def fixDecimalFormat(value: String) = value.replaceAll(" ", "").replaceAll(",", ".")
+
 		val converted = klass match {
-			case `stringCls` => value
-			case `intCls` => value.toInt
-			case `longCls` | `longPrimitiveCls` => value.toLong
-			case `floatCls` => value.toFloat
-			case `doubleCls` => value.toDouble
-			case `bigDcmlCls` => new java.math.BigDecimal(value)
-			case `dateCls` => Localizer.getDateFromString(L(GlobalTexts.dateformat_fullDate), value)
-			case `dateTimeCls` => Localizer.getDateTimeFromString(L(GlobalTexts.dateformat_fullDate), value)
-			case _ => throw new IllegalArgumentException("Don't know how to convert value " + value + " of type " + klass.getName)
-		}
+		case `stringCls` => value
+		case `shortCls` | `shortPrimitiveCls` => value.toShort
+		case `intCls` | `intPrimitiveCls` => value.toInt
+		case `longCls` | `longPrimitiveCls` => value.toLong
+		case `floatCls` | `floatPrimitiveCls` => fixDecimalFormat(value).toFloat
+		case `doubleCls` | `doublePrimitiveCls` => fixDecimalFormat(value).toDouble
+		case `javaBigDcmlCls` => new java.math.BigDecimal(fixDecimalFormat(value))
+		case `bigDcmlCls` => BigDecimal(fixDecimalFormat(value))
+		case `dateCls` => Localizer.getDateFromString(L(GlobalTexts.dateformat_fullDate), value)
+		case `dateTimeCls` => Localizer.getDateTimeFromString(L(GlobalTexts.dateformat_fullDate), value)
+		case _ => throw new IllegalArgumentException("Don't know how to convert value " + value + " of type " + klass.getName)
+	}
 		val retValue = if (isOption) {
 			Some(converted)
 		} else {
@@ -83,247 +96,454 @@ trait ValidatableScreen extends Loggable {
 		))
 	}
 
-	def labelDateInput[T](label:String, bean: AnyRef, field: javax.persistence.metamodel.Attribute[_, T], value: String, func: T => Any,
-					   isMandatory:Boolean, attrs: SHtml.ElemAttr*)(implicit m: Manifest[T]): NodeSeq = {
-		val r = getTextInputElement(bean, field.getName, value, func, m, attrs:_*)
-		val inputId: String = r._1
-		val containerId: String = r._2
-		val fieldErrors: Buffer[FieldError] = r._3
-		val textElement: NodeSeq = r._4
-		val errorSeq: NodeSeq = r._5
+	implicit def elemToApplicable(e: Elem): ApplicableElem = new ApplicableElem(e)
 
-		<td><label for={inputId}>{label}</label></td> ++
-		renderTextInputContainer(containerId, textElement, isMandatory, errorSeq, fieldErrors)
+	trait Label {
+		def label: () => NodeSeq
 	}
 
-	def dateInput[T](bean: AnyRef, field: javax.persistence.metamodel.Attribute[_, T], value: String, func: T => Any,
-					   isMandatory:Boolean, attrs: SHtml.ElemAttr*)(implicit m: Manifest[T]): NodeSeq = {
-		val r = getTextInputElement(bean, field.getName, value, func, m, attrs:_*)
-		val containerId: String = r._2
-		val fieldErrors: Buffer[FieldError] = r._3
-		val textElement: NodeSeq = r._4
-		val errorSeq: NodeSeq = r._5
+	implicit def string2NodeSeq(s: String) = Text(s)
 
-		renderInlineInputContainer(fieldErrors, containerId, textElement, isMandatory, errorSeq)
+	implicit def formField2NodeSeq(field: FormField[_,_]): NodeSeq = field.toForm
+
+	object Label {
+		def apply(l: => NodeSeq) = new Label{val label = () => l}
 	}
 
-	def labelTextInput[T](label: String, bean: AnyRef, field: javax.persistence.metamodel.Attribute[_, T], value: String,
-									func: T => Any, isMandatory: Boolean, attrs: SHtml.ElemAttr*)
-								   (implicit m: Manifest[T]): NodeSeq = {
-		labelTextInput[T](label, bean, field.getName, value, func, isMandatory, attrs: _*)(m)
+	trait InputContainerWithLabel[T] extends InputContainer[T] with Label {
 	}
 
-	def labelTextInput[T](label:String, bean: AnyRef, fieldName: String, value: String, func: T => Any,
-					   isMandatory:Boolean, attrs: SHtml.ElemAttr*)(implicit m: Manifest[T]): NodeSeq = {
-		val r = getTextInputElement(bean, fieldName, value, func, m, attrs:_*)
-		val inputId: String = r._1
-		val containerId: String = r._2
-		val fieldErrors: Buffer[FieldError] = r._3
-		val textElement: NodeSeq = r._4
-		val errorSeq: NodeSeq = r._5
+	trait InputContainer[T] {
+		var formField: FormField[_,T] = null
+		var isEditMode: () => Boolean = () => true
+		var readonlyCssClasses: Box[String] = Empty
 
-		<td><label for={inputId}>{label}</label></td> ++
-		renderTextInputContainer(containerId, textElement, isMandatory, errorSeq, fieldErrors)
+		protected def mandatoryIcon(isMandatory:Boolean) = {
+			if(isMandatory)
+				<div class="mandatory">*</div>
+			else{
+				NodeSeq.Empty
+			}
+		}
+
+		protected def getReadOnlyText: NodeSeq = {
+			val readOnlyText = if (formField.readOnlyFormatterFunc.isDefined) {
+				formField.readOnlyFormatterFunc.get.apply()
+			} else {
+				formField.defaultReadOnlyValue
+			}
+			if (readOnlyText == null || readOnlyText.trim.length == 0) {
+				NodeSeq.Empty
+			} else {
+				Text(readOnlyText)
+			}
+		}
+
+		protected def cssClasses: Box[String] = {
+			Seq(
+				Full("errorContainer").filter(s => !formField.fieldErrors.isEmpty),
+				readonlyCssClasses.filter(x => !isEditMode())
+			).flatten.reduceOption((a, b) => a + " " + b)
+		}
+
+		def withReadOnlyCssClasses(classes: String*) = {
+			readonlyCssClasses = Full(classes.mkString(" ")).filter(s => !s.isEmpty)
+			this
+		}
+
+		def toForm: NodeSeq
 	}
 
-	def textInput[T](bean: AnyRef, field: javax.persistence.metamodel.Attribute[_, T], value: String, func: T => Any,
-							   isMandatory:Boolean, attrs: SHtml.ElemAttr*)(implicit m: Manifest[T]): NodeSeq = {
-		textInput[T](bean, field.getName, value, func, isMandatory, attrs:_*)(m)
+	class InlineInputContainer[T](_formField: FormField[_,T]) extends InputContainer[T] {
+		formField = _formField
+
+		def toForm: NodeSeq = {
+			(".inputContainer [class+]" #> cssClasses)
+				.apply(
+				<div style="display: inline-block" id={formField.containerId} class="inputContainer">
+					{
+					if (isEditMode()) {
+						getReadOnlyText
+					} else {
+						formField.textElement ++ mandatoryIcon(formField.isMandatory) ++ formField.errorSeq
+					}
+					}
+				</div>
+			)
+		}
+
 	}
 
-	def textInput[T](bean: AnyRef, fieldName: String, value: String, func: T => Any,
-					isMandatory:Boolean, attrs: SHtml.ElemAttr*)(implicit m: Manifest[T]): NodeSeq = {
-		val r = getTextInputElement(bean, fieldName, value, func, m, attrs:_*)
-		val containerId: String = r._2
-		val fieldErrors: Buffer[FieldError] = r._3
-		val textElement: NodeSeq = r._4
-		val errorSeq: NodeSeq = r._5
-
-		renderInlineInputContainer(fieldErrors, containerId, textElement, isMandatory, errorSeq)
+	object InlineInputContainer {
+		def apply[T](formField: FormField[_,T]):InputContainer[T] = new InlineInputContainer[T](formField)
 	}
 
-	def labelTextAreaInput[T](label: String, bean: AnyRef, field: javax.persistence.metamodel.Attribute[_, String], value: String,
-									func: T => Any, isMandatory: Boolean, attrs: SHtml.ElemAttr*)(implicit m: Manifest[T]): NodeSeq = {
-		labelTextAreaInput[T](label, bean, field.getName, value, func, isMandatory, attrs: _*)(m)
+	class TdInputContainer[T](_label: Label, editModeFunc: Box[() => Boolean]) extends InputContainerWithLabel[T] {
+
+		def this(label: Label) {
+			this(label, Empty)
+		}
+
+		def this(label: String) {
+			this(Label(Text(label)), Empty)
+		}
+
+		def this(label: String, editModeFunc: () => Boolean) {
+			this(Label(Text(label)), Full(editModeFunc))
+		}
+
+		var label = _label.label
+		isEditMode = editModeFunc.openOr(isEditMode)
+
+		def toForm: NodeSeq = {
+			<td><label for={formField.inputId}>{label()}</label></td> ++
+			("td [class+]" #> cssClasses)
+				.apply(
+				<td id={formField.containerId}>
+					{
+					if (isEditMode()) {
+						formField.textElement ++ mandatoryIcon(formField.isMandatory) ++ formField.errorSeq
+					} else {
+						getReadOnlyText
+					}
+					}
+				</td>
+			)
+		}
+
 	}
 
-	def labelTextAreaInput[T](label:String, bean: AnyRef, fieldName: String, value: String, func: T => Any,
-					   isMandatory:Boolean, attrs: SHtml.ElemAttr*)(implicit m: Manifest[T]): NodeSeq = {
-		val r = getTextAreaInputElement(bean, fieldName, value, func, m, attrs:_*)
-		val inputId: String = r._1
-		val containerId: String = r._2
-		val fieldErrors: Buffer[FieldError] = r._3
-		val textElement: NodeSeq = r._4
-		val errorSeq: NodeSeq = r._5
+	object TdInputContainer {
+		def apply[T](_label: String):InputContainer[T] = new TdInputContainer[T](Label(Text(_label)))
 
-		<td><label for={inputId}>{label}</label></td> ++
-		renderTextInputContainer(containerId, textElement, isMandatory, errorSeq, fieldErrors)
+		def apply[T](_label: Label):InputContainer[T] = new TdInputContainer[T](_label)
+
+		def apply[T](_label: String, editModeFunc: () => Boolean):InputContainer[T] = new TdInputContainer[T](_label, editModeFunc)
 	}
 
-	def textAreaInput[T](bean: AnyRef, field: javax.persistence.metamodel.Attribute[_, String], value: String, func: T => Any,
-					  isMandatory:Boolean, attrs: SHtml.ElemAttr*)(implicit m: Manifest[T]): NodeSeq = {
-		textAreaInput[T](bean, field.getName, value, func, isMandatory, attrs:_*)(m)
-	}
+	trait TextFormField[A <: AnyRef, T] extends FormField[A, T] {
+		type K = String
 
-	def textAreaInput[T](bean: AnyRef, fieldName: String, value: String, func: T => Any,
-					  isMandatory:Boolean, attrs: SHtml.ElemAttr*)(implicit m: Manifest[T]): NodeSeq = {
-		val r = getTextAreaInputElement(bean, fieldName, value, func, m, attrs:_*)
-		val containerId: String = r._2
-		val fieldErrors: Buffer[FieldError] = r._3
-		val textElement: NodeSeq = r._4
-		val errorSeq: NodeSeq = r._5
+		def defaultReadOnlyValueFunc(k: K): String = k
 
-		renderInlineInputContainer(fieldErrors, containerId, textElement, isMandatory, errorSeq)
-	}
+		protected final def getInputElementDrus(fieldErrors: Buffer[FieldError], klass: Class[_], isOption: Boolean): Elem = {
+			val func: (String) => Any = (s) => {
+				validateInput(s, bean, fieldName, assignmentCallback, additionalValidationFunc, additionalErrorMessageFunc,
+							  klass, isOption)
+			}
+			val inputSeq = getInputElement(tryo {fieldErrors(0).errorValue}.getOrElse(nullSafeString(defaultValue)), func)
+			inputSeq
+		}
 
-	/**
-	 * For use with manual (non-JPA) validation by passing a validationFunc: String => Boolean. If it evaluates to false a field-error containing
-	 * the errorMessage: (String) => String is created and shown
-	 */
-	def labelTextInput(label:String, bean: AnyRef, fieldName: String, value: String, func: String => Any,
-					   validationFunc: String => Boolean, errorMessage: (String) => String, isMandatory:Boolean,attrs: SHtml.ElemAttr*): NodeSeq = {
-		val inputId = nextFuncName
-		val containerId = nextFuncName
-		val fieldErrors = getFieldErrors(bean, fieldName)
-		val errorSeq = getErrorsSeq(fieldErrors)
-		val textElement = addErrorClass(fieldErrors, {
-			SHtml.text(tryo{fieldErrors(0).errorValue}.getOrElse(nullSafeString(value)), (s) => {
-				if (!validationFunc(s)) {
-					registerError(bean, fieldName, s, errorMessage(s))
-				} else {
-					func(s)
-				}
-			}, attrs: _*) % ("id" -> inputId) % ("onblur" -> SHtml.onEvent((s) => {
+		protected final def getOnEventValidation(inputSeq: Elem, klass: Class[_], isOption: Boolean): Elem = {
+			val oldOnBlurAttribute = inputSeq.attribute("onblur")
+			val validationOnBlur = onBlurForTextInput(bean, fieldName, assignmentCallback, additionalValidationFunc,
+													  additionalErrorMessageFunc, ajaxCallbackFunc, inputId, containerId,
+													  klass, isOption)
+			if (oldOnBlurAttribute.isDefined) {
+				val oldOnBlur = oldOnBlurAttribute.get.text
+				if (oldOnBlur.trim().length() > 0) {
+					inputSeq % ("onblur" -> ("if (" + getAsAnonFunc(oldOnBlur) + ") {" + validationOnBlur + "}"))
+				} else inputSeq
+			} else {
+				inputSeq % ("onblur" -> validationOnBlur)
+			}
+		}
+
+		private def onBlurForTextInput[T](bean: AnyRef, fieldName: String, func: (T) => Any,
+										  additionalValidationFunc: Box[T => Boolean] = Empty,
+										  additionalErrorMessageFunc: Box[String => String] = Empty,
+										  ajaxCallbackFunc: Box[T => JsCmd] = Empty,
+										  inputId: String, containerId: String, klass: Class[_], isOption: Boolean) = {
+			SHtml.onEvent((s) => {
 				cleanErrorsForProperty(bean, fieldName) // Important to clear errors for this field in case previous action was "submit" on form
-				if (!validationFunc(s)) {
-					registerError(bean, fieldName, s, errorMessage(s))
-				}
+				val convertedValue = validateInput(s, bean, fieldName, func, additionalValidationFunc, additionalErrorMessageFunc, klass, isOption)
 				val fieldErrors = getFieldErrors(bean, fieldName)
 				val errorSeq: NodeSeq = getErrorsSeq(fieldErrors)
 				cleanErrorsForProperty(bean, fieldName)
-				if (fieldErrors.isEmpty) {
+				val errorHandlerCmd = if (fieldErrors.isEmpty) {
 					Call("Rolf.removeFieldError", containerId, inputId)
 				} else {
 					Call("Rolf.attachFieldError", containerId, inputId, errorSeq.toString())
 				}
-			})._2.toJsCmd)
-		})
-		<td><label for={inputId}>{label}</label></td> ++
-		renderTextInputContainer(containerId, textElement, isMandatory, errorSeq, fieldErrors)
+				val extraCmd: JsCmd = convertedValue match {
+					case d: java.util.Date => JsRaw("$(%s).value=%s".format(inputId.encJs, Localizer.formatDate(L(GlobalTexts.dateformat_fullDate), d, S.locale).encJs))
+					case d: DateTime => JsRaw("$(%s).value=%s".format(inputId.encJs, Localizer.formatDateTime(L(GlobalTexts.dateformat_fullDate), Full(d), S.locale).get.encJs))
+					case _ => Noop
+				}
+				errorHandlerCmd & extraCmd & (if (fieldErrors.isEmpty) ajaxCallbackFunc.map(f => f(convertedValue.asInstanceOf[T])).openOr(Noop) else Noop)
+			})._2.toJsCmd
+		}
+
 	}
 
-	def labelSelect[T](label: String, bean: AnyRef, field: javax.persistence.metamodel.Attribute[_, T], options: Seq[T],
-								 default: T, func: (T) => Any, valueLabel: (T) => String, isMandatory: Boolean, attrs: SHtml.ElemAttr*)
-								(implicit m: Manifest[T]): NodeSeq = {
-		labelSelect[T](label, bean, field.getName, options, default, func, valueLabel, isMandatory, attrs: _*)(m)
-	}
+	trait PicableFormField[A <: AnyRef, T] extends FormField[A, T] {
+		type K = T
 
-	def labelSelect[T](label: String, bean: AnyRef, fieldName: String, options: Seq[T], default: T, func: (T) => Any,
-								 valueLabel: (T) => String, isMandatory: Boolean, attrs: SHtml.ElemAttr*)(implicit m: Manifest[T]): NodeSeq = {
-		val allOptions:Seq[(T, String)] = options.map(t => (t, valueLabel(t))).toList
-		val inputId = nextFuncName
-		val containerId = nextFuncName
-		val fieldErrors = getFieldErrors(bean, fieldName)
-		val errorSeq = getErrorsSeq(fieldErrors)
+		protected final def getInputElementDrus(fieldErrors: Buffer[FieldError], klass: Class[_], isOption: Boolean): Elem = {
+			val inputSeq = getInputElement(defaultValue, assignmentCallback)
+			inputSeq
+		}
 
-		val secure = allOptions.map {case (obj, txt) => (obj, randomString(20), txt)}
-
-		val textElement = addErrorClass(fieldErrors, {
-			val (nonces, defaultNonce, secureOnSubmit) =
-				secureOptions(secure, Full(default), (selectedItem:T) => {
-					func(selectedItem)
+		protected def onEventForSelect[T](secure: Seq[(T, String, String)], bean: AnyRef, fieldName: String, assignmentCallback: (T) => Any,
+										  inputId: String, containerId: String, onSelectAjaxCallback: Box[T => JsCmd] = Empty)(implicit m: Manifest[T]) = {
+			SHtml.onEvent((s) => {
+				cleanErrorsForProperty(bean, fieldName) // Important to clear errors for this field in case previous action was "submit" on form
+				//			trace("onChangeForSelect: " + s)
+				secure.find(_._2 == s).map{x =>
+					val element = x._1
+					//				trace("onChangeForSelect.element: " + element)
+					assignmentCallback(element)
 					registerPropertyViolations(bean, fieldName)
 					registerBeanViolations(bean, fieldName)
-				})
+					val fieldErrors = getFieldErrors(bean, fieldName)
+					val errorSeq: NodeSeq = getErrorsSeq(fieldErrors)
+					cleanErrorsForProperty(bean, fieldName)
+					if (fieldErrors.isEmpty) {
+						Call("Rolf.removeFieldError", containerId, inputId) & onSelectAjaxCallback.map(f => f(element)).openOr(Noop)
+					} else {
+						Call("Rolf.attachFieldError", containerId, inputId, errorSeq.toString()) & onSelectAjaxCallback.map(f => f(element)).openOr(Noop)
+					}
+										  }.getOrElse(Noop)
+			})._2.toJsCmd
+		}
 
-			SHtml.select_*(nonces, defaultNonce, secureOnSubmit, attrs: _*) % ("id" -> inputId) %
-			("onchange" -> onChangeForSelect(secure, bean, fieldName, func, inputId, containerId, m.erasure.asInstanceOf[Class[T]]))
-		})
-		<td><label for={inputId}>{label}</label></td> ++
-		renderTextInputContainer(containerId, textElement, isMandatory, errorSeq, fieldErrors)
 	}
 
-	def labelAjaxSelect[T](label:String, bean: AnyRef, fieldName: String, options:Seq[T], default:T, onSelect: (T)=> JsCmd,
-						   valueLabel: (T) => String, isMandatory:Boolean, attrs: SHtml.ElemAttr*):NodeSeq = {
-		val allOptions:Seq[(T, String)] = (null.asInstanceOf[T] , L(GlobalTexts.select_noItemSelected)) :: options.map(t => (t, valueLabel(t))).toList
+	trait FormField[A <: AnyRef, T] {
+		type K
+		private def mandatory(bean: A, fieldName: String): Boolean = {
+			val c = bean.getClass
+			val s = c.getName + "." + fieldName
+			val cached = ValidationCache.mandatoryMap.get(s)
+
+			if (cached.isDefined) {
+				return cached.get
+			}
+
+			val beanDescriptor = validator.getConstraintsForClass(c)
+			val pd = beanDescriptor.getConstraintsForProperty(fieldName)
+
+			if (pd != null) {
+				pd.getConstraintDescriptors.foreach(cd =>
+														if (cd.getAnnotation.isInstanceOf[javax.validation.constraints.NotNull]) {
+															ValidationCache.mandatoryMap.put(s, true)
+															return true
+														}
+				)
+			}
+			ValidationCache.mandatoryMap.put(s, false)
+			false
+		}
+
+		private def getClassFromManifest[T](m: Manifest[T]): (Class[_], Boolean) = {
+			val klass = m.erasure
+			val isOption: Boolean = klass == optionCls
+			val fish = if (isOption && m.typeArguments.length > 0) m.typeArguments.head.erasure else klass
+			(fish, isOption)
+		}
+
+		protected def getAsAnonFunc(jsExp: String): String = {
+			"(" + AnonFunc(Run(jsExp)).toJsCmd + ").bind(this)()"
+		}
+
+		private def getFormInputElement: (Buffer[FieldError], NodeSeq, NodeSeq) = {
+			val fieldErrors = getFieldErrors(bean, fieldName)
+			val errorSeq = getErrorsSeq(fieldErrors)
+
+			val maxLength = getMaxLengthOfProperty(bean, fieldName)
+			val (klass, isOption) = getClassFromManifest(manifest)
+
+			var inputSeq = getInputElementDrus(fieldErrors, klass, isOption) %
+						   ("id" -> inputId) %
+						   maxLength.map(length => ("maxlength" -> length.toString):MetaData).getOrElse(Null)
+
+			inputSeq = getOnEventValidation(inputSeq, klass, isOption)
+
+			val textElement = addErrorClass(fieldErrors, inputSeq)
+			(fieldErrors, textElement, errorSeq)
+		}
+
+		protected def getInputElementDrus(fieldErrors: Buffer[FieldError], klass: Class[_], isOption: Boolean): Elem
+		protected def getInputElement(value: K, func: K => Any): Elem
+		protected def getOnEventValidation(inputSeq: Elem, klass: Class[_], isOption: Boolean): Elem
+
 		val inputId = nextFuncName
 		val containerId = nextFuncName
-		val fieldErrors = getFieldErrors(bean, fieldName)
-		val errorSeq = getErrorsSeq(fieldErrors)
 
-		val textElement = SHtml.ajaxSelectObj(allOptions, Full(default), (selectedItem:T) => {
-			val retVal = onSelect(selectedItem)
-			cleanErrorsForProperty(bean, fieldName)
-			registerPropertyViolations(bean, fieldName) // This also registers errors
-			registerBeanViolations(bean, fieldName)
-			val fieldErrors = getFieldErrors(bean, fieldName)
-			val errorSeq: NodeSeq = getErrorsSeq(fieldErrors)
-			cleanErrorsForProperty(bean, fieldName)
-			if (fieldErrors.isEmpty) {
-				Call("Rolf.removeFieldError", containerId, inputId) &
-				retVal
-			} else {
-				Call("Rolf.attachFieldError", containerId, inputId, errorSeq.toString())
-			}
+		lazy val (fieldErrors, textElement, errorSeq) = getFormInputElement
+
+		def toForm = container.toForm
+
+		def manifest: Manifest[T]
+
+		def bean: A
+		def fieldName: String
+		def defaultValue: K
+
+		protected def defaultReadOnlyValueFunc(value: K): String
+
+		final def defaultReadOnlyValue: String = {
+			defaultReadOnlyValueFunc(defaultValue)
 		}
-											  , attrs: _*) % ("id" -> inputId)
 
-		<td><label for={inputId}>{label}</label></td> ++
-		renderTextInputContainer(containerId, textElement, isMandatory, errorSeq, fieldErrors)
+		def assignmentCallback: T => Any
+
+		def isMandatory = mandatory(bean, fieldName) || mandatory
+
+		private var mandatory = false
+		var container: InputContainer[T] = InlineInputContainer[T](this)
+		var additionalValidationFunc: Box[T => Boolean] = Empty
+		var additionalErrorMessageFunc: Box[String => String] = Empty
+		var ajaxCallbackFunc: Box[T => JsCmd] = Empty
+		var attrs: Seq[SHtml.ElemAttr] = Nil
+		var readOnlyFormatterFunc: Box[() => String] = Empty
+
+		def withContainer(container: InputContainer[T]): this.type = {
+			container.formField = this
+			this.container = container
+			this
+		}
+
+		def withAdditionalValidationFunc(func: T => Boolean): this.type = {
+			this.additionalValidationFunc = Full(func)
+			this
+		}
+
+		def withAdditionalErrorMessageFunc(func: String => String): this.type = {
+			this.additionalErrorMessageFunc = Full(func)
+			this
+		}
+
+		def withAjaxCallbackFunc(func: T => JsCmd): this.type = {
+			this.ajaxCallbackFunc = Full(func)
+			this
+		}
+
+		def withMandatory(isMandatory: Boolean): this.type = {
+			this.mandatory = isMandatory
+			this
+		}
+
+		def withAttrs(attrs: SHtml.ElemAttr*): this.type = {
+			this.attrs = attrs
+			this
+		}
+
+		def withReadOnlyFormatter(formatterFunc: => String): this.type = {
+			readOnlyFormatterFunc = Full(() => formatterFunc)
+			this
+		}
+
 	}
 
-	final case class StrFuncElemAttr[T](name: String, value: (T) => String) extends SHtml.ElemAttr {
+	abstract class AbstractFormField[A <: AnyRef, T](implicit m: Manifest[T]) {
+		self: FormField[A, T]  =>
+		val manifest = m
+	}
+
+	abstract class JpaFormField[A <: AnyRef, T](field: javax.persistence.metamodel.Attribute[A, T])(implicit m: Manifest[T])
+		extends AbstractFormField[A, T] {
+		self: FormField[A, T]  =>
+		def fieldName = field.getName
+	}
+
+	object TextField {
+		def apply[A <: AnyRef, T](bean: A, field: javax.persistence.metamodel.Attribute[A, T], defaultValue: String,
+											assignmentCallback: T => Any)(implicit m: Manifest[T]) =
+			new TextField[A, T](bean, field, defaultValue, assignmentCallback)
+	}
+
+	class TextField[A <: AnyRef, T](val bean: A,
+									val field: javax.persistence.metamodel.Attribute[A, T],
+									val defaultValue: TextFormField[A, T]#K,
+									val assignmentCallback: T => Any)(implicit m: Manifest[T])
+		extends JpaFormField[A, T](field) with TextFormField[A, T] {
+		def getInputElement(value: String, func: String => Any): Elem = {
+			SHtml.text(value, func, attrs: _*)
+		}
+	}
+
+	object TextAreaField {
+		def apply[A <: AnyRef, T](bean: A, field: javax.persistence.metamodel.Attribute[A, T], defaultValue: String,
+								  assignmentCallback: T => Any)(implicit m: Manifest[T]) =
+			new TextAreaField[A, T](bean, field, defaultValue, assignmentCallback)
+	}
+
+	class TextAreaField[A <: AnyRef, T](val bean: A,
+										val field: javax.persistence.metamodel.Attribute[A, T],
+										val defaultValue: TextFormField[A, T]#K,
+										val assignmentCallback: T => Any)(implicit m: Manifest[T])
+		extends JpaFormField[A, T](field) with TextFormField[A, T] {
+		def getInputElement(value: String, func: String => Any): Elem = {
+			SHtml.textarea(value, func, attrs: _*)
+		}
+	}
+
+	object SelectField {
+		def apply[A <: AnyRef, T](bean: A,
+								  field: javax.persistence.metamodel.Attribute[A, T],
+								  options: Seq[(T, List[SHtml.ElemAttr])],
+								  defaultValue: T,
+								  assignmentCallback: T => Any,
+								  valueLabel: (T,Int) => String)(implicit m: Manifest[T]) =
+			new SelectField[A, T](bean, field, options, defaultValue, assignmentCallback, valueLabel)
+	}
+
+	class SelectField[A <: AnyRef, T](val bean: A,
+									  val field: javax.persistence.metamodel.Attribute[A, T],
+									  options: Seq[(T, List[SHtml.ElemAttr])],
+									  val defaultValue: T,
+									  val assignmentCallback: T => Any,
+									  valueLabel: (T,Int) => String)(implicit m: Manifest[T])
+		extends JpaFormField[A, T](field) with PicableFormField[A, T] {
+
+
+		def defaultReadOnlyValueFunc(value: T): String = defaultValue match {
+			case null => null
+			case _ => valueLabel(defaultValue, 0)
+		}
+
+		val allOptions:Seq[(T, String, List[SHtml.ElemAttr])] =
+			options.zipWithIndex.map{case ((t, oattrs), idx) => (t, valueLabel(t, idx), oattrs)}.toList
+
+		val secure = allOptions.map {case (obj, txt, oattrs) => (obj, randomString(20), txt, oattrs)}
+
+		val (nonces, defaultNonce, secureOnSubmit) =
+			secureOptionsWithDrus(secure, Full(defaultValue), (selectedItem:T) => {
+				assignmentCallback(selectedItem)
+				registerPropertyViolations(bean, fieldName)
+				registerBeanViolations(bean, fieldName)
+			})
+
+		def getInputElement(defaultValue: T, assignmentCallback: (T) => Any): Elem = {
+			val inputSeq = ritchSelect_*(nonces, defaultNonce, secureOnSubmit, attrs: _*)
+			inputSeq
+		}
+
+		protected final def getOnEventValidation(inputSeq: Elem, klass: Class[_], isOption: Boolean): Elem = {
+			val oldOnChangeAttribute = inputSeq.attribute("onchange")
+			val validationOnChange = onEventForSelect(secure.map{case (obj, nonce, txt, oattrs) => (obj, nonce, txt)},
+													  bean, fieldName, assignmentCallback,
+													  inputId, containerId, ajaxCallbackFunc)
+			if (oldOnChangeAttribute.isDefined) {
+				val oldOnChange = oldOnChangeAttribute.get.text
+				if (oldOnChange.trim().length() > 0) {
+					inputSeq % ("onchange" -> ("if (" + getAsAnonFunc(oldOnChange) + ") {" + validationOnChange + "}"))
+				} else inputSeq
+			} else {
+				inputSeq % ("onchange" -> validationOnChange)
+			}
+		}
+
+	}
+
+		final case class StrFuncElemAttr[T](name: String, value: (T) => String) extends SHtml.ElemAttr {
 		/**
 		 * Apply the attribute to the element
 		 */
 		def apply(in: Elem): Elem = in % (name -> ((s:T) => value(s)))
 		def apply(in: T): SHtml.ElemAttr = (name -> value(in))
-	}
-
-	private def selected(in: Boolean) = if (in) new UnprefixedAttribute("selected", "selected", Null) else Null
-
-	private def ritchSelect_*(opts: Seq[(String, String, List[SHtml.ElemAttr])], deflt: Box[String],
-							  func: AFuncHolder, attrs: SHtml.ElemAttr*): Elem = {
-		val vals = opts.map(_._1)
-		val testFunc = LFuncHolder(in => in.filter(v => vals.contains(v)) match {case Nil => false case xs => func(xs)}, func.owner)
-
-		attrs.foldLeft(S.fmapFunc(testFunc)(fn => <select name={fn}>{opts.flatMap {case (value, text, optAttrs) =>
-			optAttrs.foldLeft(<option value={value}>{text}</option>)(_ % _) % selected(deflt.exists(_ == value)) }}</select>))(_ % _)
-	}
-
-	def labelSelect2[T](label: String, bean: AnyRef, fieldName: String, options: Seq[(T, List[SHtml.ElemAttr])], default: T, func: (T) => Any,
-								 valueLabel: (T) => String, isMandatory:Boolean, attrs: SHtml.ElemAttr*)(implicit m: Manifest[T]): NodeSeq = {
-		val allOptions:Seq[(T, String, List[SHtml.ElemAttr])] = options.map{case (t, oattrs) => (t, valueLabel(t), oattrs)}.toList
-		val inputId = nextFuncName
-		val containerId = nextFuncName
-		val fieldErrors = getFieldErrors(bean, fieldName)
-		val errorSeq = getErrorsSeq(fieldErrors)
-
-		val secure = allOptions.map {case (obj, txt, oattrs) => (obj, randomString(20), txt, oattrs)}
-
-		val (nonces, defaultNonce, secureOnSubmit) =
-			secureOptionsWithDrus(secure, Full(default), (selectedItem:T) => {
-				func(selectedItem)
-				registerPropertyViolations(bean, fieldName)
-				registerBeanViolations(bean, fieldName)
-			})
-
-		val textElement = addErrorClass(fieldErrors, {
-			ritchSelect_*(nonces, defaultNonce, secureOnSubmit, attrs: _*) % ("id" -> inputId) %
-			("onchange" -> onChangeForSelect(secure.map{case (obj, nonce, txt, oattrs) => (obj, nonce, txt)}, bean, fieldName, func, inputId, containerId, m.erasure.asInstanceOf[Class[T]]))
-		})
-		<td><label for={inputId}>{label}</label></td> ++
-		renderTextInputContainer(containerId, textElement, isMandatory, errorSeq, fieldErrors)
-	}
-
-	private def secureOptionsWithDrus[T](secure: Seq[(T, String, String, List[SHtml.ElemAttr])], default: Box[T],
-								 onSubmit: T => Any): (Seq[(String, String, List[SHtml.ElemAttr])], Box[String], AFuncHolder) = {
-		val defaultNonce = default.flatMap(d => secure.find(_._1 == d).map(_._2))
-		val nonces = secure.map {case (obj, nonce, txt, oattrs) => (nonce, txt, oattrs)}
-		def process(nonce: String) {
-			secure.find(_._2 == nonce).map(x => onSubmit(x._1))
-		}
-		(nonces, defaultNonce, S.SFuncHolder(process))
 	}
 
 	def ritchRadioElem[T](opts: Seq[T], deflt: Box[T], attrs: SHtml.ElemAttr*)
@@ -383,17 +603,28 @@ trait ValidatableScreen extends Loggable {
 	///////////////////////
 	// private methods
 
-	private def secureOptions[T](secure: Seq[(T, String, String)], default: Box[T],
-								 onSubmit: T => Any): (Seq[(String, String)], Box[String], AFuncHolder) = {
+
+	private def ritchSelect_*(opts: Seq[(String, String, List[SHtml.ElemAttr])], deflt: Box[String],
+							  func: AFuncHolder, attrs: SHtml.ElemAttr*): Elem = {
+		def selected(in: Boolean) = if (in) new UnprefixedAttribute("selected", "selected", Null) else Null
+		val vals = opts.map(_._1)
+		val testFunc = LFuncHolder(in => in.filter(v => vals.contains(v)) match {case Nil => false case xs => func(xs)}, func.owner)
+
+		attrs.foldLeft(S.fmapFunc(testFunc)(fn => <select name={fn}>{opts.flatMap {case (value, text, optAttrs) =>
+			optAttrs.foldLeft(<option value={value}>{text}</option>)(_ % _) % selected(deflt.exists(_ == value)) }}</select>))(_ % _)
+	}
+
+	private def secureOptionsWithDrus[T](secure: Seq[(T, String, String, List[SHtml.ElemAttr])], default: Box[T],
+								 onSubmit: T => Any): (Seq[(String, String, List[SHtml.ElemAttr])], Box[String], AFuncHolder) = {
 		val defaultNonce = default.flatMap(d => secure.find(_._1 == d).map(_._2))
-		val nonces = secure.map {case (obj, nonce, txt) => (nonce, txt)}
+		val nonces = secure.map {case (obj, nonce, txt, oattrs) => (nonce, txt, oattrs)}
 		def process(nonce: String) {
 			secure.find(_._2 == nonce).map(x => onSubmit(x._1))
 		}
 		(nonces, defaultNonce, S.SFuncHolder(process))
 	}
 
-	private def registerFieldViolations(bean: AnyRef, fieldName: String, newValue: Any) {
+	private def registerFieldViolations[T](bean: AnyRef, fieldName: String, newValue: T) {
 		val fieldErrors = validator.validateValue(bean.getClass, fieldName, newValue)
 		for (fieldError <- fieldErrors) {
 			trace("Validation-violation for "+bean.getClass.getName+ "("+System.identityHashCode(bean)+") field: "+fieldName+": "+fieldError)
@@ -415,7 +646,6 @@ trait ValidatableScreen extends Loggable {
 		trace("Extra-errors for field: " + fieldName + ": " + extraErrors)
 
 		for (fieldError <- extraErrors) {
-			trace("Validation-violation for field: "+fieldName+": "+fieldError)
 			val fieldValue = ReflectionUtils.getFieldValue(fieldName, bean)
 			registerError(bean, fieldName, if (fieldValue != null) fieldValue.toString else null, fieldError.getMessage)
 		}
@@ -438,7 +668,7 @@ trait ValidatableScreen extends Loggable {
 		}
 		errorsForField += fieldError
 		S.error(fieldError.errorId, errorMessage)
-//		trace("Registered errors so far: " + errorsMap)
+		trace("Registered errors so far: " + errorsMap)
 	}
 
 	private def cleanErrorsForProperty(key: AnyRef, property: String) {
@@ -459,112 +689,73 @@ trait ValidatableScreen extends Loggable {
 		}
 	}
 
-	private def mandatoryIcon(isMandatory:Boolean) = {
-		if(isMandatory)
-			<div class="mandatory">*</div>
-		else{
-			NodeSeq.Empty
+	private def convertInputValue[T](bean: AnyRef, fieldName: String, newValue: String, klass: Class[_], isOption: Boolean): T = {
+		val convertedValue: T = if (newValue == null) {
+			if (isOption) {
+				None.asInstanceOf[T]
+			} else {
+				null.asInstanceOf[T]
+			}
+		} else {
+			convert(newValue, klass, isOption)
+		}
+		convertedValue
+	}
+
+	private def doFieldAndBeanValidation[T](bean: AnyRef, fieldName: String, convertedValue: T) {
+		registerFieldViolations(bean, fieldName, convertedValue)
+		registerBeanViolations(bean, fieldName)
+	}
+
+	private def doValidation[T](bean: AnyRef, fieldName: String, convertedValue: T, inputValue: String, additionalValidationFunc: Box[(T) => Boolean] = Empty, additionalErrorMessageFunc: Box[(String) => String] = Empty) {
+		if (!(additionalValidationFunc.isDefined && additionalErrorMessageFunc.isDefined ||
+				additionalValidationFunc.isEmpty && additionalErrorMessageFunc.isEmpty)) {
+			throw new IllegalArgumentException("additionalValidationFunc AND additionalErrorMessageFunc must be both Full or both Empty")
+		}
+		doFieldAndBeanValidation(bean, fieldName, convertedValue)
+		val tmpFieldErrors = getFieldErrors(bean, fieldName)
+		if (tmpFieldErrors.isEmpty) {
+			additionalValidationFunc.foreach(f => {
+				if (!f(convertedValue)) {
+					additionalErrorMessageFunc.foreach(emFunc => registerError(bean, fieldName, inputValue, emFunc(inputValue)))
+				}
+			})
+		} else {
+			if (log.isTraceEnabled && additionalValidationFunc.isDefined) {
+				trace("tmpFieldErrors: " + tmpFieldErrors)
+			}
 		}
 	}
 
-	private def validateInput[T](s: String, bean: AnyRef, fieldName: String, func: (T) => Any, klass: Class[_], isOption: Boolean): Any = {
-		val newValue = if (s == null || s.trim().isEmpty) null else s.trim()
+	private def validateInput[T](inputValue: String, bean: AnyRef, fieldName: String, assignmentCallback: (T) => Any,
+								 additionalValidationFunc: Box[T => Boolean] = Empty,
+								 additionalErrorMessageFunc: Box[String => String] = Empty,
+								 klass: Class[_], isOption: Boolean): Any = {
+		val newValue = if (inputValue == null || inputValue.trim().isEmpty) null else inputValue.trim()
 		try {
-			val convertedValue: T = if (newValue == null) {
-				if (isOption) {
-					None.asInstanceOf[T]
-				} else {
-					null.asInstanceOf[T]
-				}
-			} else {
-				convert(newValue, klass, isOption = isOption)
-			}
-			func(convertedValue)
+			val convertedValue: T = convertInputValue(bean, fieldName, newValue, klass, isOption)
+			assignmentCallback(convertedValue)
 			trace("dateformat_fullDate: " + L(GlobalTexts.dateformat_fullDate))
 			trace("S.locale: " + S.locale)
 			trace("Validating field: " + fieldName + " with value '" + convertedValue + "'")
-			registerFieldViolations(bean, fieldName, convertedValue)
-			registerBeanViolations(bean, fieldName)
+			doValidation(bean, fieldName, convertedValue, inputValue, additionalValidationFunc, additionalErrorMessageFunc)
 			convertedValue
 		} catch {
-			case e: javax.validation.ValidationException => throw e
 			case e: NumberFormatException =>
 				registerError(bean, fieldName, if (newValue != null) newValue.toString else null,
-							  L(GlobalTexts.validation_notANumber_number_text, s))
-				s
+							  L(GlobalTexts.validation_notANumber_number_text, inputValue))
+				inputValue
 			case e: InvalidDateException =>
 				registerError(bean, fieldName, if (newValue != null) newValue.toString else null,
-							  L(GlobalTexts.validation_invalidDate_text, s))
-				s
+							  L(GlobalTexts.validation_invalidDate_text, inputValue))
+				inputValue
 		}
 	}
-
-	private def renderTextInputContainer(containerId: String, textElement: NodeSeq, isMandatory: Boolean, errorSeq: NodeSeq,
-								 fieldErrors: Buffer[FieldError], extraInfo: NodeSeq = NodeSeq.Empty): Elem = {
-		("td [class+]" #> Full("errorContainer").filter(s => !fieldErrors.isEmpty))
-		(<td id={containerId}>
-			 {textElement ++ mandatoryIcon(isMandatory) ++ errorSeq ++ extraInfo}
-		 </td>)
-	}
-
-	private def onBlurForTextInput[T](bean: AnyRef, fieldName: String, func: (T) => Any, inputId: String, containerId: String, klass: Class[_], isOption: Boolean) = {
-		SHtml.onEvent((s) => {
-			cleanErrorsForProperty(bean, fieldName) // Important to clear errors for this field in case previous action was "submit" on form
-			val convertedValue = validateInput(s, bean, fieldName, func, klass, isOption)
-			val fieldErrors = getFieldErrors(bean, fieldName)
-			val errorSeq: NodeSeq = getErrorsSeq(fieldErrors)
-			cleanErrorsForProperty(bean, fieldName)
-			val errorHandlerCmd = if (fieldErrors.isEmpty) {
-				Call("Rolf.removeFieldError", containerId, inputId)
-			} else {
-				Call("Rolf.attachFieldError", containerId, inputId, errorSeq.toString())
-			}
-			val extraCmd: JsCmd = convertedValue match {
-				case d: java.util.Date => JsRaw("$(%s).value=%s".format(inputId.encJs, Localizer.formatDate(L(GlobalTexts.dateformat_fullDate), d, S.locale).encJs))
-				case d: DateTime => JsRaw("$(%s).value=%s".format(inputId.encJs, Localizer.formatDateTime(L(GlobalTexts.dateformat_fullDate), Full(d), S.locale).get.encJs))
-				case _ => Noop
-			}
-			errorHandlerCmd & extraCmd
-		})._2.toJsCmd
-	}
-
-	private def onChangeForSelect[T](secure: Seq[(T, String, String)], bean: AnyRef, fieldName: String, func: (T) => Any,
-											   inputId: String, containerId: String, klass: Class[T]) = {
-		SHtml.onEvent((s) => {
-			cleanErrorsForProperty(bean, fieldName) // Important to clear errors for this field in case previous action was "submit" on form
-			trace("onChangeForSelect: " + s)
-			secure.find(_._2 == s).map{x =>
-				val element = x._1
-				trace("onChangeForSelect.element: " + element)
-				func(element)
-				registerPropertyViolations(bean, fieldName)
-				registerBeanViolations(bean, fieldName)
-				val fieldErrors = getFieldErrors(bean, fieldName)
-				val errorSeq: NodeSeq = getErrorsSeq(fieldErrors)
-				cleanErrorsForProperty(bean, fieldName)
-				if (fieldErrors.isEmpty) {
-					Call("Rolf.removeFieldError", containerId, inputId) & Noop
-				} else {
-					Call("Rolf.attachFieldError", containerId, inputId, errorSeq.toString()) & Noop
-				}
-									  }.getOrElse(Noop)
-		})._2.toJsCmd
-	}
-
-	private def renderInlineInputContainer(fieldErrors: Buffer[FieldError], containerId: String, textElement: NodeSeq,
-								   isMandatory: Boolean, errorSeq: NodeSeq, extraInfo: NodeSeq = NodeSeq.Empty): Elem = {
-		(".inputContainer [class+]" #> Full("errorContainer").filter(s => !fieldErrors.isEmpty))
-		(<div style="display: inline-block" id={containerId} class="inputContainer">
-			{textElement ++ mandatoryIcon(isMandatory) ++ errorSeq}
-		</div>)
-	}
-
-	private val sizeMap = new HashMap[String, Option[Long]]
 
 	private def getMaxLengthOfProperty(bean: AnyRef, fieldName: String): Option[Long] = {
 		val c = bean.getClass
 		val s = c.getName + "." + fieldName
-		val cached = sizeMap.get(s)
+		val cached = ValidationCache.sizeMap.get(s)
 
 		if (cached.isDefined) {
 			return cached.get
@@ -580,7 +771,7 @@ trait ValidatableScreen extends Loggable {
 															val size = cd.getAnnotation.asInstanceOf[Size]
 															val maxSize = size.max()
 															if (maxSize != java.lang.Integer.MAX_VALUE) {
-																sizeMap.put(s, Some(maxSize))
+																ValidationCache.sizeMap.put(s, Some(maxSize))
 																return Some(maxSize)
 															}
 														}
@@ -590,78 +781,19 @@ trait ValidatableScreen extends Loggable {
 														if (cd.getAnnotation.isInstanceOf[Max]) {
 															val max = cd.getAnnotation.asInstanceOf[Max]
 															val size = max.value()
-															val maxSize = scala.math.ceil(scala.math.log10(size)).toLong
-															sizeMap.put(s, Some(maxSize))
+															val maxSize = if (size % 10 == 0) {
+																scala.math.log10(size).toLong + 1L
+															} else {
+																scala.math.ceil(scala.math.log10(size)).toLong
+															}
+															ValidationCache.sizeMap.put(s, Some(maxSize))
 															return Some(maxSize)
 														}
 				)
 			}
 		}
-		sizeMap.put(s, None)
+		ValidationCache.sizeMap.put(s, None)
 		None
-	}
-
-	private def getTextInputElement[T](bean: AnyRef, fieldName: String, value: String, func: (T) => Any, m: Manifest[T],
-												 attrs: SHtml.ElemAttr*): (String, String, Buffer[FieldError], NodeSeq, NodeSeq) = {
-		val inputId = nextFuncName
-		val containerId = nextFuncName
-		val fieldErrors = getFieldErrors(bean, fieldName)
-		val errorSeq = getErrorsSeq(fieldErrors)
-
-		val maxLength = getMaxLengthOfProperty(bean, fieldName)
-		val klass = m.erasure
-		val isOption: Boolean = klass == optionCls
-		val fish = if (isOption && m.typeArguments.length > 0) m.typeArguments.head.erasure else klass
-		var inputSeq = SHtml.text(tryo {fieldErrors(0).errorValue}.getOrElse(nullSafeString(value)), (s) => {
-			validateInput(s, bean, fieldName, func, fish, isOption)
-		}, attrs: _*) % ("id" -> inputId) % maxLength.map(length => ("maxlength" -> length.toString):MetaData).getOrElse(Null)
-
-		val oldOnBlurAttribute = inputSeq.attribute("onblur")
-		val validationOnBlur = onBlurForTextInput(bean, fieldName, func, inputId, containerId, fish, isOption)
-
-		if (oldOnBlurAttribute.isDefined) {
-			val oldOnBlur = oldOnBlurAttribute.get.text
-			if (oldOnBlur.trim().length() > 0) {
-				inputSeq = inputSeq % ("onblur" -> ("if (" + oldOnBlur + ") {" + validationOnBlur + "}"))
-			}
-		} else {
-			inputSeq = inputSeq % ("onblur" -> validationOnBlur)
-		}
-
-		val textElement = addErrorClass(fieldErrors, inputSeq)
-		(inputId, containerId, fieldErrors, textElement, errorSeq)
-	}
-
-	private def getTextAreaInputElement[T](bean: AnyRef, fieldName: String, value: String, func: (T) => Any, m: Manifest[T],
-												 attrs: SHtml.ElemAttr*): (String, String, Buffer[FieldError], NodeSeq, NodeSeq) = {
-		val inputId = nextFuncName
-		val containerId = nextFuncName
-		val fieldErrors = getFieldErrors(bean, fieldName)
-		val errorSeq = getErrorsSeq(fieldErrors)
-
-		val maxLength = getMaxLengthOfProperty(bean, fieldName)
-		val klass = m.erasure
-		val isOption: Boolean = klass == optionCls
-		val fish = if (isOption && m.typeArguments.length > 0) m.typeArguments.head.erasure else klass
-
-		var inputSeq = SHtml.textarea(tryo {fieldErrors(0).errorValue}.getOrElse(nullSafeString(value)), (s) => {
-			validateInput(s, bean, fieldName, func, fish, isOption)
-		}, attrs: _*) % ("id" -> inputId) % maxLength.map(length => ("maxlength" -> length.toString):MetaData).getOrElse(Null)
-
-		val oldOnBlurAttribute = inputSeq.attribute("onblur")
-		val validationOnBlur = onBlurForTextInput(bean, fieldName, func, inputId, containerId, fish, isOption)
-
-		if (oldOnBlurAttribute.isDefined) {
-			val oldOnBlur = oldOnBlurAttribute.get.text
-			if (oldOnBlur.trim().length() > 0) {
-				inputSeq = inputSeq % ("onblur" -> ("if (" + oldOnBlur + ") {" + validationOnBlur + "}"))
-			}
-		} else {
-			inputSeq = inputSeq % ("onblur" -> validationOnBlur)
-		}
-
-		val textElement = addErrorClass(fieldErrors, inputSeq)
-		(inputId, containerId, fieldErrors, textElement, errorSeq)
 	}
 
 	def nullSafeString(string:String) = if (string == null) "" else string

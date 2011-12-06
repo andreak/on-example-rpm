@@ -28,6 +28,7 @@ abstract class JpaField[A, T](implicit m: Manifest[T]) extends Attribute[A, T]{
  * object fiskString extends OptionalString[SomeEntity](None)
  */
 abstract class StringField[A] extends JpaField[A, String]
+abstract class OptionStringField[A] extends JpaField[A, Option[String]]
 abstract class LongField[A] extends JpaField[A, Long]
 abstract class OptionLongField[A] extends JpaField[A, Option[Long]]
 abstract class IntegerField[A] extends JpaField[A, java.lang.Integer]
