@@ -20,7 +20,7 @@
 		<version.aspectj>1.6.11</version.aspectj>
 		<version.spring>3.0.6.RELEASE</version.spring>
 		<version.spring-security>3.0.7.RELEASE</version.spring-security>
-		<version.org.hibernate>3.6.6.Final</version.org.hibernate>
+		<version.org.hibernate>3.6.8.Final</version.org.hibernate>
 		<version.usertype>1.8</version.usertype>
 		<version.jodatime>1.6.2</version.jodatime>
 		<version.surefire>2.8</version.surefire>

@@ -1,6 +1,6 @@
 package no.officenet.example.rpm.support.infrastructure.jpa.validation;
 
-import no.officenet.example.rpm.support.infrastructure.jpa.validator.constraints.OptionalPatternValidator;
+import no.officenet.example.rpm.support.infrastructure.jpa.validation.constraints.OptionalPatternValidator;
 
 import javax.validation.Constraint;
 import javax.validation.Payload;

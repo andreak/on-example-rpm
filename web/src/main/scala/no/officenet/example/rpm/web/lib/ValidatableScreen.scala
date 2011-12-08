@@ -14,7 +14,6 @@ import collection.mutable.{ArrayBuffer, HashMap, Buffer}
 import javax.validation.Validator
 import xml._
 import scala.collection.JavaConversions.iterableAsScalaIterable
-import javax.validation.constraints.{Max, Size}
 import no.officenet.example.rpm.support.infrastructure.logging.Loggable
 import no.officenet.example.rpm.support.infrastructure.scala.lang.IdentityHashMap
 import javax.annotation.Resource
@@ -25,6 +24,7 @@ import no.officenet.example.rpm.support.domain.i18n.GlobalTexts
 import no.officenet.example.rpm.support.domain.i18n.Localizer
 import no.officenet.example.rpm.support.domain.i18n.Localizer.L
 import no.officenet.example.rpm.support.infrastructure.errorhandling.InvalidDateException
+import javax.validation.constraints.{DecimalMax, Max, Size}
 
 case class FieldError(fieldName: String, errorValue: String, errorId: String, errorMessage: String)
 
@@ -765,32 +765,41 @@ trait ValidatableScreen extends Loggable {
 		val pd = beanDescriptor.getConstraintsForProperty(fieldName)
 
 		if (pd != null) {
-			if (pd.getElementClass == classOf[String]) {
-				pd.getConstraintDescriptors.foreach(cd =>
-														if (cd.getAnnotation.isInstanceOf[Size]) {
-															val size = cd.getAnnotation.asInstanceOf[Size]
-															val maxSize = size.max()
-															if (maxSize != java.lang.Integer.MAX_VALUE) {
-																ValidationCache.sizeMap.put(s, Some(maxSize))
-																return Some(maxSize)
-															}
-														}
-				)
-			} else {
-				pd.getConstraintDescriptors.foreach(cd =>
-														if (cd.getAnnotation.isInstanceOf[Max]) {
-															val max = cd.getAnnotation.asInstanceOf[Max]
-															val size = max.value()
-															val maxSize = if (size % 10 == 0) {
-																scala.math.log10(size).toLong + 1L
-															} else {
-																scala.math.ceil(scala.math.log10(size)).toLong
-															}
-															ValidationCache.sizeMap.put(s, Some(maxSize))
-															return Some(maxSize)
-														}
-				)
-			}
+			pd.getConstraintDescriptors.foreach(cd =>
+				cd.getAnnotation match {
+					case size: Size => {
+						// Valid for:
+						// String (string length is evaludated),
+						// Collection (collection size is evaluated)
+						// Map (map size is evaluated)
+						// Array (array length is evaluated)
+						val maxSize = size.max()
+						if (maxSize != java.lang.Integer.MAX_VALUE) {
+							ValidationCache.sizeMap.put(s, Some(maxSize))
+							return Some(maxSize)
+						}
+					}
+					case max: Max => {
+						val isBigDecimal = pd.getElementClass == classOf[java.math.BigDecimal] || pd.getElementClass == classOf[BigDecimal]
+						val size = max.value()
+						//Need to adjust for scale when type is BigDecimal. Add 3 (1 for '.' and 2 for 2 decimals)
+						val ajustForBigDecimal: Long = if (isBigDecimal) 3L else 0L
+						val getMaxSize: Long = scala.math.ceil(scala.math.log10(size)).toLong
+						val ajustForModZero: Long = if (size % 10 == 0) 1L else 0L
+
+						val maxSize = getMaxSize + ajustForModZero + ajustForBigDecimal
+						ValidationCache.sizeMap.put(s, Some(maxSize))
+						return Some(maxSize)
+
+					}
+					case decimalMax: DecimalMax => {
+						val size = decimalMax.value()
+						val maxSize = size.length().toLong
+						ValidationCache.sizeMap.put(s, Some(maxSize))
+						return Some(maxSize)
+					}
+					case _ => ()
+				})
 		}
 		ValidationCache.sizeMap.put(s, None)
 		None

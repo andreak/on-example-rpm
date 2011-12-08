@@ -22,7 +22,7 @@
 
 	<tx:annotation-driven order="5"/>
 
-	<bean id="lazyInitAspect" class="no.officenet.example.rpm.support.infrastructure.jpa.LazyInitAspect" factory-method="aspectOf"/>
+	<bean id="lazyInitAspect" class="no.officenet.example.rpm.support.infrastructure.spring.aop.LazyInitAspect" factory-method="aspectOf"/>
 
 	<bean id="persistenceUnitManagerRPM" class="no.officenet.example.rpm.support.infrastructure.jpa.MergePersistenceUnitManager">
 		<property name="persistenceXmlLocations">

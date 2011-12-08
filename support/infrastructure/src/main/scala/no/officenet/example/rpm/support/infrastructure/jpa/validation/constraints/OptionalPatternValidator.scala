@@ -1,4 +1,4 @@
-package no.officenet.example.rpm.support.infrastructure.jpa.validator.constraints
+package no.officenet.example.rpm.support.infrastructure.jpa.validation.constraints
 
 import javax.validation.{ConstraintValidatorContext, ConstraintValidator}
 import no.officenet.example.rpm.support.infrastructure.jpa.validation.OptionalPattern

@@ -5,13 +5,16 @@
 <aspectj>
 
 	<weaver options="-verbose -showWeaveInfo">
-		<include within="no.officenet.example.rpm..*"/>
+        <include within="@org.springframework.beans.factory.annotation.Configurable no.officenet.example.rpm..*"/>
+		<include within="no.officenet.example.rpm.support.infrastructure.spring.aop.LazyInitAspect"/>
+        <include within="@javax.persistence.Entity *"/>
+        <include within="@javax.persistence.MappedSuperclass *"/>
 	</weaver>
 
 	<aspects>
 
         <!-- weave in just this aspect -->
-        <aspect name="no.officenet.example.rpm.support.infrastructure.jpa.LazyInitAspect"/>
+        <aspect name="no.officenet.example.rpm.support.infrastructure.spring.aop.LazyInitAspect"/>
 
     </aspects>
 
