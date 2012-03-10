@@ -1,0 +1,51 @@
+<div class="lift:surround?with=main">
+    <div id="top_menu" class="lift:bind-at?name=top_menu">
+        <span class="lift:i18n?bundle=GLOBAL">logged_in_user</span>
+        <span class="lift:user.UserSnippet.displayName"></span>(userName: <span class="lift:user.UserSnippet.username"></span>)
+    </div>
+    <div class="lift:bind-at?name=content">
+        <div class="lift:blog.BlogViewSnippet.renderForm?type=ajax">
+            <div class="inputContainer">
+                <input type="text" class="title"/>
+                <div class="blogDetailsInput">
+                    <div>
+                        <textarea class="summary">Summary here</textarea>
+                    </div>
+                    <div>
+                        <textarea class="content">Content here, with MediaWiki-compatible markup</textarea> <br/>
+                    </div>
+                    <input type="submit"/><button class="cancel">Cancel</button>
+                </div>
+            </div>
+        </div>
+        <div class="lift:blog.BlogViewSnippet.render">
+            <div class="blogEntryList">
+                <div id="futureBlogPostContainer">
+                </div>
+                <div class="blogEntry">
+                    <table>
+                        <tr>
+                            <td>
+                                <img class="imageIconPath" src="http://host.com/path/to/image.gif" alt="AJK"/>
+                            </td>
+                            <td>
+                                <span class="createdBy">01.02.2001</span>
+                                <span class="created">01.02.2001</span>
+                                <div class="title" style="font-size: 16px; font-weight: bold; color: #425D7B;">
+                                    Title
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                    <div class="summary">
+                        summary
+                    </div>
+                    <div class="numComments">
+                        0
+                    </div>
+                    <div class="readMoreLink">Read more...</div>
+                </div>
+            </div>
+        </div>
+	</div>
+</div>

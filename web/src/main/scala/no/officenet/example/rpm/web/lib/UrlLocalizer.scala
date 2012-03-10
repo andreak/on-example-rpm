@@ -10,8 +10,6 @@ import no.officenet.example.rpm.support.infrastructure.logging.Loggable
 import org.springframework.context.i18n.LocaleContextHolder
 
 object UrlLocalizer extends Loggable {
-	// capture the old localization function
-	val oldLocalizeFunc = LiftRules.localeCalculator
 
 	/**
 	 * What are the available locales?
@@ -25,9 +23,11 @@ object UrlLocalizer extends Loggable {
 	 * Extract the locale
 	 */
 	def unapply(in: String): Option[Locale] = {
-		// if it's a valid locale, it matches
 		val locale = locales.get(in)
-		locale.foreach(l => LocaleContextHolder.setLocale(l))
+		locale.foreach{l =>
+			LocaleContextHolder.setLocale(l)
+			currentLocale.set(l)
+		}
 		locale
 	}
 
@@ -35,22 +35,21 @@ object UrlLocalizer extends Loggable {
 	 * Calculate the Locale
 	 */
 	def calcLocale(in: Box[HTTPRequest]): Locale =
-		if (currentLocale.set_?) {
+		if (LocaleContextHolder.getLocaleContext != null) {
+			val locale = LocaleContextHolder.getLocale
+			trace("calcLocale: using LocaleContextHolder.getLocale: " + locale)
+			locale
+		} else if (currentLocale.set_?) {
 			val locale = currentLocale.get
 			trace("calcLocale: set_? == TRUE: " + locale)
 			LocaleContextHolder.setLocale(locale)
 			locale
 		}
 		else {
-			if (LocaleContextHolder.getLocaleContext != null) {
-				val locale = LocaleContextHolder.getLocale
-				trace("calcLocale: using LocaleContextHolder.getLocale: " + locale + ", currentLocale.get: " + currentLocale.get)
-				locale
-			} else {
-				val locale = oldLocalizeFunc(in)
-				trace("calcLocale: using oldLocalizeFunc: " + locale)
-				locale
-			}
+			// Use the browser's locale or system's default
+			val locale = in.flatMap(r => r.locale).openOr(Locale.getDefault)
+			trace("calcLocale: using Locale.getDefault: " + locale)
+			locale
 		}
 
 }

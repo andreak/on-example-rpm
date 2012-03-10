@@ -46,7 +46,7 @@ class RegexpMappingFilter extends Filter {
 	}
 
 	def doFilterHttp(request: HttpServletRequest, response: HttpServletResponse, chain: FilterChain) {
-		val uri = request.getRequestURI
+		val uri = request.getRequestURI.substring(request.getContextPath.length())
 		val matcher = matchPattern.matcher(uri)
 		if (matcher.find()) {
 			val groupCount = matcher.groupCount()
@@ -57,7 +57,7 @@ class RegexpMappingFilter extends Filter {
 			val restGroup = if (groupCount == 2) matcher.group(2) else null
 			log.trace("groupCount: " + groupCount + ", baseGroup: '" + baseGroup + "', restGroup: '" + restGroup + "'")
 			if (matcher.matches() && (groupCount == 0 ||
-									  (!isBlank(baseGroup) && isBlank(restGroup) || isBlank(baseGroup) && uriListMatches(restGroup)))) { // only start searching sub-filter if we have groups
+				(!isBlank(baseGroup) && isBlank(restGroup) || isBlank(baseGroup) && uriListMatches(restGroup)))) { // only start searching sub-filter if we have groups
 				log.trace("delegating uri '" + uri + "' to filter: " + delegate.getClass.getName)
 				delegate.doFilter(request, response, chain)
 			} else {

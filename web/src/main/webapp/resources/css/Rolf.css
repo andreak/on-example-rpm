@@ -63,3 +63,18 @@ select.value_error {
 	color: red;
 	font-size: 12px;
 }
+
+.calendarButton {
+	display: inline-block;
+	width: 18px;
+	height: 15px;
+	cursor: pointer;
+	background-image: url(../img/calendar.png);
+	background-repeat: no-repeat;
+	vertical-align: text-bottom;
+}
+
+.disabled .calendarButton {
+	cursor: default;
+	background-image: url(../img/calendar_disabled.png);
+}

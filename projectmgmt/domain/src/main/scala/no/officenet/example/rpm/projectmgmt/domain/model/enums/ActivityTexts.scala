@@ -1,6 +1,6 @@
 package no.officenet.example.rpm.projectmgmt.domain.model.enums
 
-import no.officenet.example.rpm.support.domain.i18n.{Bundle, ResourceBundleEnum}
+import no.officenet.example.rpm.support.infrastructure.i18n.{ResourceBundleEnum, Bundle}
 
 object ActivityTexts {
 

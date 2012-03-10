@@ -1,6 +1,6 @@
 package no.officenet.example.rpm.projectmgmt.domain.model.enums
 
-import no.officenet.example.rpm.support.domain.i18n.{Bundle, ResourceBundleEnum}
+import no.officenet.example.rpm.support.infrastructure.i18n.{Bundle, ResourceBundleEnum}
 
 object ProjectTexts {
 
@@ -15,8 +15,8 @@ object ProjectTexts {
 		modifiedBy,
 		projectEstimatedStart,
 		type_scrum,
-		type_sales,
-		petId
+		type_sales
+
 		= BundleEnum(Bundle.PROJECT_D)
 	}
 
@@ -28,7 +28,6 @@ object ProjectTexts {
 		projectDialog_title_editProject,
 		projectDialog_details_label_budget,
 		projectDialog_details_label_estimatedStartDate,
-		projectDialog_details_label_petName,
 		projectDialog_button_save,
 		color_black,
 		color_red,

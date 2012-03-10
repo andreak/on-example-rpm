@@ -1,1 +1,4 @@
-<div class="lift:embed?what=lift/project/_projectEdit"></div>
+<div class="lift:project.ProjectEditDialogWrapperSnippet.render">
+    <span class="liftPageSetter"/>
+    <div class="lift:embed?what=lift/project/_projectEdit"></div>
+</div>

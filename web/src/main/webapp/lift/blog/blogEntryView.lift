@@ -1,0 +1,48 @@
+<div class="lift:surround?with=main">
+    <div id="top_menu" class="lift:bind-at?name=top_menu">
+        <span class="lift:i18n?bundle=GLOBAL">logged_in_user</span>
+        <span class="lift:user.UserSnippet.displayName"></span>(userName: <span class="lift:user.UserSnippet.username"></span>)
+    </div>
+    <div class="lift:bind-at?name=content">
+        <div class="lift:blog.BlogEntryViewSnippet.render">
+
+			<div class="blogEntryHeaderContainer">
+				<span class="userName"/>
+			</div>
+
+			<div class="blogEntryCometContainer">
+				<div class="blogEntry">
+                    <img class="imageIconPath" src="http://host.com/path/to/image.gif" alt="AJK"/>
+                    <div class="title">Blog-entry title</div>
+					<div class="summary">Blog-entry summary</div>
+					<div class="blogContent">Blog-entry content</div>
+					<button class="replyToBlogEntry">Reply</button>
+					<button class="editBlogEntry">Edit</button>
+				</div>
+				<div class="comments" id="blogEntryComments">
+					<div class="commentContainer">
+						<div class="comment">
+                            <img class="imageIconPath" src="http://host.com/path/to/image.gif" alt="AJK"/>
+                            <div class="voteContainer">
+								<div class="numberOfVotes">0</div>
+								<div class="voteOperationContainer">
+									<div class="addPlusVote">+</div>
+									<div class="addMinusVote">-</div>
+									<div class="removeVote">R</div>
+								</div>
+							</div>
+							<div class="created">Created</div>
+							<div class="createdBy">Created</div>
+							<div class="commentText">comment text</div>
+							<div class="replyContainer">
+								<a href="#" class="replyLink">Reply</a>
+								<a href="#" class="editLink">Reply</a>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+        </div>
+
+	</div>
+</div>

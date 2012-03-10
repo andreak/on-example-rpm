@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	   xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+	<bean id="validateRepositories" class="java.lang.Boolean">
+		<constructor-arg value="${infrastructure.validation.validate_repositories}"/>
+	</bean>
+
+	<bean id="rpmOvalExceptionTranslator" class="no.officenet.example.rpm.support.infrastructure.errorhandling.RpmOvalExceptionTranslator"/>
+
+    <bean id="ovalMessageResolver"
+          class="no.officenet.example.rpm.support.infrastructure.validation.OvalMessageResolver"
+          factory-method="getInstance">
+        <property name="resourceBundles">
+            <set>
+                <value>no.officenet.example.rpm.support.infrastructure.validation.oval.Messages</value>
+                <value>no.officenet.example.rpm.support.infrastructure.validation.oval.customValidationMessages</value>
+            </set>
+        </property>
+    </bean>
+
+    <bean id="ovalValidator" class="no.officenet.example.rpm.support.infrastructure.validation.OvalValidator">
+        <constructor-arg index="0">
+            <set>
+                <bean class="no.officenet.example.rpm.support.infrastructure.validation.RpmAnnotationsConfigurer"/>
+            </set>
+        </constructor-arg>
+        <property name="exceptionTranslator" ref="rpmOvalExceptionTranslator"/>
+	</bean>
+
+</beans>

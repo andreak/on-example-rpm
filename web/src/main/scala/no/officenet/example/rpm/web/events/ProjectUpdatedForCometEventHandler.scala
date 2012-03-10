@@ -5,6 +5,7 @@ import org.springframework.stereotype.Component
 import no.officenet.example.rpm.support.domain.events.{AfterCommitEventDispatcher, DomainEventHandler}
 import no.officenet.example.rpm.projectmgmt.domain.events.ProjectUpdatedEvent
 import no.officenet.example.rpm.web.comet.server.ProjectCometMasterServer
+import no.officenet.example.rpm.web.comet.dto.ProjectCometDto
 
 @Component
 class ProjectUpdatedForCometEventHandler extends DomainEventHandler[ProjectUpdatedEvent] {
@@ -14,7 +15,8 @@ class ProjectUpdatedForCometEventHandler extends DomainEventHandler[ProjectUpdat
 	def handleEvent(event: ProjectUpdatedEvent) {
 		if (OperationType.UPDATE == event.operationType) {
 			// Send actor a message for comet-updates
-			ProjectCometMasterServer.findProjectCometServerFor(event.project.id).map(_.projectUpdated(event.project))
+			ProjectCometMasterServer.findProjectCometServerFor(event.project.id).
+				map(_.projectUpdated(ProjectCometDto(event.project)))
 		}
 	}
 }

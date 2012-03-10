@@ -1,13 +1,13 @@
 <div class="lift:surround?with=main">
 	<div id="top_menu" class="lift:bind-at?name=top_menu">
 		<span class="lift:i18n?bundle=GLOBAL">logged_in_user</span>
-		<span class="lift:UserSnippet.displayName"></span>(userName: <span class="lift:UserSnippet.username"></span>)
+		<span class="lift:user.UserSnippet.displayName"></span>(userName: <span class="lift:user.UserSnippet.username"></span>)
 	</div>
 	<div class="lift:bind-at?name=content">
-		<div class="lift:ProjectPageSnippet.editNoComet">
+		<div class="lift:project.ProjectPageSnippet.editNoComet">
 			<div class="editButton">Edit me (non-comet)</div>
 		</div>
-		<div class="lift:ProjectPageSnippet?eager_eval=true">
+		<div class="lift:project.ProjectPageSnippet.render?eager_eval=true">
 			<div class="lift:embed?what=lift/project/_projectDetailViewComponent"></div>
 		</div>
 	</div>

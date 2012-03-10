@@ -5,11 +5,11 @@
 	   xmlns:tx="http://www.springframework.org/schema/tx"
        xmlns:aop="http://www.springframework.org/schema/aop"
 	   xmlns:security="http://www.springframework.org/schema/security"
-	   xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
-						   http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd
-						   http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security-3.0.xsd
-						   http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
-						   http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.0.xsd">
+	   xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+						   http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+						   http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security.xsd
+						   http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd
+						   http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd">
 
 	<context:property-placeholder location="classpath*:spring/props/*.properties"/>
 	<aop:aspectj-autoproxy/>
@@ -23,26 +23,10 @@
 	<tx:annotation-driven order="5"/>
 
 	<bean id="lazyInitAspect" class="no.officenet.example.rpm.support.infrastructure.spring.aop.LazyInitAspect" factory-method="aspectOf"/>
-
-	<bean id="persistenceUnitManagerRPM" class="no.officenet.example.rpm.support.infrastructure.jpa.MergePersistenceUnitManager">
-		<property name="persistenceXmlLocations">
-			<list>
-				<value>classpath*:META-INF/persistence-rpm.xml</value>
-			</list>
-		</property>
-		<property name="includedPersistenceUnits">
-			<set>
-				<value>RPM</value>
-			</set>
-		</property>
-		<property name="jtdDataSource" ref="dataSourceRPM"/>
-	</bean>
-
-	<bean id="transactionManagerHelper" class="no.officenet.example.rpm.support.infrastructure.spring.TransactionManagerHelper"
-		  factory-method="getInstance"/>
+	<bean id="lazyInitActivationAspect" class="no.officenet.example.rpm.support.infrastructure.spring.aop.LazyInitActivationAspect" />
 
 	<bean id="jpaVendorAdapter"
-		  class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter" depends-on="transactionManagerHelper">
+		  class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter">
 		<property name="database" value="${infrastructure.database.vendor}"/>
 		<property name="databasePlatform" value="${infrastructure.database.platform}"/>
 		<property name="showSql" value="${infrastructure.jpa.showSql}"/>
@@ -51,14 +35,14 @@
 
 	<bean id="RPM"
 		  class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">
+		<property name="dataSource" ref="rpmDataSource"/>
 		<property name="persistenceUnitName" value="RPM"/>
-		<property name="persistenceUnitManager" ref="persistenceUnitManagerRPM"/>
+		<property name="packagesToScan" value="no.officenet.example.rpm"/>
 		<property name="jpaVendorAdapter" ref="jpaVendorAdapter"/>
 		<property name="jpaDialect" ref="jpaDialect"/>
 		<property name="jpaProperties">
 			<props>
 				<prop key="javax.persistence.validation.mode">none</prop><!-- We do manual validation in repositories (+ field-validation) -->
-				<prop key="hibernate.transaction.manager_lookup_class">no.officenet.example.rpm.support.infrastructure.spring.TransactionManagerLookup</prop>
 			</props>
 		</property>
 	</bean>
@@ -67,16 +51,42 @@
 		<property name="vendorAdapter" ref="jpaVendorAdapter"/>
 	</bean>
 
+	<bean id="transactionManager" class="org.springframework.orm.jpa.JpaTransactionManager">
+		<property name="entityManagerFactory" ref="RPM"/>
+		<property name="jpaDialect" ref="jpaDialect"/>
+	</bean>
+
 	<!-- Transform exceptions thrown by the persistence-provider to spring DataAccessExceptions  -->
 	<bean class="org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor"/>
 
 	<!-- Look for and process JPA annotations -->
 	<bean class="org.springframework.orm.jpa.support.PersistenceAnnotationBeanPostProcessor"/>
 
-	<bean id="validator" class="org.springframework.validation.beanvalidation.LocalValidatorFactoryBean" />
+	<bean id="liftSchedulerWorkerQueue" class="java.util.concurrent.ArrayBlockingQueue">
+		<!--
+				   Constructor arguments in order:
+					   int capacity,
+					   boolean fair
+				-->
+		<constructor-arg index="0" value="200000"/>
+		<constructor-arg index="1" value="true"/>
+	</bean>
 
-	<bean id="validateRepositories" class="java.lang.Boolean">
-		<constructor-arg value="${infrastructure.validation.validate_repositories}"/>
+	<bean id="liftSchedulerExecutor" class="java.util.concurrent.ThreadPoolExecutor"
+		  destroy-method="shutdown">
+		<!--
+				   Constructor arguments in order:
+					   int corePoolSize,
+					   int maximumPoolSize,
+					   long keepAliveTime,
+					   TimeUnit unit,
+					   BlockingQueue<Runnable> workQueue
+				-->
+		<constructor-arg index="0" value="16"/>
+		<constructor-arg index="1" value="400"/>
+		<constructor-arg index="2" value="60"/>
+		<constructor-arg index="3" value="SECONDS"/>
+		<constructor-arg index="4" ref="liftSchedulerWorkerQueue"/>
 	</bean>
 
 </beans>

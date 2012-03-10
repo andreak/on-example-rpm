@@ -1,8 +1,7 @@
 package no.officenet.example.rpm.projectmgmt.domain.service.repository
 
-import no.officenet.example.rpm.support.infrastructure.jpa.GenericRepository
 import no.officenet.example.rpm.projectmgmt.domain.model.entities.Activity
-import no.officenet.example.rpm.support.domain.service.repository.PersistenceUnits
+import no.officenet.example.rpm.support.infrastructure.jpa.{PersistenceUnits, GenericRepository}
 import org.springframework.stereotype.Repository
 
 @Repository

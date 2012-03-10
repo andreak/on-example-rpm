@@ -5,6 +5,7 @@ import org.apache.commons.logging.LogFactory
 import org.aspectj.lang.ProceedingJoinPoint
 import org.aspectj.lang.annotation.Around
 import org.aspectj.lang.annotation.Aspect
+import org.aspectj.lang.annotation.Pointcut
 import org.aspectj.lang.reflect.FieldSignature
 import org.aspectj.lang.reflect.MethodSignature
 import org.hibernate.Hibernate
@@ -24,23 +25,23 @@ import java.lang.reflect.Method
 class LazyInitAspect extends InitializingBean {
 	private val log: Log = LogFactory.getLog(getClass)
 
-	private class ThreadLocaleInit[T](initValue: T) extends ThreadLocal[T] {
-		protected override def initialValue: T = initValue
-	}
-
-	@PersistenceContext(unitName = "RPM")
-	private val entityManagerRPM: EntityManager = null
-	@PersistenceContext(unitName = "PETS")
-	private val entityManagerPETS: EntityManager = null
-
-	private var sessionFactoryRPM: SessionFactory = null
-	private var sessionFactoryPETS: SessionFactory = null
-
-	protected var locked: ThreadLocal[Boolean] = new ThreadLocaleInit[Boolean](false)
+	@PersistenceContext
+	private val entityManager: EntityManager = null
+	private var sessionFactory: SessionFactory = null
+	protected var locked = new ThreadLocalInit[Boolean](false)
 
 	def afterPropertiesSet() {
-		sessionFactoryRPM = (entityManagerRPM.getDelegate.asInstanceOf[Session]).getSessionFactory
-		sessionFactoryPETS = (entityManagerPETS.getDelegate.asInstanceOf[Session]).getSessionFactory
+		sessionFactory = (entityManager.getDelegate.asInstanceOf[Session]).getSessionFactory
+	}
+
+	@Pointcut("(@within(javax.persistence.Entity) || @within(javax.persistence.MappedSuperclass))" +
+		" && (" +
+		"@annotation(javax.persistence.ManyToOne)" +
+		" || @annotation(javax.persistence.ManyToMany)" +
+		" || @annotation(javax.persistence.OneToMany)" +
+		" || @annotation(javax.persistence.OneToOne)" +
+		")")
+	def lazyLoadableJpaProperties() {
 	}
 
 	private def getPropertyName(method: Method): String = {
@@ -50,8 +51,8 @@ class LazyInitAspect extends InitializingBean {
 			propertyName = methodName.substring("get".length)
 		}
 		else if (methodName.startsWith("is")) {
-			// Note the getter will probably never be a "is" because this aspect only applies to
-			// JPA-associations, which are not primitives, thus never boolean-types
+            // Note the getter will probably never be a "is" because this aspect only applies to
+            // JPA-associations, which are not primitives, thus never boolean-types
 			propertyName = methodName.substring("is".length)
 		}
 		else {
@@ -63,11 +64,10 @@ class LazyInitAspect extends InitializingBean {
 
 	private def getImplementation(obj: AnyRef): AnyRef = {
 		Hibernate.initialize(obj)
-		val initialized = obj match {
-			case hp :HibernateProxy => hp.getHibernateLazyInitializer.getImplementation
+		obj match {
+			case hp: HibernateProxy => hp.getHibernateLazyInitializer.getImplementation
 			case _ => obj
 		}
-		initialized
 	}
 
 	private def getSetter(entityType: Class[_], propertyName: String, returnType: Class[_]): Method = {
@@ -75,102 +75,124 @@ class LazyInitAspect extends InitializingBean {
 		entityType.getDeclaredMethod(setterName, returnType)
 	}
 
-	@Around("execution(* no.officenet.example.rpm.pets..*(..)) && no.officenet.example.rpm.support.infrastructure.spring.aop.SystemArchitectureAspect.lazyLoadableJpaProperties()")
-	def reattachSessionPETS(pjp: ProceedingJoinPoint): AnyRef = reattachSession(pjp, sessionFactoryPETS)
-
-	@Around("!execution(* no.officenet.example.rpm.pets..*(..)) && no.officenet.example.rpm.support.infrastructure.spring.aop.SystemArchitectureAspect.lazyLoadableJpaProperties()")
-	def reattachSessionRPM(pjp: ProceedingJoinPoint): AnyRef = reattachSession(pjp, sessionFactoryRPM)
-
 	@Around("no.officenet.example.rpm.support.infrastructure.spring.aop.LazyInitAspect.lazyLoadableJpaProperties()")
-	def reattachSession(pjp: ProceedingJoinPoint, sessionFactory: SessionFactory): AnyRef = {
-		var obj = pjp.proceed
+	def reattachSession(pjp: ProceedingJoinPoint): AnyRef = {
+		var obj: AnyRef = pjp.proceed
+		if (obj == null || !LazyInitState.lazyInit.get) return obj
+		val traceEnabled: Boolean = log.isTraceEnabled
 		// Don't try to re-init if already re-initing some stuff on the same thread.
 		// This happens when the persistence-provider calls the getters when it's initing)
 		if (!locked.get) {
-			var reAttachNeeded: Boolean = false
-			if (obj.isInstanceOf[AbstractPersistentCollection]) {
-				val ps = obj.asInstanceOf[AbstractPersistentCollection]
-				reAttachNeeded = !ps.wasInitialized && ps.getSession == null
-			}
-			if (obj.isInstanceOf[HibernateProxy]) {
-				val li = (obj.asInstanceOf[HibernateProxy]).getHibernateLazyInitializer
-				reAttachNeeded = li.isUninitialized && li.getSession == null
-			}
+			val implementor: SessionImplementor = getSessionImplementor(obj)
+			val hasOpenSession = implementor != null && implementor.isOpen
+			val reAttachNeeded = !hasOpenSession && !Hibernate.isInitialized(obj)
 			if (reAttachNeeded) {
-				if (log.isTraceEnabled) {
-					log.trace("Re-attaching Hibernate session to " + pjp.toString)
-				}
-				var session: Session = null
-				locked.set(true)
-				var newSession: Boolean = false
 				try {
-
-					try {
-						session = sessionFactory.getCurrentSession
-					}
-					catch {
-						case e: HibernateException => {
-							session = SessionFactoryUtils.getNewSession(sessionFactory)
-							newSession = true
-						}
-					}
-
-					val implementor = session.asInstanceOf[SessionImplementor]
-					val pjpTarget = pjp.getTarget
-					val entityType = pjpTarget.getClass
-					val identifier = sessionFactory.getClassMetadata(entityType).getIdentifier(pjpTarget, implementor)
-					val newInstance = getImplementation(session.load(entityType, identifier));
-
-					pjp.getSignature match {
-						case methodSignature: MethodSignature =>
-							val getter = methodSignature.getMethod
-							var wasAccessible = getter.isAccessible
-							if (!wasAccessible) {
-								getter.setAccessible(true)
-							}
-							obj = getImplementation(getter.invoke(newInstance));
-							if (!wasAccessible) {
-								getter.setAccessible(false)
-							}
-							val propertyName = getPropertyName(getter);
-							val setter = getSetter(entityType, propertyName, getter.getReturnType);
-							wasAccessible = setter.isAccessible
-							if (!wasAccessible) {
-								setter.setAccessible(true)
-							}
-							// Stuff the updated field in the original object
-							setter.invoke(pjpTarget, obj)
-							if (!wasAccessible) {
-								setter.setAccessible(false)
-							}
-						case fieldSignature: FieldSignature =>
-							val field = fieldSignature.getField
-							val wasAccessible = field.isAccessible
-							if (!wasAccessible) {
-								field.setAccessible(true)
-							}
-							obj = getImplementation(field.get(newInstance));
-							// Stuff the updated field in the original object
-							field.set(pjpTarget, obj)
-							if (!wasAccessible) {
-								field.setAccessible(false)
-							}
-						case signature =>
-							throw new IllegalStateException("Unsupported signature-type: " + signature)
-					}
-
-				} finally {
+					locked.set(true)
+					obj = loadAndReAttach(pjp, traceEnabled)
+				}
+				finally {
 					locked.set(false)
-					if (session != null && newSession) {
-						try {
-							SessionFactoryUtils.closeSession(session)
-						}
-						catch {
-							case t: Throwable => // Fall thru
-						}
+				}
+			}
+		}
+		obj
+	}
+
+	private def getSessionImplementor(obj: AnyRef): SessionImplementor = {
+		var implementor: SessionImplementor = null
+		if (obj.isInstanceOf[AbstractPersistentCollection]) {
+			val ps = obj.asInstanceOf[AbstractPersistentCollection]
+			implementor = ps.getSession
+		}
+		else if (obj.isInstanceOf[HibernateProxy]) {
+			val li = (obj.asInstanceOf[HibernateProxy]).getHibernateLazyInitializer
+			implementor = li.getSession
+		}
+		implementor
+	}
+
+	private def loadAndReAttach(pjp: ProceedingJoinPoint, traceEnabled: Boolean): AnyRef = {
+		var session: Session = null
+		var obj: AnyRef = null
+		var newSession = false
+		try {
+			try {
+				session = sessionFactory.getCurrentSession
+			}
+			catch {
+				case e: HibernateException => {
+					session = SessionFactoryUtils.getNewSession(sessionFactory)
+					newSession = true
+				}
+			}
+			if (traceEnabled) {
+				log.trace("Re-attaching Hibernate session to " + pjp.toString)
+			}
+			val implementor: SessionImplementor = session.asInstanceOf[SessionImplementor]
+			val pjpTarget = pjp.getTarget
+			val entityType = pjpTarget.getClass
+			val identifier = sessionFactory.getClassMetadata(entityType).getIdentifier(pjpTarget, implementor)
+			val newInstance = getImplementation(session.load(entityType, identifier))
+			obj = initializeAndReAttach(pjp, newInstance)
+		}
+		finally {
+			if (session != null && newSession) {
+				try {
+					SessionFactoryUtils.closeSession(session)
+				}
+				catch {
+					case t: Throwable => {
 					}
 				}
 			}
+		}
+		if (traceEnabled) {
+			log.trace("obj: " + obj.getClass.getSimpleName + "@" + System.identityHashCode(obj) + " isInitialized: " + Hibernate.isInitialized(obj))
+		}
+		obj
+	}
+
+	private def initializeAndReAttach(pjp: ProceedingJoinPoint, newInstance: AnyRef): AnyRef = {
+		var obj: AnyRef = null
+		val pjpTarget = pjp.getTarget
+		val entityType = pjpTarget.getClass
+		pjp.getSignature match {
+			case methodSignature: MethodSignature =>
+				val getter = methodSignature.getMethod
+				var wasAccessible = getter.isAccessible
+				if (!wasAccessible) {
+					getter.setAccessible(true)
+				}
+				obj = getter.invoke(newInstance)
+				Hibernate.initialize(obj)
+				if (!wasAccessible) {
+					getter.setAccessible(false)
+				}
+				val propertyName: String = getPropertyName(getter)
+				val setter: Method = getSetter(entityType, propertyName, getter.getReturnType)
+				wasAccessible = setter.isAccessible
+				if (!wasAccessible) {
+					setter.setAccessible(true)
+				}
+				setter.invoke(pjpTarget, obj)
+				if (!wasAccessible) {
+					setter.setAccessible(false)
+				}
+			case fieldSignature: FieldSignature =>
+				val field = fieldSignature.getField
+				val wasAccessible = field.isAccessible
+				if (!wasAccessible) {
+					field.setAccessible(true)
+				}
+				obj = field.get(newInstance)
+				Hibernate.initialize(obj)
+				field.set(pjpTarget, obj)
+				if (!wasAccessible) {
+					field.setAccessible(false)
+				}
+				case signature =>
+					throw new IllegalStateException("Unsupported signature-type: " + signature)
 		}
 		obj
 	}

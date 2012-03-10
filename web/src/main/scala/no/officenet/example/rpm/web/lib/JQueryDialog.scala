@@ -1,13 +1,27 @@
 package no.officenet.example.rpm.web.lib
 
+import net.liftweb.util.Helpers._
 import net.liftweb.http.js.jquery.JqJE._
 import net.liftweb.http.js.JE._
 import net.liftweb.http.js._
 import net.liftweb.http.js.JsCmds._
 import java.util.UUID
 import xml.{Text, NodeSeq}
+import net.liftweb.http.S
 
 object JQueryDialog {
+	def apply(template: String, title: String): JQueryDialog = {
+		val dialog = JQueryDialog(S.runTemplate(List(template)).openOr(<div>Template {template} not found</div>),
+			title,
+			false, nextFuncName)
+		dialog
+	}
+	def apply(template: String, title: String, dialogId: String): JQueryDialog = {
+		val dialog = JQueryDialog(S.runTemplate(List(template)).openOr(<div>Template {template} not found</div>),
+			title,
+			false, dialogId)
+		dialog
+	}
 	def apply(html: NodeSeq) = new JQueryDialog(html, "")
 	def apply(html: NodeSeq, title: String) = new JQueryDialog(html, title)
 	def apply(html: NodeSeq, title: String, isModal: Boolean) = {
@@ -23,6 +37,10 @@ object JQueryDialog {
 								   super.options
 		}
 	}
+}
+
+case class CloseDialog(id: String) extends JsCmd {
+	def toJsCmd = (JqId(Str(id)) ~> JsFunc("dialog", "close")).toJsCmd
 }
 
 class JQueryDialog(in: NodeSeq, title: NodeSeq) {

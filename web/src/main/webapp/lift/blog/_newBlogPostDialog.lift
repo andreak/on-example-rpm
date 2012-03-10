@@ -1,0 +1,13 @@
+<div class="lift:blog.NewBlogPostDialogSnippet.renderForm?type=ajax">
+    New blog-post here!
+    <div class="inputContainer">
+        <input type="text" class="title"/> <br/>
+        <div>
+            <textarea class="summary">Summary here</textarea>
+        </div>
+        <div>
+            <textarea class="content">Content here, with MediaWiki-compatible markup</textarea> <br/>
+        </div>
+        <input type="submit"/> <br/>
+    </div>
+</div>

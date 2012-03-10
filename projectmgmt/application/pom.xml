@@ -17,10 +17,6 @@
 			<groupId>no.officenet.example.rpm</groupId>
 			<artifactId>on-example-rpm-projectmgmt-domain</artifactId>
 		</dependency>
-		<dependency>
-			<groupId>no.officenet.example.rpm</groupId>
-			<artifactId>on-example-rpm-pets</artifactId>
-		</dependency>
 	</dependencies>
 
 	<build>

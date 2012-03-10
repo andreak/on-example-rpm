@@ -3,18 +3,17 @@ package no.officenet.example.rpm.support.infrastructure.jpa
 import java.io.Serializable
 import org.springframework.transaction.annotation.Transactional
 import collection.JavaConversions.asScalaBuffer
-import collection.JavaConversions.iterableAsScalaIterable
 import javax.annotation.Resource
-import javax.validation.{ConstraintViolation, ConstraintViolationException, Validator}
-import validation.MethodValidationGroup
-import no.officenet.example.rpm.support.infrastructure.errorhandling.ObjectNotFoundByPrimaryKeyException
 import javax.persistence.criteria.CriteriaBuilder
 import collection.mutable.{ListBuffer, Buffer}
+import no.officenet.example.rpm.support.infrastructure.spring.aop.LazyInitState
+import net.sf.oval.Validator
+import no.officenet.example.rpm.support.infrastructure.errorhandling.{RpmConstraintsViolatedException, ObjectNotFoundByPrimaryKeyException}
 
 @Transactional
 trait WritableRepository[T <: AnyRef, PK <: Serializable] extends RepositorySupport {
 
-	@Resource
+	@Resource(name = "ovalValidator")
 	var validator: Validator = _
 
 	@Resource
@@ -23,13 +22,15 @@ trait WritableRepository[T <: AnyRef, PK <: Serializable] extends RepositorySupp
 	def save(entity: T): T = {
 		if (entity == null) throw new IllegalArgumentException(getClass.getSimpleName + ": Cannot save null-object")
 		if (validateRepositories) {
-			val fieldViolations = validator.validate(entity)
-			val methodViolations = validator.validate(entity, classOf[MethodValidationGroup])
-			val constraintViolations = new java.util.LinkedHashSet[ConstraintViolation[_]](fieldViolations.size() + methodViolations.size())
-			fieldViolations.foreach(v => constraintViolations.add(v))
-			methodViolations.foreach(v => constraintViolations.add(v))
-			if (!constraintViolations.isEmpty) {
-				throw new ConstraintViolationException(constraintViolations.asInstanceOf[java.util.Set[ConstraintViolation[_]]])
+			val origLazyInitValue = LazyInitState.lazyInit.get
+			LazyInitState.lazyInit.set(true)
+			try {
+				val violations = validator.validate(entity, null.asInstanceOf[Array[String]]: _*)
+				if (!violations.isEmpty) {
+					throw new RpmConstraintsViolatedException(violations)
+				}
+			} finally {
+				LazyInitState.lazyInit.set(origLazyInitValue)
 			}
 		}
 		entityManager.merge(entity)

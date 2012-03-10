@@ -2,7 +2,7 @@ package no.officenet.example.rpm.support.domain.service.repository
 
 import org.springframework.stereotype.Repository
 import no.officenet.example.rpm.support.domain.model.entities.User
-import no.officenet.example.rpm.support.infrastructure.jpa.GenericRepository
+import no.officenet.example.rpm.support.infrastructure.jpa.{PersistenceUnits, GenericRepository}
 
 @Repository
 class UserRepositoryJpa extends UserRepository with PersistenceUnits.PersistenceUnitRPM

@@ -6,9 +6,9 @@ object RpmMenu {
 	def menu = {
 		(Menu("Index") / "index" >> Loc.Hidden) ::
 		(Menu("Project-view wrapperForJSF") / "lift" / "project" / "projectViewWrapperForJSF" >> Loc.Hidden) ::
-		(Menu("Project-view wrapperForJSF") / "lift" / "project" / "projectEditDialogWrapperForJSF" >> Loc.Hidden) ::
-		Menu(ProjectListLoc) ::
-		Menu(ProjectLoc) ::
+		Menu(ProjectEditDialogWrapperLoc) ::
+		Menu(ProjectListLoc, Menu(ProjectLoc)) ::
+		Menu(BlogViewLoc, Menu(BlogEntryViewLoc)) ::
 		Nil
 	}
 }

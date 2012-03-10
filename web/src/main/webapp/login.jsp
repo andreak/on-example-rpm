@@ -3,6 +3,7 @@
 	%><%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %><%@
 	page import="org.springframework.security.core.AuthenticationException,
 org.springframework.security.web.WebAttributes,
+org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter,
 org.springframework.security.web.authentication.rememberme.AbstractRememberMeServices,
 org.springframework.security.core.AuthenticationException" %>
 <html>
@@ -17,7 +18,7 @@ org.springframework.security.core.AuthenticationException" %>
 		<tr>
 			<td class="key">Username</td>
 			<td class="input"><input id="username" name="j_username" type="text"
-									 value="<%=(session.getAttribute(WebAttributes.LAST_USERNAME) != null ? session.getAttribute(WebAttributes.LAST_USERNAME) : "")%>"/></td>
+									 value="<%=(session.getAttribute(UsernamePasswordAuthenticationFilter.SPRING_SECURITY_LAST_USERNAME_KEY) != null ? session.getAttribute(UsernamePasswordAuthenticationFilter.SPRING_SECURITY_LAST_EXCEPTION_KEY) : "")%>"/></td>
 		</tr>
 		<tr>
 			<td class="key">Password</td>

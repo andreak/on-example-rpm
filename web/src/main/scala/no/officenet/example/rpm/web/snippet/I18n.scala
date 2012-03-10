@@ -4,8 +4,8 @@ import net.liftweb._
 import http._
 import common._
 import xml.{Text, Elem, NodeSeq}
-import no.officenet.example.rpm.support.domain.i18n.Bundle
-import no.officenet.example.rpm.support.domain.i18n.Localizer.L
+import no.officenet.example.rpm.support.infrastructure.i18n.Bundle
+import no.officenet.example.rpm.support.infrastructure.i18n.Localizer.L
 
 object I18n extends DispatchSnippet {
 

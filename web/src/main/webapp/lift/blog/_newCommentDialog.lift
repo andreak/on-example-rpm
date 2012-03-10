@@ -1,0 +1,7 @@
+<div class="lift:blog.NewCommentDialogSnippet.renderForm?type=ajax">
+    Comment
+    <div class="inputContainer">
+        <textarea class="commentText">Comment text</textarea> <br/>
+        <input type="submit"/> <br/>
+    </div>
+</div>

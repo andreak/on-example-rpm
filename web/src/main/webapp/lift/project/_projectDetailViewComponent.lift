@@ -41,10 +41,6 @@
 			<td class="lift:i18n.i?bundle=PROJECT_D">projectEstimatedStart</td>
 			<td class="projectEstimatedStart">projectEstimatedStart</td>
 		</tr>
-		<tr>
-			<td class="lift:i18n.i?bundle=PROJECT_D">petId</td>
-			<td class="petId">petId</td>
-		</tr>
 		</tbody>
 	</table>
 </div>

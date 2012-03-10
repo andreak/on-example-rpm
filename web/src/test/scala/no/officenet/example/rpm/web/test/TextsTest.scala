@@ -1,9 +1,9 @@
 package no.officenet.example.rpm.web.test
 
 import java.util.Locale
-import no.officenet.example.rpm.support.domain.i18n.ResourceBundleEnum
-import no.officenet.example.rpm.support.domain.i18n.Localizer.L
 import org.junit.Assert
+import no.officenet.example.rpm.support.infrastructure.i18n.ResourceBundleEnum
+import no.officenet.example.rpm.support.infrastructure.i18n.Localizer.L
 
 
 trait TextsTest {

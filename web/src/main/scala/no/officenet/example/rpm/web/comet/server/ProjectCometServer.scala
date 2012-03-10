@@ -4,23 +4,24 @@ import collection.mutable.HashMap
 import no.officenet.example.rpm.support.infrastructure.logging.Loggable
 import net.liftweb.http.ListenerManager
 import net.liftweb.actor.LiftActor
-import no.officenet.example.rpm.projectmgmt.domain.model.entities.Project
 import org.springframework.beans.factory.annotation.Configurable
 import javax.annotation.Resource
 import no.officenet.example.rpm.projectmgmt.application.service.ProjectAppService
+import no.officenet.example.rpm.web.comet.dto.ProjectCometDto
 
 case class ProjectCometServerKey(id: Long)
+case class ProjectCometCreatedMessage(project: ProjectCometDto)
 
 @Configurable
 class ProjectCometServer(id: Long) extends LiftActor with ListenerManager with Loggable {
 
 	trace("Creating new: "+this)
 
-	private var cachedProject: Project = _
+	private var cachedProject: Option[ProjectCometDto] = None
 	@Resource
 	val projectAppService: ProjectAppService = null
 
-	def projectUpdated(project: Project) {
+	def projectUpdated(project: ProjectCometDto) {
 		this ! project
 	}
 
@@ -29,18 +30,18 @@ class ProjectCometServer(id: Long) extends LiftActor with ListenerManager with L
 	 */
 	def createUpdate = {
 		trace("Sending message to newly subscribed comet-actor for project: "+id)
-		if (cachedProject == null) {
-			cachedProject = projectAppService.retrieve(id).project
+		if (!cachedProject.isDefined) {
+			cachedProject = Some(ProjectCometDto(projectAppService.retrieve(id).project))
 		}
-		cachedProject
+		ProjectCometCreatedMessage(cachedProject.get)
 	}
 
 	/**
 	 * process messages that are sent to the Actor.
 	 */
 	override def lowPriority = {
-		case project: Project =>
-			cachedProject = project
+		case project: ProjectCometDto =>
+			cachedProject = Some(project)
 			updateListeners(project)
 	}
 

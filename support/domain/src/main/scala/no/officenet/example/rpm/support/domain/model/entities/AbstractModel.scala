@@ -14,6 +14,6 @@ abstract class AbstractModel[PK <: java.io.Serializable] extends Serializable  {
 		case _ => false
 	}
 
-	def toString: String
+	override def toString: String
 
 }

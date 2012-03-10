@@ -2,31 +2,32 @@ Welcome to RPM - Rolf's Project Management.
 
 This project aims to demonstrate how to use The Lift-framework to implement
 an application with uses Domain Driven Design and technologies like
-Spring, Spring Security (with remember-me), JPA (Hibernate), JSR-303 Validation,
-jQuery-UI, JTA+XA and the PostgreSQL RDBMS.
+Spring, Spring Security (with remember-me), JPA (Hibernate), Oval Validation,
+jQuery-UI and the PostgreSQL RDBMS.
+It also shows how one can use other frameworks with Lift, example is with JSF,
+and use Lift-backed AJAX-dialogs and comet on a JSF-page
 
 Features:
 - URI-based locale selection
+- Dynamic, type-safe, form-fields with in-place validation and optional AJAX-callbacks on "field-change"
 - Type-safe i18n
 - Modern (technical, not looks) and responsive GUI for editing entities in a jQuery-dialog
 - AJAX-spinner which follows mouse on AJAX-requests
 - Execute custom JavaScript when different radio-buttons (in same group) are checked
   - In this demo it just toggles the value of a text below the radio-buttons
-- In-place field-validation based on the JSR-303 Bean Validation standard
+- Oval integration, http://oval.sf.net
 - Modularize the code into functional domains by having a PersistenceUnit spread across multiple maven-modules
   and have Spring wire it up correctly
 - Uses scala-jpa
-- JPA-entities written in Scala with Scala-based Enumerations in JPA-entities with custom Hibernate-converters
+- JPA-entities written in Scala with Scala-based Enumerations and Option-types in JPA-entities with custom Hibernate-converters
 - Spring Security with remember me and integration with Lift
-- 2 persistence-units using 2 separate data-sources (Spring-managed)
-- JTA+XA in Tomcat using Atomikos and Spring for transaction-management
+- Blog, with Wiki-markup using the OpenSource bliki-parser, nested comments and comment-votes
+  - The blog-view is always in sync (using Comet), no need to refresh to see new posts, comments or updated votes
 
 Bugs:
 - Doesn't handle multiple simultaneous open dialogs
 
 What RPM doesn't want to address and therefore does not implement:
-- Exception-handling
-- Logging (except standard log4j-setup)
 - Nice GUI
 - Useful functionality
 - Testing
@@ -38,7 +39,6 @@ Unresolved issues I'd like to get comments on:
 
 Prerequisites:
 - PostgreSQL 9.0 or later is required to run this application.
-  - Make sure XA is enabled by setting max_prepared_transactions = 10 (or any other suitable value) in $PGDIR/data/postgresql.conf
 - A Maven-3 installation. Note that for some reason the build-process tries to access the deprecated jboss-repository, to overcome this, add a $HOME/.m2/settings.xml like this:
 {{{
 <settings xmlns="http://maven.apache.org/POM/4.0.0"
@@ -69,11 +69,10 @@ infrastructure.datasource.RPM.password=xxx
 Issue the following commands to bootstrap the application:
 {{{
 $ cd <checked out sources>
-$ createdb pets
 $ createdb rpm
 $ mvn install # have a cup of coffee while downloading the Internet if this is your 1st Maven-project.
 $ cd web
-$ MAVEN_OPTS="-XX:MaxPermSize=256m -Xmx512m -javaagent:$HOME/.m2/repository/org/springframework/spring-instrument/3.0.5.RELEASE/spring-instrument-3.0.5.RELEASE.jar" mvn tomcat:run
+$ MAVEN_OPTS="-XX:MaxPermSize=256m -Xmx512m -javaagent:$HOME/.m2/repository/org/springframework/spring-instrument/3.1.1.RELEASE/spring-instrument-3.1.1.RELEASE.jar" mvn tomcat7:run
 $ psql -f bootstrap/sampledata.sql rpm
 }}}
 
@@ -81,6 +80,14 @@ Notes on bootstrapping the application:
 It's crucial to run the sampledata.sql script *after* starting tomcat because Hibernate will generate the relevant tables upon boot.
 The Spring-context needs a loadtime-weaver to be able to inject Spring-beans into non-Spring-managed classes (like snippets), so ensure
 that spring-instrument gets added as a javaagent.
+Also note that when tomcat shuts down it will try to serialize all sessions and when starting it will try to load
+all classes in the previous sessions, including our classes which need load-time weaving. This will lead to the classes
+not being weaved correctly because it happens before the Spring-context is loaded, which prevents the classes to be weaved correctly.
+To ensure weaving is correctly performed, always delete the .SER file by issuing
+{{{
+rm -f `find . -name \*.SER`
+}}}
+before the tomcat7:run command
 
 Open a web-browser on http://localhost:8080/rpm/en/projects or http://localhost:8080/rpm/no/projects (for Norwegian) and login with:
   username: admin
@@ -89,4 +96,3 @@ Open a web-browser on http://localhost:8080/rpm/en/projects or http://localhost:
 NB: Testing is completely non-existent, on purpose.
 
 Disclaimer: RPM is by no means a complete ProjectManagement-system.
-This file was modified by IntelliJ IDEA (Xena) IU-107.509 for binding GitHub repository

@@ -6,13 +6,12 @@ import js.JE.JsRaw
 import js.JsCmds._
 import util.Helpers._
 import collection.JavaConversions._
-import no.officenet.example.rpm.support.infrastructure.util.ResourceBundleHelper
-import no.officenet.example.rpm.support.domain.i18n.Bundle
+import no.officenet.example.rpm.support.infrastructure.i18n.{Bundle, ResourceBundleHelper}
 
 class ConfigSnippet {
 
 	def setBaseURLInJavaScript = {
-		"*" #> Script(JsRaw("Rolf.setBaseUrl(\""+S.contextPath+"\")"))
+		"*" #> Script(JsRaw("Rolf.setBaseUrl(\""+S.contextPath+"/" + S.locale + "\")"))
 	}
 
 	def setGlobalJavaScript = {
