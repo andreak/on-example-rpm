@@ -21,8 +21,6 @@ import java.util.concurrent.atomic.AtomicBoolean
 class BlogViewSnippet(blogViewParam: BlogViewParam) extends ValidatableScreen with JpaFormFields {
 
 	@Resource
-	private val blogService: BlogService = null
-	@Resource
 	val blogEntryService: BlogEntryService = null
 
 	var newBlogPost: BlogEntry = null

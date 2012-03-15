@@ -9,11 +9,9 @@ import http.js.JsRules
 import http.{SHtml, S}
 import net.liftweb.util.Helpers._
 
-import javax.annotation.Resource
 import org.springframework.beans.factory.annotation.Configurable
 import server.{BlogEntryCommentAddedMessage, BlogEntryUpdatedMessage, BlogEntryCreatedMessage, BlogCometListenerAddedMessage, BlogMasterServer}
 import xml.{Text, NodeSeq}
-import no.officenet.example.rpm.blog.domain.service.BlogService
 import no.officenet.example.rpm.web.lib.RolfJsCmds.SlideDown
 import no.officenet.example.rpm.web.menu.{BlogEntryViewLoc, BlogEntryViewParam}
 import no.officenet.example.rpm.support.infrastructure.i18n.GlobalTexts
@@ -24,9 +22,6 @@ import no.officenet.example.rpm.web.lib.{BlogHelper, LiftUtils}
 class BlogCometActor extends RpmCometActor {
 
 	lazy val blogIdent = nameParts(1).toLong
-
-	@Resource
-	private val blogService: BlogService = null
 
 	lazy val blogServer = BlogMasterServer.registerWithServer(blogIdent)
 

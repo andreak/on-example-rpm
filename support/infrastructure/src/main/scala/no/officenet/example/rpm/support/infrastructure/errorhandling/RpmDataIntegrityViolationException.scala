@@ -23,5 +23,4 @@ class RpmDataIntegrityViolationException(val constraintName: String, cause: Thro
 
 	def getArguments = localizableRuntimeException.getArguments
 
-	def get = this
 }

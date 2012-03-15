@@ -12,5 +12,4 @@ class RpmConstraintsViolatedException(_constraintViolations: Array[ConstraintVio
 
 	def getConstraintViolations = _constraintViolations
 
-	def get() = this
 }

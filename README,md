@@ -8,24 +8,21 @@ It also shows how one can use other frameworks with Lift, example is with JSF,
 and use Lift-backed AJAX-dialogs and comet on a JSF-page
 
 Features:
-- URI-based locale selection
-- Dynamic, type-safe, form-fields with in-place validation and optional AJAX-callbacks on "field-change"
-- Type-safe i18n
-- Modern (technical, not looks) and responsive GUI for editing entities in a jQuery-dialog
-- AJAX-spinner which follows mouse on AJAX-requests
-- Execute custom JavaScript when different radio-buttons (in same group) are checked
-  - In this demo it just toggles the value of a text below the radio-buttons
-- Oval integration, http://oval.sf.net
-- Modularize the code into functional domains by having a PersistenceUnit spread across multiple maven-modules
+* URI-based locale selection
+* Dynamic, type-safe, form-fields with in-place validation and optional AJAX-callbacks on "field-change"
+* Type-safe i18n
+* Modern (technical, not looks) and responsive GUI for editing entities in a jQuery-dialog
+* AJAX-spinner which follows mouse on AJAX-requests
+* Execute custom JavaScript when different radio-buttons (in same group) are checked
+** In this demo it just toggles the value of a text below the radio-buttons
+* Oval integration, http://oval.sf.net
+* Modularize the code into functional domains by having a PersistenceUnit spread across multiple maven-modules
   and have Spring wire it up correctly
-- Uses scala-jpa
-- JPA-entities written in Scala with Scala-based Enumerations and Option-types in JPA-entities with custom Hibernate-converters
-- Spring Security with remember me and integration with Lift
-- Blog, with Wiki-markup using the OpenSource bliki-parser, nested comments and comment-votes
-  - The blog-view is always in sync (using Comet), no need to refresh to see new posts, comments or updated votes
-
-Bugs:
-- Doesn't handle multiple simultaneous open dialogs
+* Uses scala-jpa
+* JPA-entities written in Scala with Scala-based Enumerations and Option-types in JPA-entities with custom Hibernate-converters
+* Spring Security with remember me and integration with Lift
+* Blog, with Wiki-markup using the OpenSource bliki-parser, nested comments and comment-votes
+** The blog-view is always in sync (using Comet), no need to refresh to see new posts, comments or updated votes
 
 What RPM doesn't want to address and therefore does not implement:
 - Nice GUI
@@ -35,12 +32,11 @@ What RPM doesn't want to address and therefore does not implement:
 Unresolved issues I'd like to get comments on:
 1 Is it possible to run Hibernate's hibernate-jpamodelgen to generate Meta-classes for the JPA-entities on entities written in Scala?
   - It seems the plugin doesn't operate on class-files but on sources and doesn't recognize JPA-entities written in Scala.
-2 Setting the locale in Spring's LocaleContextHolder using S.addAround() in Boot.scala doesn't work, see thread: http://groups.google.com/group/liftweb/browse_frm/thread/2b44b5ad4d2ab57d/5eb3a2a166d0aa0d
 
 Prerequisites:
 - PostgreSQL 9.0 or later is required to run this application.
 - A Maven-3 installation. Note that for some reason the build-process tries to access the deprecated jboss-repository, to overcome this, add a $HOME/.m2/settings.xml like this:
-{{{
+```xml
 <settings xmlns="http://maven.apache.org/POM/4.0.0"
 	  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
@@ -54,27 +50,27 @@ Prerequisites:
     </mirror>
   </mirrors>
 </settings>
-}}}
+```
 
 DB-configuration:
 Ensure these properties are set to match your DB-settings, configured in /spring/props/infrastructure.properties
 
-{{{
+```
 infrastructure.datasource.RPM.serverName=localhost
 infrastructure.datasource.RPM.port=5432
 infrastructure.datasource.RPM.username=your-username
 infrastructure.datasource.RPM.password=xxx
-}}}
+```
 
 Issue the following commands to bootstrap the application:
-{{{
+```
 $ cd <checked out sources>
 $ createdb rpm
 $ mvn install # have a cup of coffee while downloading the Internet if this is your 1st Maven-project.
 $ cd web
 $ MAVEN_OPTS="-XX:MaxPermSize=256m -Xmx512m -javaagent:$HOME/.m2/repository/org/springframework/spring-instrument/3.1.1.RELEASE/spring-instrument-3.1.1.RELEASE.jar" mvn tomcat7:run
 $ psql -f bootstrap/sampledata.sql rpm
-}}}
+```
 
 Notes on bootstrapping the application:
 It's crucial to run the sampledata.sql script *after* starting tomcat because Hibernate will generate the relevant tables upon boot.

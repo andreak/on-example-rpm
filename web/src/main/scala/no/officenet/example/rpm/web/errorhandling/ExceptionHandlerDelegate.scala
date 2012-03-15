@@ -34,7 +34,7 @@ object ExceptionHandlerDelegate extends Loggable {
 	def createErrorDialog(localizableEx: Localizable) = {
 		val stackTrace: NodeSeq = (localizableEx match {
 			case e: SystemException =>
-				ExceptionHandlerDelegate.getShowHide(e.get)
+				ExceptionHandlerDelegate.getShowHide(e.asInstanceOf[Throwable])
 			case _ => NodeSeq.Empty
 		})
 		val title = L_!(GlobalTexts.exception_popup_title)

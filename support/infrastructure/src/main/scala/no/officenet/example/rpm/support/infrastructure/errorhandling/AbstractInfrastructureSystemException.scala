@@ -11,8 +11,6 @@ abstract class AbstractInfrastructureSystemException(resourceKey: String, cause:
 		this(resourceKey, null, arguments:_*)
 	}
 
-	final def get = this
-
 	val RESOURCE_BUNDLE_NAME = "infrastructureErrorResources"
 
 	def getResourceBundleName = RESOURCE_BUNDLE_NAME
