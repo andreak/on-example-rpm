@@ -34,21 +34,34 @@ Unresolved issues I'd like to get comments on:
 
 Prerequisites:
 * PostgreSQL 9.0 or later is required to run this application.
-* A Maven-3 installation. Note that for some reason the build-process tries to access the deprecated jboss-repository, to overcome this, add a $HOME/.m2/settings.xml like this:
+* A Maven-3 installation. You need the oss.sonatype.org repo in order to get lift-2.5-SNAPSHOT, like this example ~/.m2/settings.xml
 <pre>
 <settings xmlns="http://maven.apache.org/POM/4.0.0"
-	  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
-			      http://maven.apache.org/xsd/settings-1.0.0.xsd">
-  <mirrors>
-    <mirror>
-      <id>jboss-public</id>
-      <name>JBoss Public Nexus Repository</name>
-      <url>https://repository.jboss.org/nexus/content/groups/public/</url>
-      <mirrorOf>repository.jboss.org</mirrorOf>
-    </mirror>
-  </mirrors>
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                              http://maven.apache.org/xsd/settings-1.0.0.xsd">
+  <profiles>
+    <profile>
+      <id>mydefaultprofile</id>
+      <repositories>
+        <repository>
+          <id>oss-sonatype</id>
+          <url>https://oss.sonatype.org/content/groups/public/</url>
+          <snapshots>
+            <enabled>true</enabled>
+          </snapshots>
+          <releases>
+            <enabled>true</enabled>
+          </releases>
+        </repository>
+      </repositories>
+    </profile>
+  </profiles>
+  <activeProfiles>
+    <activeProfile>mydefaultprofile</activeProfile>
+  </activeProfiles>
 </settings>
+
 </pre>
 
 DB-configuration:
