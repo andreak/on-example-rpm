@@ -36,7 +36,7 @@ Unresolved issues I'd like to get comments on:
 Prerequisites:
 - PostgreSQL 9.0 or later is required to run this application.
 - A Maven-3 installation. Note that for some reason the build-process tries to access the deprecated jboss-repository, to overcome this, add a $HOME/.m2/settings.xml like this:
-```xml
+<pre>
 <settings xmlns="http://maven.apache.org/POM/4.0.0"
 	  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
@@ -50,27 +50,27 @@ Prerequisites:
     </mirror>
   </mirrors>
 </settings>
-```
+</pre>
 
 DB-configuration:
 Ensure these properties are set to match your DB-settings, configured in /spring/props/infrastructure.properties
 
-```
+<pre>
 infrastructure.datasource.RPM.serverName=localhost
 infrastructure.datasource.RPM.port=5432
 infrastructure.datasource.RPM.username=your-username
 infrastructure.datasource.RPM.password=xxx
-```
+</pre>
 
 Issue the following commands to bootstrap the application:
-```
+<pre>
 $ cd <checked out sources>
 $ createdb rpm
 $ mvn install # have a cup of coffee while downloading the Internet if this is your 1st Maven-project.
 $ cd web
 $ MAVEN_OPTS="-XX:MaxPermSize=256m -Xmx512m -javaagent:$HOME/.m2/repository/org/springframework/spring-instrument/3.1.1.RELEASE/spring-instrument-3.1.1.RELEASE.jar" mvn tomcat7:run
 $ psql -f bootstrap/sampledata.sql rpm
-```
+</pre>
 
 Notes on bootstrapping the application:
 It's crucial to run the sampledata.sql script *after* starting tomcat because Hibernate will generate the relevant tables upon boot.
@@ -80,9 +80,9 @@ Also note that when tomcat shuts down it will try to serialize all sessions and 
 all classes in the previous sessions, including our classes which need load-time weaving. This will lead to the classes
 not being weaved correctly because it happens before the Spring-context is loaded, which prevents the classes to be weaved correctly.
 To ensure weaving is correctly performed, always delete the .SER file by issuing
-{{{
+<pre>
 rm -f `find . -name \*.SER`
-}}}
+</pre>
 before the tomcat7:run command
 
 Open a web-browser on http://localhost:8080/rpm/en/projects or http://localhost:8080/rpm/no/projects (for Norwegian) and login with:
