@@ -24,17 +24,17 @@ Features:
 ** The blog-view is always in sync (using Comet), no need to refresh to see new posts, comments or updated votes
 
 What RPM doesn't want to address and therefore does not implement:
-- Nice GUI
-- Useful functionality
-- Testing
+* Nice GUI
+* Useful functionality
+* Testing
 
 Unresolved issues I'd like to get comments on:
-1 Is it possible to run Hibernate's hibernate-jpamodelgen to generate Meta-classes for the JPA-entities on entities written in Scala?
-:: It seems the plugin doesn't operate on class-files but on sources and doesn't recognize JPA-entities written in Scala.
+* Is it possible to run Hibernate's hibernate-jpamodelgen to generate Meta-classes for the JPA-entities on entities written in Scala?
+** It seems the plugin doesn't operate on class-files but on sources and doesn't recognize JPA-entities written in Scala.
 
 Prerequisites:
-- PostgreSQL 9.0 or later is required to run this application.
-- A Maven-3 installation. Note that for some reason the build-process tries to access the deprecated jboss-repository, to overcome this, add a $HOME/.m2/settings.xml like this:
+* PostgreSQL 9.0 or later is required to run this application.
+* A Maven-3 installation. Note that for some reason the build-process tries to access the deprecated jboss-repository, to overcome this, add a $HOME/.m2/settings.xml like this:
 <pre>
 <settings xmlns="http://maven.apache.org/POM/4.0.0"
 	  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -89,5 +89,3 @@ Open a web-browser on http://localhost:8080/rpm/en/projects or http://localhost:
   password: Fish123
 
 NB: Testing is completely non-existent, on purpose.
-
-Disclaimer: RPM is by no means a complete ProjectManagement-system.
