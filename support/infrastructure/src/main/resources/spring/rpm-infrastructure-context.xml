@@ -40,11 +40,6 @@
 		<property name="packagesToScan" value="no.officenet.example.rpm"/>
 		<property name="jpaVendorAdapter" ref="jpaVendorAdapter"/>
 		<property name="jpaDialect" ref="jpaDialect"/>
-		<property name="jpaProperties">
-			<props>
-				<prop key="javax.persistence.validation.mode">none</prop><!-- We do manual validation in repositories (+ field-validation) -->
-			</props>
-		</property>
 	</bean>
 
 	<bean id="jpaDialect" class="no.officenet.example.rpm.support.infrastructure.jpa.RpmPersistenceExceptionTranslator">

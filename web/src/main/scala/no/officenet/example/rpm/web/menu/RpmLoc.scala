@@ -165,3 +165,26 @@ object ProjectEditDialogWrapperLoc extends Loc[Unit] {
 
 
 }
+
+object ProjectViewWrapperLoc extends Loc[Unit] {
+	def name = "viewProjectWrapper"
+	def defaultValue = Full(())
+
+	val link = new Loc.Link[Unit](List("lift", "project", "projectViewWrapperForJSF"), false){
+		override def createLink(in: Unit) = Empty
+	}
+
+	def params = Loc.Hidden :: Nil
+
+	val text = new Loc.LinkText(calcLinkText _)
+
+	def calcLinkText(in: Unit): NodeSeq = NodeSeq.Empty
+
+	override val rewrite: LocRewrite = Full(NamedPF("viewProjectWrapper rewrite") {
+		case RewriteRequest(ParsePath(UrlLocalizer(locale) :: "wrapper" :: "project" :: "projectViewWrapperForJSF" :: Nil,_,_,_),_,_) => {
+			(RewriteResponse("lift" :: "project" :: "projectViewWrapperForJSF" :: Nil, Map.empty, true), ())
+		}
+	})
+
+
+}

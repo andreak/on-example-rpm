@@ -7,6 +7,7 @@ object RpmMenu {
 		(Menu("Index") / "index" >> Loc.Hidden) ::
 		(Menu("Project-view wrapperForJSF") / "lift" / "project" / "projectViewWrapperForJSF" >> Loc.Hidden) ::
 		Menu(ProjectEditDialogWrapperLoc) ::
+		Menu(ProjectViewWrapperLoc) ::
 		Menu(ProjectListLoc, Menu(ProjectLoc)) ::
 		Menu(BlogViewLoc, Menu(BlogEntryViewLoc)) ::
 		Nil
