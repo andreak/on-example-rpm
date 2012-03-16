@@ -16,8 +16,7 @@ Features:
 * Execute custom JavaScript when different radio-buttons (in same group) are checked
 ** In this demo it just toggles the value of a text below the radio-buttons
 * Oval integration, http://oval.sf.net
-* Modularize the code into functional domains by having a PersistenceUnit spread across multiple maven-modules
-  and have Spring wire it up correctly
+* Modularize the code into functional domains by having a PersistenceUnit spread across multiple maven-modules and have Spring wire it up correctly
 * Uses scala-jpa
 * JPA-entities written in Scala with Scala-based Enumerations and Option-types in JPA-entities with custom Hibernate-converters
 * Spring Security with remember me and integration with Lift
