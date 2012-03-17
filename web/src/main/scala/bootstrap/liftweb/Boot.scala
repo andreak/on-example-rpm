@@ -33,7 +33,7 @@ class Boot {
 		LiftRules.htmlProperties.default.set((r: Req) => new XHtmlInHtml5OutProperties(r.userAgent))
 
 		LiftRules.templateSuffixes = "lift" :: LiftRules.templateSuffixes
-		LiftRules.snippetNamesToSearch.default.set(() => LiftRules.searchSnippetsWithRequestPath(_))
+
 		LiftRules.addToPackages("no.officenet.example.rpm.web")
 
 		LiftRules.loggedInTest = Full(() => SecurityContextHolder.getContext.getAuthentication != null)

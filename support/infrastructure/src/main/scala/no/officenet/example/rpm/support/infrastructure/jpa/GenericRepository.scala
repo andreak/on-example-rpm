@@ -1,7 +1,6 @@
 package no.officenet.example.rpm.support.infrastructure.jpa
 
 import java.io.Serializable
-import org.springframework.transaction.annotation.Transactional
 import collection.JavaConversions.asScalaBuffer
 import javax.annotation.Resource
 import javax.persistence.criteria.CriteriaBuilder
@@ -9,8 +8,9 @@ import collection.mutable.{ListBuffer, Buffer}
 import no.officenet.example.rpm.support.infrastructure.spring.aop.LazyInitState
 import net.sf.oval.Validator
 import no.officenet.example.rpm.support.infrastructure.errorhandling.{RpmConstraintsViolatedException, ObjectNotFoundByPrimaryKeyException}
+import org.springframework.stereotype.Repository
 
-@Transactional
+@Repository
 trait WritableRepository[T <: AnyRef, PK <: Serializable] extends RepositorySupport {
 
 	@Resource(name = "ovalValidator")
@@ -80,6 +80,7 @@ trait ReadableRepository[T <: AnyRef, PK <: Serializable] extends RepositorySupp
 
 }
 
+@Repository
 trait DeletableRepository[T <: AnyRef, PK <: Serializable] extends RepositorySupport {
 	def remove(entity: T) {
 		val oldVersion = entityManager.merge(entity)
