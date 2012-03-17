@@ -164,6 +164,19 @@
 
         .liftTemplate pre{clear:both;white-space:pre;margin:1em 2.5%;padding:.5em;background:#f9f9f9;border:1px solid #ddd;_width:100%;_overflow-x:auto;_padding-bottom:1.5em;}
 
+        .liftTemplate div.inputContainer div.title input {
+            width: 400px;
+        }
+
+        .liftTemplate div.inputContainer div.summary textarea {
+            width: 400px;
+            height: 50px;
+        }
+
+        .liftTemplate div.inputContainer div.content textarea {
+            width: 400px;
+            height: 100px;
+        }
     </style>
 </head>
 <body class="yui-skin-sam liftTemplate">
