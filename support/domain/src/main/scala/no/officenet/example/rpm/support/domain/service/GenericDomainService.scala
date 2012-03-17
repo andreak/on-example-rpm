@@ -3,12 +3,12 @@ package no.officenet.example.rpm.support.domain.service
 import org.springframework.beans.factory.InitializingBean
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.util.Assert
-import no.officenet.example.rpm.support.infrastructure.jpa.{OrderBy, GenericRepository}
+import no.officenet.example.rpm.support.infrastructure.jpa.{GenericEntityRepository, OrderBy, GenericRepository}
 
 @Transactional
 trait GenericDomainService[T <: AnyRef] extends InitializingBean {
 
-	var repository: GenericRepository[T, java.lang.Long] = null
+	var repository: GenericEntityRepository[T] = null
 
 	def retrieve(id: java.lang.Long)(implicit m: Manifest[T]) = repository.retrieve(id)(m)
 
