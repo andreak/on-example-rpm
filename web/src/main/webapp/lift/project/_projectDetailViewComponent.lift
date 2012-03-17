@@ -4,8 +4,8 @@
 	<table>
 		<thead>
 		<tr>
-			<th>Property</th>
-			<th>Value</th>
+			<th class="property">Property</th>
+			<th class="value">Value</th>
 		</tr>
 		</thead>
 		<tbody>

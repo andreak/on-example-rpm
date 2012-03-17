@@ -39,7 +39,10 @@ object ProjectTexts {
 		activityListIsEmpty,
 		label_chosenColor,
 		label_niceColor,
-		label_badColor
+		label_badColor,
+
+		label_property,
+		label_value
 
 		= BundleEnum(Bundle.PROJECT_V)
 	}

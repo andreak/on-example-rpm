@@ -37,6 +37,10 @@ object ProjectDetailCometRenderer extends Loggable {
 	def getNodeSeqNodeSeq(project: ProjectCometDto) = {
 		".projectName *" #> project.name &
 		".editButton *" #> getEditButtonLink(project.id) &
+		"thead" #> (
+			".property *" #> L(ProjectTexts.V.label_property) &
+			".value *" #> L(ProjectTexts.V.label_value)
+			) &
 		".description *" #> project.description &
 		".created *" #> formatDateTime(L(GlobalTexts.dateformat_fullDateTime), Some(project.created)) &
 		".createdBy *" #> project.createdBy.displayName &
