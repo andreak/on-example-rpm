@@ -2,12 +2,12 @@ package no.officenet.example.rpm.support.domain.service.repository
 
 import org.springframework.stereotype.Repository
 import no.officenet.example.rpm.support.domain.model.entities.User
-import no.officenet.example.rpm.support.infrastructure.jpa.{PersistenceUnits, GenericRepository}
+import no.officenet.example.rpm.support.infrastructure.jpa.{PersistenceUnits, GenericEntityRepository}
 
 @Repository
 class UserRepositoryJpa extends UserRepository with PersistenceUnits.PersistenceUnitRPM
 
-trait UserRepository extends GenericRepository[User, java.lang.Long] {
+trait UserRepository extends GenericEntityRepository[User] {
 
 	def findByUserName(userName: String) = {
 		entityManager.createQuery[User]("SELECT u FROM User u WHERE u.userName = :userName")

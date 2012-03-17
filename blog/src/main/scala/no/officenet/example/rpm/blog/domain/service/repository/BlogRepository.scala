@@ -2,13 +2,13 @@ package no.officenet.example.rpm.blog.domain.service.repository
 
 import org.springframework.stereotype.Repository
 import collection.mutable.Buffer
-import no.officenet.example.rpm.support.infrastructure.jpa.{GenericRepository, PersistenceUnits}
+import no.officenet.example.rpm.support.infrastructure.jpa.{GenericEntityRepository, PersistenceUnits}
 import no.officenet.example.rpm.blog.domain.model.entities.{BlogEntrySummary, Blog}
 
 @Repository
 class BlogRepositoryImpl extends BlogRepository with PersistenceUnits.PersistenceUnitRPM
 
-trait BlogRepository extends GenericRepository[Blog, java.lang.Long] {
+trait BlogRepository extends GenericEntityRepository[Blog] {
 
 	def findByNameForUser(blogName: String, userName: String): Option[Blog] = {
 		val query = entityManager.createQuery[Blog]("""

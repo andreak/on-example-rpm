@@ -2,14 +2,14 @@ package no.officenet.example.rpm.blog.domain.service.repository
 
 import org.springframework.stereotype.Repository
 import no.officenet.example.rpm.blog.domain.model.entities.{CommentVoteOwner, Comment}
-import no.officenet.example.rpm.support.infrastructure.jpa.{PersistenceUnits, GenericRepository}
+import no.officenet.example.rpm.support.infrastructure.jpa.{PersistenceUnits, GenericEntityRepository}
 
 @Repository
 class CommentRepositoryImpl extends CommentRepository with PersistenceUnits.PersistenceUnitRPM
 
 private case class VoteSummary(commentId: Long, voteValue: Boolean)
 
-trait CommentRepository extends GenericRepository[Comment, java.lang.Long] {
+trait CommentRepository extends GenericEntityRepository[Comment] {
 
 	def findVotesForPerson(blogEntryId: Long, userId: Long): Map[Long, Boolean] = {
 		val result = entityManager.createQuery[VoteSummary]("""
