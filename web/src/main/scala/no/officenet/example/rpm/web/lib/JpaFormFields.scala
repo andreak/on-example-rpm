@@ -21,7 +21,7 @@ trait JpaFormFields extends Validatable {
 			validator.registerFieldViolations(registerError(originalValue) _, bean, fieldName, valueToValidate, errorsMap, nextFuncName)
 		}
 
-		override def maxLengthOfFieldInChars = validator.getMaxLengthOfProperty(bean, fieldName)
+		override def maxLengthOfFieldInChars(implicit m: Manifest[T]) = validator.getMaxLengthOfProperty[T](bean, fieldName)
 	}
 
 	object JpaTextField {

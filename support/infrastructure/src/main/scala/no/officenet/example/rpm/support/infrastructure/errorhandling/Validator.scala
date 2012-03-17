@@ -11,7 +11,7 @@ import net.sf.oval.Check
 import net.sf.oval.constraint._
 import java.lang.reflect.{Method, Field}
 import no.officenet.example.rpm.support.infrastructure.scala.lang.ControlHelpers.?
-import no.officenet.example.rpm.support.infrastructure.validation.OvalValidator
+import no.officenet.example.rpm.support.infrastructure.validation.{OptionalMaxCheck, OvalValidator}
 
 private[errorhandling] object ValidationCache {
 	val sizeMap = new HashMap[String, Option[Long]]
@@ -23,7 +23,7 @@ trait Validator {
 
 	def mandatory[A <: AnyRef](bean: A, fieldName: String): Boolean
 
-	def getMaxLengthOfProperty(bean: AnyRef, fieldName: String): Option[Long]
+	def getMaxLengthOfProperty[T](bean: AnyRef, fieldName: String)(implicit m: Manifest[T]): Option[Long]
 
 	def registerFieldViolations[T](registerErrorFunc: (AnyRef, String, String, String,
 		IdentityHashMap[AnyRef, HashMap[String, Buffer[FieldError]]], String) => Unit,
@@ -56,7 +56,7 @@ object OvalScreenValidator extends Validator with Loggable {
 		isMandatory
 	}
 
-	override def getMaxLengthOfProperty(bean: AnyRef, fieldName: String): Option[Long] = {
+	override def getMaxLengthOfProperty[T](bean: AnyRef, fieldName: String)(implicit m: Manifest[T]): Option[Long] = {
 		val c = bean.getClass
 		val s = c.getName + "." + fieldName
 		val cached = ValidationCache.sizeMap.get(s)
@@ -102,22 +102,38 @@ object OvalScreenValidator extends Validator with Loggable {
 		registerBeanViolations(registerErrorFunc, bean, fieldName, errorsMap, uniqueErrorId)
 	}
 
-	private def findMax(checks: Array[Check]): Option[Long] = {
+	private def findMax[T](checks: Array[Check])(implicit m: Manifest[T]): Option[Long] = {
+		import no.officenet.example.rpm.support.infrastructure.i18n.InputStringConverter.optionCls
+
+		def calculateMax(size: Long, classToCheck: Class[_]): Option[Long] = {
+			// Number
+			val isBigDecimal = classToCheck == classOf[java.math.BigDecimal] ||
+				classToCheck == classOf[BigDecimal]
+			//Need to adjust for scale when type is BigDecimal. Add 3 (1 for '.' and 2 for 2 decimals)
+			val ajustForBigDecimal: Long = if (isBigDecimal) 3L else 0L
+			val getMaxSize: Long = scala.math.ceil(scala.math.log10(size)).toLong
+			val ajustForModZero: Long = if (size % 10 == 0) 1L else 0L
+
+			val maxSize = getMaxSize + ajustForModZero + ajustForBigDecimal
+			Some(maxSize)
+		}
 
 		checks.foreach(check => {
 			check match {
+				case optionalMaxCheck: OptionalMaxCheck =>
+					val size = optionalMaxCheck.max.toLong
+					val compileTimeType = check.getContext.getCompileTimeType
+					return compileTimeType match {
+						case `optionCls` =>
+							val classToCheck = m.typeArguments.head.erasure
+							trace("We've got an option of type: " + classToCheck)
+							calculateMax(size, classToCheck)
+						case _ => None
+					}
 				case maxCheck: MaxCheck =>
-					// Number
-					val isBigDecimal = check.getContext.getCompileTimeType == classOf[java.math.BigDecimal] ||
-						check.getContext.getCompileTimeType == classOf[BigDecimal]
-					//Need to adjust for scale when type is BigDecimal. Add 3 (1 for '.' and 2 for 2 decimals)
-					val ajustForBigDecimal: Long = if (isBigDecimal) 3L else 0L
 					val size = maxCheck.getMax.toLong
-					val getMaxSize: Long = scala.math.ceil(scala.math.log10(size)).toLong
-					val ajustForModZero: Long = if (size % 10 == 0) 1L else 0L
-
-					val maxSize = getMaxSize + ajustForModZero + ajustForBigDecimal
-					return Some(maxSize)
+					val classToCheck = check.getContext.getCompileTimeType
+					return calculateMax(size, classToCheck)
 				case maxSizeCheck: MaxSizeCheck =>
 					// Array or collection
 					return Some(maxSizeCheck.getMax.toLong)

@@ -12,7 +12,6 @@ import http.{LiftRules, AjaxContext, S, SHtml}
 import util.Helpers._
 import xml._
 import org.joda.time.DateTime
-import no.officenet.example.rpm.support.infrastructure.i18n.GlobalTexts
 import no.officenet.example.rpm.support.infrastructure.i18n.Localizer.L
 import no.officenet.example.rpm.support.infrastructure.i18n.DateFormatter._
 import no.officenet.example.rpm.support.infrastructure.i18n.NumberFormatter._
@@ -22,6 +21,7 @@ import no.officenet.example.rpm.web.lib.RolfJsCmds.{AttachFieldError, RemoveFiel
 import collection.mutable.{ArrayBuffer, HashMap, Buffer}
 import no.officenet.example.rpm.support.infrastructure.logging.Loggable
 import no.officenet.example.rpm.support.infrastructure.errorhandling.{FieldError, InvalidDateException}
+import no.officenet.example.rpm.support.infrastructure.i18n.{InputStringConverter, GlobalTexts}
 
 trait ValidatableScreen extends Loggable with ErrorsAware {
 
@@ -319,7 +319,7 @@ trait ValidatableScreen extends Loggable with ErrorsAware {
 		}
 
 		def withInputMask(mask: InputMask): this.type = {
-			mask.applyTo(this)
+			this.inputMask = Full(mask)
 			this
 		}
 
@@ -368,6 +368,10 @@ trait ValidatableScreen extends Loggable with ErrorsAware {
 			val errorSeq = getErrorsSeq(fieldErrors)
 
 			val _maxLength = maxLength or maxLengthOfFieldInChars // prefer local if explicitly set via withMaxLength()
+
+			for (mask <- inputMask) {
+				mask.applyTo(this)
+			}
 
 			var inputSeq = getInputElementDrus(fieldErrors) %
 				("id" -> inputId) %
@@ -450,10 +454,10 @@ trait ValidatableScreen extends Loggable with ErrorsAware {
 
 		def isMandatory = mandatory
 
-		protected def maxLengthOfFieldInChars: Option[Long] = Empty
+		protected[lib] def maxLengthOfFieldInChars(implicit m: Manifest[T]): Option[Long] = Empty
 
 		protected var mandatory = false
-		protected var maxLength: Box[Long] = Empty
+		protected[lib] var maxLength: Box[Long] = Empty
 		var container: InputContainer[T] = InlineInputContainer[T](this)
 		var additionalValidationFunc: Box[T => Boolean] = Empty
 		var additionalErrorMessageFunc: Box[K => String] = Empty
@@ -462,6 +466,8 @@ trait ValidatableScreen extends Loggable with ErrorsAware {
 		private[this] var attrs: Seq[SHtml.ElemAttr] = Nil
 		var readOnlyFormatterFunc: Box[() => NodeSeq] = Empty
 		private[this] var doPerformInPlaceFieldValidation = true
+
+		var inputMask: Box[InputMask] = Empty
 
 		def getAttributes = origAttrs ++ attrs
 

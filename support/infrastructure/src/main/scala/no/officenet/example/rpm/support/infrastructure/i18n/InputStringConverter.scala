@@ -1,7 +1,6 @@
-package no.officenet.example.rpm.web.lib
+package no.officenet.example.rpm.support.infrastructure.i18n
 
 import org.joda.time.DateTime
-import no.officenet.example.rpm.support.infrastructure.i18n.{DateFormatter, NumberFormatter}
 
 object InputStringConverter {
 

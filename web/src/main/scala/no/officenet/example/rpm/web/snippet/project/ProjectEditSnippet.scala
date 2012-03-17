@@ -19,7 +19,7 @@ import xml.NodeSeq
 import no.officenet.example.rpm.projectmgmt.domain.model.enums.{ProjectColor, ProjectType, ProjectTexts}
 import no.officenet.example.rpm.support.infrastructure.i18n.{Localizer, Bundle, GlobalTexts}
 import no.officenet.example.rpm.support.infrastructure.i18n.Localizer.L
-import no.officenet.example.rpm.web.lib.{JpaFormFields, ValidatableScreen}
+import no.officenet.example.rpm.web.lib.{NaturalNumberMask, JpaFormFields, ValidatableScreen}
 
 object DisplayRadioWithLabelHorizontallyTemplate {
 	def buildElement(item: SHtml.ChoiceItem[(String, String)]): NodeSeq = {
@@ -107,7 +107,8 @@ class ProjectEditSnippet extends ValidatableScreen with JpaFormFields with Trans
 			".bad_color_id [id]" #> badColorIdKey &
 			".bad_color_id [style]" #> getStyleForLabel(badColorIdKey) &
 			".budget *" #> JpaTextField(project, Project.budget, project.budget.map(d => d.toString).getOrElse(""), (v: Option[Long]) => project.budget = v).
-				withContainer(TdInputContainer(L(ProjectTexts.V.projectDialog_details_label_budget)))&
+				withContainer(TdInputContainer(L(ProjectTexts.V.projectDialog_details_label_budget))).
+				withInputMask(NaturalNumberMask()) &
 			".estimatedStart *" #> JpaDateField(project, Project.estimatedStartDate,
 											 Localizer.formatDateTime(L(GlobalTexts.dateformat_fullDate),
 																	  Box.legacyNullTest(project.estimatedStartDate)).getOrElse(""),

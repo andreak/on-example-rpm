@@ -517,8 +517,16 @@ var Rolf = (function() {
                 percent: function(inputfieldId) {
                     applyMask(inputfieldId, {aSep: '', aDec: ',', vMin: '0.00', vMax: '100.00'});
                 },
-                naturalNumber: function(inputfieldId) {
-                    applyMask(inputfieldId, {aSep: ' ', vMin: '0', mDec: '0'});
+                naturalNumber: function(inputfieldId, maxLength) {
+                    var max = "";
+                    if (Object.isUndefined(maxLength)) {
+                        max = undefined
+                    } else {
+                        for (var i = 0; i < maxLength; i++) {
+                            max = max + "9";
+                        }
+                    }
+                    applyMask(inputfieldId, {aSep: ' ', vMin: '0', mDec: '0', vMax: max});
                 }
             };
         })(),
