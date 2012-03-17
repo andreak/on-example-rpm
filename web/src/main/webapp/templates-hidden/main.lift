@@ -86,7 +86,6 @@
             border-radius: 3px;
             box-shadow: 10px 10px 10px black;
             margin: 20px auto 0 auto;
-            width: 1000px;
         }
 
         .liftTemplate .blogEntryHeaderContainer {
