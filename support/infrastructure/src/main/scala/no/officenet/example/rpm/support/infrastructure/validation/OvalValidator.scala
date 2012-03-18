@@ -5,7 +5,6 @@ package no.officenet.example.rpm.support.infrastructure.validation
  */
 
 import net.sf.oval.configuration.Configurer
-import net.sf.oval.Validator
 import net.sf.oval.internal.ContextCache
 import java.lang.reflect.Method
 import collection.JavaConversions._
@@ -14,6 +13,9 @@ import net.sf.oval.localization.message.MessageResolver
 import java.util.{MissingResourceException, Locale, Collections}
 import org.springframework.context.i18n.LocaleContextHolder
 import no.officenet.example.rpm.support.infrastructure.i18n.ResourceBundleHelper
+import net.sf.oval.{Check, ConstraintViolation, Validator}
+import net.sf.oval.context.OValContext
+import org.hibernate.Hibernate
 
 /**
  * Custom validator based on Oval's {@link Validator}}
@@ -46,6 +48,15 @@ class OvalValidator(configurers: java.util.Collection[Configurer])
 		}
 		violations
 	}
+
+	override def checkConstraint(violations: java.util.List[ConstraintViolation], check: Check, validatedObject: AnyRef,
+								 valueToValidate: Any, context: OValContext, profiles: Array[String],
+								 isContainerValue: Boolean, ignoreTarget: Boolean) {
+		if (Hibernate.isInitialized(valueToValidate)) {
+			super.checkConstraint(violations, check, validatedObject, valueToValidate, context, profiles, isContainerValue, ignoreTarget)
+		}
+	}
+
 }
 
 object OvalMessageResolver extends MessageResolver {
