@@ -41,10 +41,15 @@ class ProjectCometServer(id: Long) extends LiftActor with ListenerManager with L
 			updateListeners(project)
 	}
 
+	override protected def onListenersListEmptied() {
+		trace("I'm out of listeners: " + toString)
+		val reply = ProjectCometMasterServer !! ServerListenersListEmptiedMessage(id)
+		reply.foreach(r => trace("BlogEntryMasterServer replied: " + r))
+	}
 
 }
 
-object ProjectCometMasterServer extends Loggable {
+object ProjectCometMasterServer extends LiftActor with Loggable {
 	val projectCometServers = new HashMap[ProjectCometServerKey, ProjectCometServer]()
 
 	def findProjectCometServerFor(id: Long): Option[ProjectCometServer] = {
@@ -56,4 +61,11 @@ object ProjectCometMasterServer extends Loggable {
 		val key = ProjectCometServerKey(id)
 		projectCometServers.synchronized(projectCometServers.getOrElseUpdate(key, new ProjectCometServer(id)))
 	}
+
+	protected def messageHandler = {
+		case ServerListenersListEmptiedMessage(id) =>
+			projectCometServers.synchronized(projectCometServers.remove(ProjectCometServerKey(id)))
+			reply("Removed server: " + id + " from registry of servers")
+	}
+
 }
