@@ -8,8 +8,8 @@ import org.springframework.beans.factory.annotation.Configurable
 import javax.annotation.Resource
 import no.officenet.example.rpm.projectmgmt.application.service.ProjectAppService
 import no.officenet.example.rpm.web.comet.dto.ProjectCometDto
+import net.liftweb.common.Full
 
-case class ProjectCometServerKey(id: Long)
 case class ProjectCometCreatedMessage(project: ProjectCometDto)
 
 @Configurable
@@ -50,21 +50,27 @@ class ProjectCometServer(id: Long) extends LiftActor with ListenerManager with L
 }
 
 object ProjectCometMasterServer extends LiftActor with Loggable {
-	val projectCometServers = new HashMap[ProjectCometServerKey, ProjectCometServer]()
+	val serverMap = new HashMap[Long, ProjectCometServer]()
 
 	def findProjectCometServerFor(id: Long): Option[ProjectCometServer] = {
-		val key = ProjectCometServerKey(id)
-		projectCometServers.get(key)
+		this !! FindServerMessage(id) match {
+			case Full(server: ProjectCometServer) => Some(server)
+			case e => None
+		}
 	}
 
 	def registerWithProjectCometServer(id: Long): ProjectCometServer = {
-		val key = ProjectCometServerKey(id)
-		projectCometServers.synchronized(projectCometServers.getOrElseUpdate(key, new ProjectCometServer(id)))
+		(this !! RegisterServerMessage(id)).open_!.asInstanceOf[ProjectCometServer]
 	}
 
 	protected def messageHandler = {
+		case FindServerMessage(id) =>
+			reply(serverMap.get(id).getOrElse(()))
+		case RegisterServerMessage(id) =>
+			val server = serverMap.getOrElseUpdate(id, new ProjectCometServer(id))
+			reply(server)
 		case ServerListenersListEmptiedMessage(id) =>
-			projectCometServers.synchronized(projectCometServers.remove(ProjectCometServerKey(id)))
+			serverMap.remove(id)
 			reply("Removed server: " + id + " from registry of servers")
 	}
 
