@@ -21,10 +21,6 @@ class ProjectCometServer(id: Long) extends LiftActor with ListenerManager with L
 	@Resource
 	val projectAppService: ProjectAppService = null
 
-	def projectUpdated(project: ProjectCometDto) {
-		this ! project
-	}
-
 	/**
 	 * When a new comet-actor (CometListener) is initially created, send this message
 	 */

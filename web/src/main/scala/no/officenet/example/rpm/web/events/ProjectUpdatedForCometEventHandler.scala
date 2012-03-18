@@ -16,7 +16,7 @@ class ProjectUpdatedForCometEventHandler extends DomainEventHandler[ProjectUpdat
 		if (OperationType.UPDATE == event.operationType) {
 			// Send actor a message for comet-updates
 			ProjectCometMasterServer.findProjectCometServerFor(event.project.id).
-				map(_.projectUpdated(ProjectCometDto(event.project)))
+				foreach(_ ! ProjectCometDto(event.project))
 		}
 	}
 }
