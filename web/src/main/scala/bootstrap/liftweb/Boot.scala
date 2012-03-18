@@ -20,15 +20,21 @@ import net.liftweb.actor.{ILAExecute, LAScheduler}
 import net.liftweb.common.{Full, Logger}
 import no.officenet.example.rpm.support.infrastructure.logging.Loggable
 import no.officenet.example.rpm.web.lib.{ContextVars, ErrorDialog, UrlLocalizer}
+import org.springframework.beans.factory.annotation.Configurable
+import javax.annotation.Resource
 
+@Configurable
 class Boot {
+
+	@Resource(name = "liftSchedulerExecutor")
+	val liftSchedulerExecutor: ExecutorService = null
 
 	def boot() {
 		// Do nothing. We don't want Lift to try to mess up our logging. Having log4j.xml in classpath is sufficient
 		Logger.setup = Full(() => ())
 
 		// Use custom executor-service to be able to monitor it using JMX. Lift's is private so we need to install our own
-		setupLiftScheduler(ContextVars.liftSchedulerExecutor)
+		setupLiftScheduler()
 
 		LiftRules.htmlProperties.default.set((r: Req) => new XHtmlInHtml5OutProperties(r.userAgent))
 
@@ -71,7 +77,7 @@ class Boot {
 		ExceptionHandlerDelegate.setUpLiftExceptionHandler()
 	}
 
-	def setupLiftScheduler(liftSchedulerExecutor: ExecutorService) {
+	def setupLiftScheduler() {
 		LAScheduler.createExecutor = () => {
 			new ILAExecute with Loggable {
 				def execute(f: () => Unit) {

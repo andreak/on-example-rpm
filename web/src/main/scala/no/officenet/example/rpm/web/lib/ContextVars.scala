@@ -26,9 +26,6 @@ object ContextVars {
 	@Resource
 	val userService: UserService = null
 
-	@Resource(name = "liftSchedulerExecutor")
-	val liftSchedulerExecutor: ExecutorService = null
-
 	object projectVar extends RequestVar[ProjectDto](new ProjectDto)
 
 	object BlogEntryVar extends RequestVar[BlogEntry](new BlogEntry)
