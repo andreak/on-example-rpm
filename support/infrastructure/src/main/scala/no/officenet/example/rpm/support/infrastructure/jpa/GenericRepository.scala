@@ -95,10 +95,6 @@ trait DeletableRepository[T <: AnyRef, PK <: Serializable] extends RepositorySup
 
 trait GenericRepository[T <: AnyRef, PK <: Serializable] extends ReadableRepository[T, PK]
 															with WritableRepository[T, PK]
-															with DeletableRepository[T, PK] {
-}
+															with DeletableRepository[T, PK]
 
-trait GenericEntityRepository[T <: AnyRef] extends ReadableRepository[T, java.lang.Long]
-											  with WritableRepository[T, java.lang.Long]
-											  with DeletableRepository[T, java.lang.Long] {
-}
+trait GenericEntityRepository[T <: AnyRef] extends GenericRepository[T, java.lang.Long]
