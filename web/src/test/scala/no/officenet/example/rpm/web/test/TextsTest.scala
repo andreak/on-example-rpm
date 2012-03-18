@@ -14,8 +14,9 @@ trait TextsTest {
 		val errors = bundleEnum.getValues.flatMap(v => locales.map(l => (v, l))).flatMap(value => {
 			val (bundle, locale) = value
 			try {
-				println("Testing locale: " + locale + " bundle: " + bundle)
-				Assert.assertNotNull("was null: " + value, L(locale, bundle))
+				val translated = L(locale, bundle)
+				println("Testing locale: " + locale + " bundle: " + bundle + ", result: " + translated)
+				Assert.assertNotNull("was null: " + value, translated)
 				None
 			} catch {
 				case e@_ =>

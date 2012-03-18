@@ -54,12 +54,12 @@ trait RpmCometActor extends CometActor with CometListener with Loggable {
 	}
 
 	override def cometRenderTimeoutHandler(): Box[NodeSeq] = {
-		Full(<div>{L(GlobalTexts.error_comet_renderTimeOut, cometRenderTimeout.asInstanceOf[AnyRef])}</div>)
+		Full(<div>{L(GlobalTexts.error_comet_renderTimeOut, cometRenderTimeout)}</div>)
 	}
 
 	override def cometProcessingTimeoutHandler(): JsCmd = {
 		ErrorDialog(L_!(GlobalTexts.exception_popup_header),
-			Text(L(GlobalTexts.error_comet_processTimeOut, cometProcessingTimeout.asInstanceOf[AnyRef])),
+			Text(L(GlobalTexts.error_comet_processTimeOut, cometProcessingTimeout)),
 			None).open
 	}
 

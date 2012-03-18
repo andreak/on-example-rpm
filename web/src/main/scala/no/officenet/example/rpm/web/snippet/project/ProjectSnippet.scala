@@ -104,7 +104,7 @@ class ProjectSnippet extends Loggable {
 				"*" #> L_!(ProjectTexts.V.activityListIsEmpty, project.name)
 			} else {
 				".activitiesForProjectHeader" #> L_!(ProjectTexts.V.header_activitiesForProject_text,
-													 project.activityList.size.asInstanceOf[AnyRef], project.name) &
+													 project.activityList.size, project.name) &
 				"tbody" #> (
 						   ".activityRow" #> project.activityList.map(activity => {
 							   ".activityName *" #> activity.name

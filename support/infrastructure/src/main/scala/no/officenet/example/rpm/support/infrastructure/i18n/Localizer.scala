@@ -12,10 +12,10 @@ object Localizer {
 	def strToNodeSeq(str: String) = NodeSeq.fromSeq(Unparsed(str))
 
 	object L_! {
-		def apply(withBundle: WithBundle, arguments: AnyRef*): NodeSeq =
+		def apply(withBundle: WithBundle, arguments: Any*): NodeSeq =
 			apply(withBundle.bundle, withBundle.resourceKey, arguments: _*)
 
-		def apply(bundle: Bundle.ExtendedValue, resourceKey: String, arguments: AnyRef*): NodeSeq = {
+		def apply(bundle: Bundle.ExtendedValue, resourceKey: String, arguments: Any*): NodeSeq = {
 			try {
 				strToNodeSeq(ResourceBundleHelper.getMessage(LocaleContextHolder.getLocale, bundle.path, resourceKey, arguments: _*))
 			} catch {
@@ -25,18 +25,18 @@ object Localizer {
 	}
 
 	object L {
-		def apply(withBundle: WithBundle, arguments: AnyRef*): String = {
+		def apply(withBundle: WithBundle, arguments: Any*): String = {
 			apply(LocaleContextHolder.getLocale, withBundle.bundle, withBundle.resourceKey, arguments: _*)
 		}
 
-		def apply(locale: Locale, withBundle: WithBundle, arguments: AnyRef*): String = {
+		def apply(locale: Locale, withBundle: WithBundle, arguments: Any*): String = {
 			apply(locale, withBundle.bundle, withBundle.resourceKey, arguments: _*)
 		}
 
-		def apply(bundle: Bundle.ExtendedValue, resourceKey: String, arguments: AnyRef*): String =
+		def apply(bundle: Bundle.ExtendedValue, resourceKey: String, arguments: Any*): String =
 			apply(LocaleContextHolder.getLocale, bundle, resourceKey, arguments: _*)
 
-		def apply(locale: Locale, bundle: Bundle.ExtendedValue, resourceKey: String, arguments: AnyRef*): String = {
+		def apply(locale: Locale, bundle: Bundle.ExtendedValue, resourceKey: String, arguments: Any*): String = {
 			ResourceBundleHelper.getMessage(locale, bundle.path, resourceKey, arguments: _*)
 		}
 

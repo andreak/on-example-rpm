@@ -25,7 +25,7 @@ object ResourceBundleHelper {
 	}
 
 	def getMessage(locale: Locale, resourceBundleName: String, resourceKey: String, arguments: Any*): String = {
-		getMessage(getLocale, resourceBundleName, resourceKey, true, arguments: _*)
+		getMessage(locale, resourceBundleName, resourceKey, true, arguments: _*)
 	}
 
 	def getMessage(locale: Locale, resourceBundleName: String, resourceKey: String, useFormat: Boolean,  arguments: Any*): String = {
