@@ -78,7 +78,7 @@ class ProjectSnippet extends Loggable {
 	private def renderProjectRow(rowId: String, project: Project) = {
 		"tr" #> ((ns: NodeSeq) => {
 			"tr [id]" #> rowId &
-			".projectName *" #> ProjectLoc.createLink(ProjectViewParam(project.id.toString)).map(l => SHtml.link(l.toString(), () => (), Text(project.name))) &
+			".projectName *" #> ProjectLoc.createLink(ProjectViewParam(project.id)).map(l => SHtml.link(l.toString(), () => (), Text(project.name))) &
 			".projectType *" #> L(project.projectType.wrapped) &
 			".showActivitiesButton *" #> SHtml.ajaxButton(L(ProjectTexts.V.button_showActivities_text), () => showActivitiesForProject(project)) &
 			".createdDate *" #> Localizer.formatDate(L(GlobalTexts.dateformat_fullDateTime), project.created.toDate,

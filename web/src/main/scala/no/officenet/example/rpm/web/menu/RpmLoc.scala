@@ -12,11 +12,10 @@ import net.liftweb.util.Helpers._
 import xml.{Text, NodeSeq}
 
 import no.officenet.example.rpm.support.infrastructure.i18n.Localizer.L_!
-import no.officenet.example.rpm.support.infrastructure.i18n.{Localizer, Bundle}
 import no.officenet.example.rpm.support.infrastructure.i18n.Localizer.L
+import no.officenet.example.rpm.support.infrastructure.i18n.Bundle
 import no.officenet.example.rpm.web.menu.LocHelper._
 import no.officenet.example.rpm.web.lib.{ContextVars, UrlLocalizer}
-import no.officenet.example.rpm.projectmgmt.application.dto.ProjectDto
 import net.liftweb.common.{Empty, Box, Full}
 import no.officenet.example.rpm.blog.domain.service.BlogService
 import org.springframework.beans.factory.annotation.Configurable
@@ -29,24 +28,23 @@ object LocHelper {
 }
 
 trait LocalizableMenu {
-	def L_menu_!(key:String, arguments: AnyRef*) = L_!(Bundle.MENU, "menu." + key, arguments:_*)
+	def L_menu_!(key:String, arguments: Any*) = L_!(Bundle.MENU, "menu." + key, arguments:_*)
 
-	def L_menu(key:String, arguments: AnyRef*) = L(Bundle.MENU, "menu." + key, arguments:_*)
+	def L_menu(key:String, arguments: Any*) = L(Bundle.MENU, "menu." + key, arguments:_*)
 }
 
 trait ProjectParam {
-	val id: String
-	lazy val projectDto: ProjectDto = ContextVars.projectVar.get
+	val id: Long
 }
 
-case class ProjectViewParam(id: String) extends ProjectParam
+case class ProjectViewParam(id: Long) extends ProjectParam
 
 @Configurable
 object ProjectLoc extends Loc[ProjectParam] with LocalizableMenu {
 	@Resource
 	val projectAppService: ProjectAppService = null
 	def name = "project"
-	def defaultValue = S.param("id").map(ProjectViewParam(_)) // When this is Empty, the menu-item will not get displayed
+	def defaultValue = asLong(S.param("id")).map(ProjectViewParam(_)) // When this is Empty, the menu-item will not get displayed
 
 	val link = new Loc.Link[ProjectParam](List("lift", "project", "projectView"), false){
 		override def createLink(in: ProjectParam) = Full(Text("/" + UrlLocalizer.currentLocale.get + "/project/" + in.id))
@@ -59,9 +57,9 @@ object ProjectLoc extends Loc[ProjectParam] with LocalizableMenu {
 	def calcLinkText(in: ProjectParam): NodeSeq = L_menu_!("project", in.id)
 
 	override val rewrite: LocRewrite = Full(NamedPF("Project rewrite") {
-		case RewriteRequest(ParsePath(UrlLocalizer(locale) :: "project" :: projectId :: Nil,_,_,_),_,_) => {
-			asLong(projectId).foreach(id => ContextVars.projectVar.set(projectAppService.retrieve(id)))
-			(RewriteResponse("lift" :: "project" :: "projectView" :: Nil, Map("id" -> projectId), true), ProjectViewParam(projectId))
+		case RewriteRequest(ParsePath(UrlLocalizer(locale) :: "project" :: AsLong(projectId) :: Nil,_,_,_),_,_) => {
+			ContextVars.projectVar.set(projectAppService.retrieve(projectId))
+			(RewriteResponse("lift" :: "project" :: "projectView" :: Nil, Map("id" -> projectId.toString), true), ProjectViewParam(projectId))
 		}
 	})
 }
