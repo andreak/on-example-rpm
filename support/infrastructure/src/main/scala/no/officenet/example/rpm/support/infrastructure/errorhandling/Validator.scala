@@ -128,7 +128,7 @@ object OvalScreenValidator extends Validator with Loggable {
 							val classToCheck = m.typeArguments.head.erasure
 							trace("We've got an option of type: " + classToCheck)
 							calculateMax(size, classToCheck)
-						case _ => None
+						case _ => throw new IllegalArgumentException("Invalid usage of " + optionalMaxCheck.getClass.getName + ": Expected " + optionCls.getName + ", got: " + compileTimeType.getName)
 					}
 				case maxCheck: MaxCheck =>
 					val size = maxCheck.getMax.toLong

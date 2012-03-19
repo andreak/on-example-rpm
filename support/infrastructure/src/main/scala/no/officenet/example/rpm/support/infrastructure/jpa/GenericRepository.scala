@@ -14,10 +14,10 @@ import org.springframework.stereotype.Repository
 trait WritableRepository[T <: AnyRef, PK <: Serializable] extends RepositorySupport {
 
 	@Resource(name = "ovalValidator")
-	var validator: Validator = _
+	val validator: Validator = null
 
 	@Resource
-	var validateRepositories: java.lang.Boolean = true
+	val validateRepositories: java.lang.Boolean = true
 
 	def save(entity: T): T = {
 		if (entity == null) throw new IllegalArgumentException(getClass.getSimpleName + ": Cannot save null-object")
