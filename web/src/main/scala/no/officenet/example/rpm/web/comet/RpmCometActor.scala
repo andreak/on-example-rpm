@@ -47,7 +47,12 @@ trait RpmCometActor extends CometActor with CometListener with Loggable {
 		val cometLW = new LoanWrapper  {
 			def apply[T](f: => T) : T =  {
 				authentication.foreach(auth => SecurityContextHolder.getContext.setAuthentication(auth))
-				f
+				try {
+					f
+				}
+				finally {
+					SecurityContextHolder.clearContext()
+				}
 			}
 		}
 		cometLW :: lw :: Nil
