@@ -10,8 +10,7 @@ import util.Helpers._
 import util.{PassThru, CssSel}
 import xml.NodeSeq
 import no.officenet.example.rpm.support.domain.model.entities.User
-import no.officenet.example.rpm.support.infrastructure.i18n.Localizer
-import info.bliki.wiki.model.WikiModel
+import net.liftmodules.textile.TextileParser
 
 object LiftUtils {
 
@@ -56,10 +55,10 @@ object LiftUtils {
 	def getNodesWithClass(seq: NodeSeq, className: String): Box[NodeSeq] = {
 		var selected: Box[NodeSeq] = Empty
 		(("." + className) #> ((ns: NodeSeq) => {
-			selected = Full(ns);
+			selected = Full(ns)
 			ns
 		})
-			)(seq)
+			).apply(seq)
 		selected
 	}
 
@@ -74,9 +73,12 @@ object LiftUtils {
 	def getLoggedInUser: Box[User] = ContextVars.loggedInUserVar.get
 
 	def renderWiki(rawString: String): NodeSeq = {
-		val wikiModel = new WikiModel("http://www.mywiki.com/wiki/${image}",
-			"http://www.mywiki.com/wiki/${title}");
-		val htmlStr = wikiModel.render(rawString)
-		Localizer.strToNodeSeq(htmlStr)
+		WikiRenderer.render(rawString)
+	}
+}
+
+object WikiRenderer {
+	def render(rawString: String): NodeSeq = {
+		TextileParser.toHtml(rawString)
 	}
 }

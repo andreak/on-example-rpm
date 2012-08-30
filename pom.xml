@@ -203,12 +203,6 @@
 			<!-- External dependencies -->
 
 			<dependency>
-				<groupId>info.bliki.wiki</groupId>
-				<artifactId>bliki-core</artifactId>
-				<version>3.0.17</version>
-			</dependency>
-
-			<dependency>
 				<groupId>c3p0</groupId>
 				<artifactId>c3p0</artifactId>
 				<version>0.9.1.2</version>
@@ -292,6 +286,11 @@
 				<groupId>net.liftweb</groupId>
 				<artifactId>lift-webkit_${version.scala}</artifactId>
 				<version>${version.lift}</version>
+			</dependency>
+			<dependency>
+				<groupId>net.liftmodules</groupId>
+				<artifactId>textile_${version.scala}</artifactId>
+				<version>${version.lift}-1.1-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>org.scala-lang</groupId>

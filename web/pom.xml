@@ -27,8 +27,8 @@
 
 		<!-- External dependencies -->
 		<dependency>
-			<groupId>info.bliki.wiki</groupId>
-			<artifactId>bliki-core</artifactId>
+			<groupId>net.liftmodules</groupId>
+			<artifactId>textile_${version.scala}</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>com.sun.faces</groupId>

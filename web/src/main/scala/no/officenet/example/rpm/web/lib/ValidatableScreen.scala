@@ -129,8 +129,6 @@ trait ValidatableScreen extends Loggable with ErrorsAware {
 		def label: () => NodeSeq
 	}
 
-	implicit def string2NodeSeq(s: String) = Text(s)
-
 	implicit def formField2NodeSeq(field: FormField[_, _]): NodeSeq = field.toForm
 
 	object Label {
@@ -559,7 +557,7 @@ trait ValidatableScreen extends Loggable with ErrorsAware {
 												   value: Option[java.lang.Integer],
 												   assignmentCallback: java.lang.Integer => Any)(implicit m: Manifest[java.lang.Integer])
 		extends TextField[A, java.lang.Integer](bean, value.map(formatWholeNumber(_)).getOrElse(""), assignmentCallback) {
-		withReadOnlyFormatter(value.map(v => Text(formatWholeNumber(v))).getOrElse(""))
+		withReadOnlyFormatter(value.map(v => Text(formatWholeNumber(v))).getOrElse(NodeSeq.Empty))
 		withInputMask(NaturalNumberMask())
 	}
 
@@ -579,7 +577,7 @@ trait ValidatableScreen extends Loggable with ErrorsAware {
 											 value: Option[java.math.BigDecimal],
 											 assignmentCallback: java.math.BigDecimal => Any)
 		extends DecimalField[A](bean, value, assignmentCallback) {
-		withReadOnlyFormatter(formatPercent(value))
+		withReadOnlyFormatter(Text(formatPercent(value)))
 		withInputMask(PercentMask())
 	}
 

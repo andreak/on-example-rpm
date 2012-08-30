@@ -28,10 +28,6 @@ What RPM doesn't want to address and therefore does not implement:
 * Useful functionality
 * Testing
 
-Unresolved issues I'd like to get comments on:
-* Is it possible to run Hibernate's hibernate-jpamodelgen to generate Meta-classes for the JPA-entities on entities written in Scala?
-** It seems the plugin doesn't operate on class-files but on sources and doesn't recognize JPA-entities written in Scala.
-
 Prerequisites:
 * PostgreSQL 9.0 or later is required to run this application.
 * A Maven-3 installation. You need the oss.sonatype.org repo in order to get lift-2.5-SNAPSHOT, like this example ~/.m2/settings.xml
