@@ -17,15 +17,16 @@
 		<version.jsf>2.0.4-b09</version.jsf>
 		<timestamp>${maven.build.timestamp}</timestamp>
 		<version.postgresql>9.0-801.jdbc4</version.postgresql>
-		<version.aspectj>1.6.11</version.aspectj>
-		<version.spring>3.1.1.RELEASE</version.spring>
-		<version.spring-security>3.1.0.RELEASE</version.spring-security>
-		<version.org.hibernate>3.6.9.Final</version.org.hibernate>
-		<version.usertype>1.8</version.usertype>
-		<version.jodatime>1.6.2</version.jodatime>
+		<version.aspectj>1.7.1</version.aspectj>
+		<version.spring>3.1.2.RELEASE</version.spring>
+		<version.spring-security>3.1.3.RELEASE</version.spring-security>
+		<version.org.hibernate>4.1.7.Final</version.org.hibernate>
+		<version.usertype>3.0.0.CR5</version.usertype>
+		<version.jodatime>2.1</version.jodatime>
+		<version.jodaconvert>1.2</version.jodaconvert>
 		<version.surefire>2.8</version.surefire>
-		<version.lift>2.5-SNAPSHOT</version.lift>
-		<version.maven-scala-plugin>2.15.2</version.maven-scala-plugin>
+		<version.lift>2.5-M1</version.lift>
+		<version.scala-maven-plugin>3.1.0</version.scala-maven-plugin>
 		<version.scala>2.9.1</version.scala>
 		<version.scalajpa>1.4</version.scalajpa>
 		<version.commons-logging>1.1.1</version.commons-logging>
@@ -76,7 +77,7 @@
 				<plugin>
 					<groupId>org.apache.tomcat.maven</groupId>
 					<artifactId>tomcat7-maven-plugin</artifactId>
-					<version>2.0-beta-1</version>
+					<version>2.0</version>
 				</plugin>
 				<plugin>
 					<artifactId>maven-war-plugin</artifactId>
@@ -111,9 +112,9 @@
 					<version>1.5</version>
 				</plugin>
 				<plugin>
-					<groupId>org.scala-tools</groupId>
-					<artifactId>maven-scala-plugin</artifactId>
-					<version>${version.maven-scala-plugin}</version>
+					<groupId>net.alchim31.maven</groupId>
+					<artifactId>scala-maven-plugin</artifactId>
+					<version>${version.scala-maven-plugin}</version>
 					<configuration>
 						<jvmArgs>
 							<jvmArg>-Xss1m</jvmArg>
@@ -232,7 +233,7 @@
 
 			<dependency>
 				<groupId>org.jadira.usertype</groupId>
-				<artifactId>usertype.jodatime</artifactId>
+				<artifactId>usertype.core</artifactId>
 				<version>${version.usertype}</version>
 			</dependency>
 
@@ -240,6 +241,11 @@
 				<groupId>joda-time</groupId>
 				<artifactId>joda-time</artifactId>
 				<version>${version.jodatime}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.joda</groupId>
+				<artifactId>joda-convert</artifactId>
+				<version>${version.jodaconvert}</version>
 			</dependency>
 
 			<dependency>
@@ -286,11 +292,6 @@
 				<groupId>net.liftweb</groupId>
 				<artifactId>lift-webkit_${version.scala}</artifactId>
 				<version>${version.lift}</version>
-			</dependency>
-			<dependency>
-				<groupId>net.liftmodules</groupId>
-				<artifactId>textile_${version.scala}</artifactId>
-				<version>${version.lift}-1.1-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>org.scala-lang</groupId>

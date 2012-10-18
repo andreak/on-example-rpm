@@ -22,18 +22,28 @@ object InputStringConverter {
 	val dateTimeCls = classOf[DateTime]
 	val optionCls = classOf[Option[_]]
 
+	def isTypeOrOptionOfType[T](klass: Class[_], m: Manifest[T]): Boolean = {
+		klass == (
+			if (isOption(m) && m.typeArguments.length > 0) {
+				m.typeArguments.head.erasure
+			} else {m.erasure}
+			)
+	}
+
+	def isOption[T](m: Manifest[T]): Boolean = m.erasure == InputStringConverter.optionCls
+
 	def convert[T](fromValue: String)(implicit m: Manifest[T]): T = {
 		val klass = m.erasure
-		val isOption: Boolean = klass == InputStringConverter.optionCls
+		val _isOption: Boolean = isOption(m)
 
 		if (fromValue == null) {
-			if (isOption) {
+			if (_isOption) {
 				None.asInstanceOf[T]
 			} else {
 				null.asInstanceOf[T]
 			}
 		} else {
-			val foundClass = if (isOption && m.typeArguments.length > 0) m.typeArguments.head.erasure else klass
+			val foundClass = if (_isOption && m.typeArguments.length > 0) m.typeArguments.head.erasure else klass
 			val converted = foundClass match {
 				case `stringCls` => fromValue
 				case `shortCls` | `shortPrimitiveCls` => NumberFormatter.parse(fromValue).shortValue()
@@ -47,7 +57,7 @@ object InputStringConverter {
 				case `dateTimeCls` => new DateTime(DateFormatter.parseFullDate(fromValue))
 				case _ => throw new IllegalArgumentException("Don't know how to convert value " + fromValue + " of type " + foundClass.getName)
 			}
-			val retValue = if (isOption) {
+			val retValue = if (_isOption) {
 				Some(converted)
 			} else {
 				converted

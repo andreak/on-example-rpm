@@ -19,8 +19,11 @@ Features:
 * Modularize the code into functional domains by having a PersistenceUnit spread across multiple maven-modules and have Spring wire it up correctly
 * Uses scala-jpa
 * JPA-entities written in Scala with Scala-based Enumerations and Option-types in JPA-entities with custom Hibernate-converters
+* Automatic lazy-load lazy-associations without using custom AOP-trickery (new in Hibernate-4.1.7)
+* Automatic registering JodaTime types in Hibernate (note: Doesn't work on Option[DateTime] type where custom user-type is needed)
+* Use Option in (JPA) domain-object's properties *and* associations to completely avoid _null_
 * Spring Security with remember me and integration with Lift
-* Blog, with Wiki-markup using the OpenSource bliki-parser, nested comments and comment-votes
+* Blog, with nested comments and comment-votes
 ** The blog-view is always in sync (using Comet), no need to refresh to see new posts, comments or updated votes
 
 What RPM doesn't want to address and therefore does not implement:
@@ -76,7 +79,7 @@ $ cd <checked out sources>
 $ createdb rpm
 $ mvn install # have a cup of coffee while downloading the Internet if this is your 1st Maven-project.
 $ cd web
-$ MAVEN_OPTS="-XX:MaxPermSize=256m -Xmx512m -javaagent:$HOME/.m2/repository/org/springframework/spring-instrument/3.1.1.RELEASE/spring-instrument-3.1.1.RELEASE.jar" mvn tomcat7:run
+$ MAVEN_OPTS="-XX:MaxPermSize=256m -Xmx512m -javaagent:$HOME/.m2/repository/org/springframework/spring-instrument/3.1.2.RELEASE/spring-instrument-3.1.2.RELEASE.jar" mvn tomcat7:run
 $ psql -f bootstrap/sampledata.sql rpm
 </pre>
 
@@ -84,14 +87,6 @@ Notes on bootstrapping the application:
 It's crucial to run the sampledata.sql script *after* starting tomcat because Hibernate will generate the relevant tables upon boot.
 The Spring-context needs a loadtime-weaver to be able to inject Spring-beans into non-Spring-managed classes (like snippets), so ensure
 that spring-instrument gets added as a javaagent.
-Also note that when tomcat shuts down it will try to serialize all sessions and when starting it will try to load
-all classes in the previous sessions, including our classes which need load-time weaving. This will lead to the classes
-not being weaved correctly because it happens before the Spring-context is loaded, which prevents the classes to be weaved correctly.
-To ensure weaving is correctly performed, always delete the .SER file by issuing
-<pre>
-rm -f `find . -name \*.SER`
-</pre>
-before the tomcat7:run command
 
 Open a web-browser on http://localhost:8080/rpm/en/projects or http://localhost:8080/rpm/no/projects (for Norwegian) and login with:
   username: admin

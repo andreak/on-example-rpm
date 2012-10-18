@@ -23,11 +23,16 @@
 		</dependency>
 		<dependency>
 			<groupId>org.jadira.usertype</groupId>
-			<artifactId>usertype.jodatime</artifactId>
+			<artifactId>usertype.core</artifactId>
+			<version>${version.usertype}</version>
 		</dependency>
 		<dependency>
 			<groupId>joda-time</groupId>
 			<artifactId>joda-time</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.joda</groupId>
+			<artifactId>joda-convert</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>commons-lang</groupId>
@@ -148,8 +153,8 @@
 	<build>
 		<plugins>
 			<plugin>
-				<groupId>org.scala-tools</groupId>
-				<artifactId>maven-scala-plugin</artifactId>
+				<groupId>net.alchim31.maven</groupId>
+				<artifactId>scala-maven-plugin</artifactId>
 				<executions>
 					<execution>
 						<id>scala-compile-first</id>
@@ -167,34 +172,34 @@
 						</goals>
 					</execution>
 					<!-- Example of running a Scala-script as part of the build -->
-<!--
-					<execution>
-						<phase>prepare-package</phase>
-						<goals>
-							<goal>script</goal>
-						</goals>
-						<configuration>
-							<keepGeneratedScript>true</keepGeneratedScript>
-							<script>
-								<![CDATA[
-        import java.io.{File,  PrintWriter, FileWriter};
-        import scalax.io.FileExtras;
-        import scala.collection.mutable.HashSet;
+					<!--
+						 <execution>
+							 <phase>prepare-package</phase>
+							 <goals>
+								 <goal>script</goal>
+							 </goals>
+							 <configuration>
+								 <keepGeneratedScript>true</keepGeneratedScript>
+								 <script>
+									 <![CDATA[
+			 import java.io.{File,  PrintWriter, FileWriter};
+			 import scalax.io.FileExtras;
+			 import scala.collection.mutable.HashSet;
 
-        val outputDir = project.getBuild().getOutputDirectory();
-        val depsFile = new FileExtras( new File( outputDir, "deps.txt" ) )
-        val pw = depsFile.printWriter
-        val depSet = new HashSet[String]
-        for( d <- project.getDependencies() ) {
-          depSet += d.getGroupId + ":" + d.getArtifactId + ":" + d.getVersion
-        }
-        pw.writeLines( depSet.toSeq )
+			 val outputDir = project.getBuild().getOutputDirectory();
+			 val depsFile = new FileExtras( new File( outputDir, "deps.txt" ) )
+			 val pw = depsFile.printWriter
+			 val depSet = new HashSet[String]
+			 for( d <- project.getDependencies() ) {
+			   depSet += d.getGroupId + ":" + d.getArtifactId + ":" + d.getVersion
+			 }
+			 pw.writeLines( depSet.toSeq )
 
-                ]]>
-							</script>
-						</configuration>
-					</execution>
--->
+					 ]]>
+								 </script>
+							 </configuration>
+						 </execution>
+	 -->
 				</executions>
 			</plugin>
 		</plugins>

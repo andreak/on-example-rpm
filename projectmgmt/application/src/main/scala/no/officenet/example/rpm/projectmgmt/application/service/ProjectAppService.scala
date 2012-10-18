@@ -37,8 +37,8 @@ trait ProjectAppService extends Loggable {
 	def update(projectDto: ProjectDto): ProjectDto = {
 		trace("Activities in project: " + projectDto.project.activityList.size())
 		if (projectDto.project.id == null) throw new IllegalArgumentException("Cannot update non-existing entity")
-		projectDto.project.modified = new DateTime()
-		userService.findByUserName(SecurityContextHolder.getContext.getAuthentication.getName).foreach(projectDto.project.modifiedBy = _)
+		projectDto.project.modified = Some(new DateTime())
+		projectDto.project.modifiedByOpt = userService.findByUserName(SecurityContextHolder.getContext.getAuthentication.getName)
 		projectDto.project = projectService.update(projectDto.project)
 		projectDto
 	}

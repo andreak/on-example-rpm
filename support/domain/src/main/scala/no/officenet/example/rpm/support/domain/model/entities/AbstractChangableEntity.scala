@@ -13,8 +13,6 @@ abstract class AbstractChangableEntity(_created: DateTime, _createdBy: User)
 	extends AbstractDomainObject {
 
 	@Column(name = "created", nullable = false, updatable = false)
-	@org.hibernate.annotations.Type(`type` = CustomJpaType.DateTime,
-		parameters = Array(new org.hibernate.annotations.Parameter(name = "databaseZone", value = "jvm")))
 	@net.sf.oval.constraint.NotNull
 	var created = _created
 
@@ -24,11 +22,13 @@ abstract class AbstractChangableEntity(_created: DateTime, _createdBy: User)
 	var createdBy = _createdBy
 
 	@Column(name = "modified")
-	@org.hibernate.annotations.Type(`type` = CustomJpaType.DateTime,
-		parameters = Array(new org.hibernate.annotations.Parameter(name = "databaseZone", value = "jvm")))
-	var modified: DateTime = null
+	@org.hibernate.annotations.Type(`type` = CustomJpaType.DateTimeOptionType)
+	var modified: Option[DateTime] = None
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "modified_by")
-	var modifiedBy: User = null
+	private[this] var modifiedBy: User = null
+	def modifiedByOpt = Option(modifiedBy)
+	def modifiedByOpt_=(newVal:Option[User]) = modifiedBy = newVal.orNull
+
 }

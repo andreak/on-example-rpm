@@ -6,6 +6,7 @@ import java.sql.ResultSet
 import java.sql.Types
 
 import org.hibernate.usertype.UserType
+import org.hibernate.engine.spi.SessionImplementor
 
 /**
  * Helper class to translate enum for hibernate
@@ -23,7 +24,7 @@ abstract class EnumUserType(val et: Enumeration) extends UserType {
 
 	override def hashCode(x: Object) = x.hashCode
 
-	override def nullSafeGet(resultSet: ResultSet, names: Array[String], owner: Object): Object = {
+	override def nullSafeGet(resultSet: ResultSet, names: Array[String], session: SessionImplementor, owner: Object): Object = {
 		val value = resultSet.getString(names(0))
 		if (resultSet.wasNull()) {
 			null
@@ -33,7 +34,7 @@ abstract class EnumUserType(val et: Enumeration) extends UserType {
 		}
 	}
 
-	override def nullSafeSet(statement: PreparedStatement, value: Object, index: Int) {
+	override def nullSafeSet(statement: PreparedStatement, value: Object, index: Int, session: SessionImplementor) {
 		if (value == null) {
 			statement.setNull(index, Types.VARCHAR)
 		} else {

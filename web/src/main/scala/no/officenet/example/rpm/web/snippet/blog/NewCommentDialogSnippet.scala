@@ -7,13 +7,13 @@ import util._
 import util.Helpers._
 import org.springframework.beans.factory.annotation.Configurable
 import javax.annotation.Resource
-import xml.NodeSeq
 import no.officenet.example.rpm.support.infrastructure.logging.Loggable
 import no.officenet.example.rpm.blog.domain.service.CommentService
 import no.officenet.example.rpm.blog.domain.model.entities.Comment
 import no.officenet.example.rpm.web.lib.ContextVars.{CommentVar, CommentedEntityVar}
 import no.officenet.example.rpm.blog.domain.model.entities.CommentJPAFields._
 import no.officenet.example.rpm.web.lib.{LiftUtils, JpaFormFields, ValidatableScreen}
+import no.officenet.example.rpm.support.infrastructure.scala.lang.ControlHelpers.?
 
 object afterCommentSaveVar extends RequestVar[() => JsCmd](() => JsCmds.Noop)
 
@@ -31,7 +31,7 @@ class NewCommentDialogSnippet extends ValidatableScreen with JpaFormFields with 
 		abstractEntity match {
 			case cmnt: Comment =>
 				comment.commentedId = cmnt.commentedId
-				comment.parent = cmnt
+				comment.parentOpt = Some(cmnt)
 			case _ =>
 				comment.commentedId = abstractEntity.id
 		}
@@ -40,7 +40,7 @@ class NewCommentDialogSnippet extends ValidatableScreen with JpaFormFields with 
 	override protected def renderScreen() = {
 		".inputContainer" #> SHtml.idMemoize {
 			idMemoize =>
-				".commentText" #> JpaTextAreaField(comment, commentText, comment.commentText, (v: String) => comment.commentText = v) &
+				".commentText" #> JpaTextAreaField(comment, commentText, ?(comment.commentText), (v: String) => comment.commentText = v) &
 				":submit" #> SHtml.ajaxSubmit("Save", () => saveComment(idMemoize))
 		}
 	}
@@ -50,7 +50,7 @@ class NewCommentDialogSnippet extends ValidatableScreen with JpaFormFields with 
 			if (comment.id == null) {
 				commentService.createComment(comment)
 			} else {
-				LiftUtils.getLoggedInUser.foreach(user => comment.modifiedBy = user)
+				LiftUtils.getLoggedInUser.foreach(user => comment.modifiedByOpt = Some(user))
 				commentService.updateComment(comment)
 			}
 			afterSave()

@@ -16,6 +16,7 @@ import no.officenet.example.rpm.support.domain.model.entities.User
 import no.officenet.example.rpm.web.lib.ContextVars._
 import net.liftweb.common.Full
 import java.util.concurrent.atomic.AtomicBoolean
+import no.officenet.example.rpm.support.infrastructure.scala.lang.ControlHelpers.?
 
 @Configurable
 class BlogViewSnippet(blogViewParam: BlogViewParam) extends ValidatableScreen with JpaFormFields {
@@ -44,14 +45,14 @@ class BlogViewSnippet(blogViewParam: BlogViewParam) extends ValidatableScreen wi
 			newBlogPost = new BlogEntry(blogVar.get.get, user)
 			val newBlogEntryDomID = nextFuncName
 			SHtml.idMemoize{idMemoize =>
-				".title" #> JpaTextField(newBlogPost, BlogEntryJPAFields.title, newBlogPost.title, (v: String) => newBlogPost.title = v).
+				".title" #> JpaTextField(newBlogPost, BlogEntryJPAFields.title, ?(newBlogPost.title), (v: String) => newBlogPost.title = v).
 					withAttrs("onfocus" -> SlideDown(newBlogEntryDomID, "slow").toJsCmd, "placeholder" -> "New entry").
 					disableInPlaceValidation()  &
 				".blogDetailsInput [id]" #> newBlogEntryDomID &
 				".blogDetailsInput [style]" #> Full("display: none").filter(v => hideOnShow.get()) &
 				".blogDetailsInput" #> (
-					".summary" #> JpaTextAreaField(newBlogPost, BlogEntryJPAFields.summary, newBlogPost.summary, (v: String) => newBlogPost.summary = v) &
-						".content" #> JpaTextAreaField(newBlogPost, BlogEntryJPAFields.content, newBlogPost.content, (v: String) => newBlogPost.content = v) &
+					".summary" #> JpaTextAreaField(newBlogPost, BlogEntryJPAFields.summary, ?(newBlogPost.summary), (v: String) => newBlogPost.summary = v) &
+						".content" #> JpaTextAreaField(newBlogPost, BlogEntryJPAFields.content, ?(newBlogPost.content), (v: String) => newBlogPost.content = v) &
 						":submit" #> SHtml.ajaxSubmit("Save", () => saveBlogEntry(idMemoize, user, hideOnShow, newBlogEntryDomID)) &
 						".cancel [onclick]" #> SHtml.ajaxInvoke(() => {
 							newBlogPost = new BlogEntry(blogVar.get.get, user)
@@ -69,7 +70,7 @@ class BlogViewSnippet(blogViewParam: BlogViewParam) extends ValidatableScreen wi
 			if (newBlogPost.id == null) {
 				blogEntryService.createBlogEntry(newBlogPost)
 			} else {
-				newBlogPost.modifiedBy = user
+				newBlogPost.modifiedByOpt = Some(user)
 				blogEntryService.updateBlogEntry(newBlogPost)
 			}
 			hideOnShow.set(true)

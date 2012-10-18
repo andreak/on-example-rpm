@@ -19,10 +19,7 @@ object CommentCometDto {
 			created = comment.created,
 			createdBy = UserCometDto(comment.createdBy),
 			commentText = comment.commentText,
-			parentId = comment.parent match {
-				case null => None
-				case c: Comment => Some(c.id.longValue())
-			},
+			parentId = comment.parentOpt.map(_.id.longValue()),
 			commentVote = CommentVoteCometDto(comment.commentVote),
 			children = comment.children.map(CommentCometDto(_)).toList
 		)

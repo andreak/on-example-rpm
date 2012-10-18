@@ -12,6 +12,7 @@ import no.officenet.example.rpm.web.lib.ContextVars._
 import no.officenet.example.rpm.support.infrastructure.logging.Loggable
 import no.officenet.example.rpm.blog.domain.service.BlogEntryService
 import no.officenet.example.rpm.web.lib.{LiftUtils, JpaFormFields, ValidatableScreen}
+import no.officenet.example.rpm.support.infrastructure.scala.lang.ControlHelpers.?
 
 object afterBlogEntrySaveVar extends RequestVar[() => JsCmd](() => JsCmds.Noop)
 
@@ -28,9 +29,9 @@ class NewBlogPostDialogSnippet extends ValidatableScreen with JpaFormFields with
 	override protected def renderScreen() = {
 			".inputContainer" #> SHtml.idMemoize {
 				idMemoize =>
-					".title" #> JpaTextField(blogPost, title, blogPost.title, (v: String) => blogPost.title = v) &
-						".summary" #> JpaTextAreaField(blogPost, summary, blogPost.summary, (v: String) => blogPost.summary = v) &
-						".content" #> JpaTextAreaField(blogPost, content, blogPost.content, (v: String) => blogPost.content = v) &
+					".title" #> JpaTextField(blogPost, title, ?(blogPost.title), (v: String) => blogPost.title = v) &
+						".summary" #> JpaTextAreaField(blogPost, summary, ?(blogPost.summary), (v: String) => blogPost.summary = v) &
+						".content" #> JpaTextAreaField(blogPost, content, ?(blogPost.content), (v: String) => blogPost.content = v) &
 						":submit" #> SHtml.ajaxSubmit("Save", () => saveBlogEntry(idMemoize))
 			}
 	}
@@ -40,7 +41,7 @@ class NewBlogPostDialogSnippet extends ValidatableScreen with JpaFormFields with
 			if (blogPost.id == null) {
 				blogEntryService.createBlogEntry(blogPost)
 			} else {
-				LiftUtils.getLoggedInUser.foreach(user => blogPost.modifiedBy = user)
+				LiftUtils.getLoggedInUser.foreach(user => blogPost.modifiedByOpt = Some(user))
 				blogEntryService.updateBlogEntry(blogPost)
 			}
 			afterSave()

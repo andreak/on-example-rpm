@@ -25,7 +25,7 @@ trait Validator {
 
 	def getMaxLengthOfProperty[T](bean: AnyRef, fieldName: String)(implicit m: Manifest[T]): Option[Long]
 
-	def registerFieldViolations[T](registerErrorFunc: (AnyRef, String, String, String,
+	def registerFieldViolations[T](registerErrorFunc: (AnyRef, String, String,
 		IdentityHashMap[AnyRef, HashMap[String, Buffer[FieldError]]], String) => Unit,
 								   bean: AnyRef, fieldName: String, newValue: T,
 								   errorsMap: IdentityHashMap[AnyRef, HashMap[String, Buffer[FieldError]]],
@@ -50,7 +50,7 @@ object OvalScreenValidator extends Validator with Loggable {
 		}
 
 		val allChecks = getChecksForFieldAndMethod(c, fieldName)
-		val isMandatory: Boolean = allChecks.find(_.isInstanceOf[NotNullCheck]).map(check => check.isActive(bean, "", validator)).getOrElse(false) //empty string as value is ok for NotNullCheck
+		val isMandatory: Boolean =   allChecks.find(_.isInstanceOf[NotNullCheck]).map(check => check.isActive(bean, "", validator)).getOrElse(false) //empty string as value is ok for NotNullCheck
 
 		ValidationCache.mandatoryMap.put(s, isMandatory)
 		isMandatory
@@ -88,15 +88,15 @@ object OvalScreenValidator extends Validator with Loggable {
 		hasFieldValidation
 	}
 
-	override def registerFieldViolations[T](registerErrorFunc: (AnyRef, String, String, String,
+	override def registerFieldViolations[T](registerErrorFunc: (AnyRef, String, String,
 		IdentityHashMap[AnyRef, HashMap[String, Buffer[FieldError]]], String) => Unit,
 											bean: AnyRef, fieldName: String, newValue: T,
 											errorsMap: IdentityHashMap[AnyRef, HashMap[String, Buffer[FieldError]]],
 											uniqueErrorId: String) {
 		val fieldErrors = validateFieldValue(bean, fieldName, newValue)
 		for (fieldError <- fieldErrors) {
-			trace("Validation-violation for " + bean.getClass.getName + "(" + System.identityHashCode(bean) + ") field: " + fieldName + ": " + fieldError)
-			registerErrorFunc(bean, fieldName, if (newValue != null) newValue.toString else null, fieldError.getMessage,
+			trace("Validation-violation for "+bean.getClass.getName+ "("+System.identityHashCode(bean)+") field: "+fieldName+": "+fieldError)
+			registerErrorFunc(bean, fieldName, fieldError.getMessage,
 				errorsMap, uniqueErrorId)
 		}
 		registerBeanViolations(registerErrorFunc, bean, fieldName, errorsMap, uniqueErrorId)
@@ -106,15 +106,15 @@ object OvalScreenValidator extends Validator with Loggable {
 		import no.officenet.example.rpm.support.infrastructure.i18n.InputStringConverter.optionCls
 
 		def calculateMax(size: Long, classToCheck: Class[_]): Option[Long] = {
-			// Number
+					// Number
 			val isBigDecimal = classToCheck == classOf[java.math.BigDecimal] ||
 				classToCheck == classOf[BigDecimal]
-			//Need to adjust for scale when type is BigDecimal. Add 3 (1 for '.' and 2 for 2 decimals)
-			val ajustForBigDecimal: Long = if (isBigDecimal) 3L else 0L
-			val getMaxSize: Long = scala.math.ceil(scala.math.log10(size)).toLong
-			val ajustForModZero: Long = if (size % 10 == 0) 1L else 0L
+						//Need to adjust for scale when type is BigDecimal. Add 3 (1 for '.' and 2 for 2 decimals)
+					val ajustForBigDecimal: Long = if (isBigDecimal) 3L else 0L
+					val getMaxSize: Long = scala.math.ceil(scala.math.log10(size)).toLong
+					val ajustForModZero: Long = if (size % 10 == 0) 1L else 0L
 
-			val maxSize = getMaxSize + ajustForModZero + ajustForBigDecimal
+					val maxSize = getMaxSize + ajustForModZero + ajustForBigDecimal
 			Some(maxSize)
 		}
 
@@ -157,7 +157,7 @@ object OvalScreenValidator extends Validator with Loggable {
 		def isGetterForField(method: Method): Boolean = {
 			// TODO M andreak 1/21/12: If field-name is "isPrivate", this will try to lookup isIsPrivate, which is wrong - fix it!
 			method.getName == ("is" + (field.getName.charAt(0).toUpper + field.getName.substring(1))) ||
-				method.getName == ("get" + (field.getName.charAt(0).toUpper + field.getName.substring(1)))
+			method.getName == ("get" + (field.getName.charAt(0).toUpper + field.getName.substring(1)))
 		}
 		field.getDeclaringClass.getDeclaredMethods.find(isGetterForField(_))
 	}
@@ -184,22 +184,22 @@ object OvalScreenValidator extends Validator with Loggable {
 		allChecks
 	}
 
-	private def registerBeanViolations(registerErrorFunc: (AnyRef, String, String, String,
+	private def registerBeanViolations(registerErrorFunc: (AnyRef, String, String,
 		IdentityHashMap[AnyRef, HashMap[String, Buffer[FieldError]]], String) => Unit,
 									   bean: AnyRef, fieldName: String,
 									   errorsMap: IdentityHashMap[AnyRef, HashMap[String, Buffer[FieldError]]],
 									   uniqueErrorId: String) {
-		/*
-		  var extraErrors = validator.validate(bean, classOf[MethodValidationGroup]).toSet
-		  extraErrors = extraErrors.filter(cv => cv.getPropertyPath.iterator().next().getName == fieldName)
-		  trace("Extra-errors for field: " + fieldName + ": " + extraErrors)
+/*
+		var extraErrors = validator.validate(bean, classOf[MethodValidationGroup]).toSet
+		extraErrors = extraErrors.filter(cv => cv.getPropertyPath.iterator().next().getName == fieldName)
+		trace("Extra-errors for field: " + fieldName + ": " + extraErrors)
 
-		  for (fieldError <- extraErrors) {
-			  val fieldValue = ReflectionUtils.getFieldValue(fieldName, bean)
-			  registerError(bean, fieldName, if (fieldValue != null) fieldValue.toString else null, fieldError.getMessage,
-				  errorsMap, uniqueErrorId)
-		  }
-  */
+		for (fieldError <- extraErrors) {
+			val fieldValue = ReflectionUtils.getFieldValue(fieldName, bean)
+			registerError(bean, fieldName, if (fieldValue != null) fieldValue.toString else null, fieldError.getMessage,
+				errorsMap, uniqueErrorId)
+		}
+*/
 	}
 
 }

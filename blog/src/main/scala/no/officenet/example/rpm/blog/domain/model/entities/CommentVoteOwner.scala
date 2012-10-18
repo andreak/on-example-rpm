@@ -17,8 +17,6 @@ class CommentVoteOwner(_created: DateTime, _comment: Comment, _voter: User, _vot
 	}
 
 	@Column(name = "created", nullable = false, updatable = false)
-	@org.hibernate.annotations.Type(`type` = CustomJpaType.DateTime,
-		parameters = Array(new org.hibernate.annotations.Parameter(name = "databaseZone", value = "jvm")))
 	var created = _created
 
 	@ManyToOne(fetch = FetchType.LAZY, optional = false)

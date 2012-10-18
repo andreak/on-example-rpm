@@ -85,12 +85,12 @@ class ProjectSnippet extends Loggable {
 				S.locale) &
 			".projectBudget *" #> Localizer.formatLong(project.budget) &
 			".projectEstimatedStart *" #> Localizer.formatDateTime(L(GlobalTexts.dateformat_fullDateTime),
-				Box.legacyNullTest(project.estimatedStartDate),
+				project.estimatedStartDate,
 				S.locale) &
 			".createdBy *" #> project.createdBy.displayName &
 			".editButtonContainer" #> (
 				".lastModified *" #> Localizer.formatDateTime(L(GlobalTexts.dateformat_fullDateTimeSeconds),
-					Option(project.modified)).getOrElse("<not-modified>") &
+					project.modified).getOrElse("<not-modified>") &
 				".editButton" #> getEditButtonLink(rowId, project.id, ns)
 				)
 		}.apply(ns))

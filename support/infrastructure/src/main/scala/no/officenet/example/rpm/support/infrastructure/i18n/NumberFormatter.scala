@@ -94,8 +94,8 @@ object NumberFormatter {
 	def formatBigDecimalNumber(value: java.math.BigDecimal): String = formatBigDecimalNumber(BigDecimal(value))
 
 
-	def formatPercent(value: Option[java.math.BigDecimal]): String = {
-		value.map(v => "%s %%" format formatBigDecimalNumber(BigDecimal(v))).getOrElse("")
+	def formatPercent(value: Option[java.math.BigDecimal]): Option[String] = {
+		value.map(v => "%s %%" format formatBigDecimalNumber(BigDecimal(v)))
 	}
 
 }

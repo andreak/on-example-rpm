@@ -10,7 +10,7 @@ trait JpaFormFields extends Validatable {
 	self: ValidatableScreen =>
 
 	trait JpaFormField[A <: AnyRef, T] {
-		self: FormField[A, T] =>
+		self: FormField[A, T]  =>
 		override def hasExternalFieldValidation: Boolean = {
 			validator.hasFieldValidation(bean, fieldName)
 		}
@@ -27,7 +27,7 @@ trait JpaFormFields extends Validatable {
 	object JpaTextField {
 		def apply[A <: AnyRef, T](bean: A,
 								  field: javax.persistence.metamodel.Attribute[A, T],
-								  defaultValue: String,
+								  defaultValue: Option[String],
 								  assignmentCallback: T => Any)(implicit m: Manifest[T]) =
 			new TextField[A, T](bean, defaultValue, assignmentCallback) with JpaFormField[A, T] {
 				override val fieldName = field.getName
@@ -37,7 +37,7 @@ trait JpaFormFields extends Validatable {
 	object JpaTextAreaField {
 		def apply[A <: AnyRef, T](bean: A,
 								  field: javax.persistence.metamodel.Attribute[A, T],
-								  defaultValue: String,
+								  defaultValue: Option[String],
 								  assignmentCallback: T => Any)(implicit m: Manifest[T]) = {
 			new TextAreaField[A, T](bean, defaultValue, assignmentCallback) with JpaFormField[A, T] {
 				override val fieldName = field.getName
@@ -82,10 +82,11 @@ trait JpaFormFields extends Validatable {
 		def apply[A <: AnyRef, T](bean: A,
 								  field: javax.persistence.metamodel.Attribute[A, T],
 								  options: Seq[(T, List[SHtml.ElemAttr])],
-								  defaultValue: T,
+								  defaultValue: Option[T],
 								  assignmentCallback: T => Any,
 								  valueLabel: (T, Int) => String)(implicit m: Manifest[T]) = {
-			new SelectField[A, T](bean, options, defaultValue, assignmentCallback, valueLabel) with JpaFormField[A, T] {
+			implicit val krafs = 0
+			new SelectField[A, T](bean, options.map(t => Some(t._1) -> t._2), defaultValue, assignmentCallback, valueLabel) with JpaFormField[A, T] {
 				override val fieldName = field.getName
 			}
 		}
@@ -95,18 +96,19 @@ trait JpaFormFields extends Validatable {
 		def apply[A <: AnyRef, T](bean: A,
 								  field: javax.persistence.metamodel.Attribute[A, T],
 								  options: Seq[(T, List[SHtml.ElemAttr])],
-								  defaultValue: T,
+								  defaultValue: Option[T],
 								  assignmentCallback: T => Any,
-								  valueLabel: (T, Int) => String)(implicit m: Manifest[T]) = {
-			val unSelectedOption = (null.asInstanceOf[T], List[SHtml.ElemAttr]("disabled" -> "disabled"))
-			val allOptions = unSelectedOption +: options
-			val valueLabelWithDefaultValue = (option: T, idx: Int) => if (idx == 0) L(GlobalTexts.select_noItemSelected) else valueLabel(option, idx)
-			JpaSelectField(bean, field, allOptions, defaultValue, assignmentCallback, valueLabelWithDefaultValue)
+								  valueLabel: (T, Int) => String, notSelectedText: String = L(GlobalTexts.select_noItemSelected))(implicit m: Manifest[T]) = {
+			val valueLabelWithDefaultValue = (option: Option[T], idx: Int) => option.map(value => valueLabel(value, idx)).getOrElse(notSelectedText)
+			new SelectField[A, T](bean, options.map(t => Some(t._1) -> t._2), defaultValue, assignmentCallback,
+				valueLabelWithDefaultValue, includeUnselectedOption = true) with JpaFormField[A, T] {
+				override val fieldName = field.getName
+			}
 		}
 	}
 
 	object JpaDateField {
-		def apply[A <: AnyRef, T](bean: A, field: javax.persistence.metamodel.Attribute[A, T], defaultValue: String,
+		def apply[A <: AnyRef, T](bean: A, field: javax.persistence.metamodel.Attribute[A, T], defaultValue: Option[String],
 								  assignmentCallback: T => Any)(implicit m: Manifest[T]) = {
 			new DateField[A, T](bean, defaultValue, assignmentCallback) with JpaFormField[A, T] {
 				override val fieldName = field.getName

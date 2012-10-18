@@ -30,7 +30,7 @@ trait CommentService extends GenericDomainService[Comment] {
 	}
 
 	def updateComment(comment: Comment) {
-		comment.modified = new DateTime(DateTimeUtils.currentTimeMillis())
+		comment.modified = Some(new DateTime(DateTimeUtils.currentTimeMillis()))
 		val persistentEntity = commentRepository.save(comment)
 		AfterCommitEventDispatcher.registerAfterCommitEvent(CommentUpdatedEvent(OperationType.UPDATE, persistentEntity))
 		persistentEntity

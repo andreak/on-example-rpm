@@ -47,9 +47,8 @@ class Project(_created: DateTime, _createdBy: User)
 	var budget: Option[Long] = None
 
 	@Column(name = "estimated_start_date")
-	@org.hibernate.annotations.Type(`type` = CustomJpaType.DateTime,
-		parameters = Array(new org.hibernate.annotations.Parameter(name = "databaseZone", value = "jvm")))
-	var estimatedStartDate: DateTime = null
+	@org.hibernate.annotations.Type(`type` = CustomJpaType.DateTimeOptionType)
+	var estimatedStartDate: Option[DateTime] = None
 
 	override def toString = new ToStringBuilder(this).append("id", id).append("name", name).toString
 
@@ -62,6 +61,6 @@ object Project {
 	object name extends StringField[Project]
 	object description extends OptionStringField[Project]
 	object budget extends OptionLongField[Project]
-	object estimatedStartDate extends DateTimeField[Project]
+	object estimatedStartDate extends OptionalDateTimeField[Project]
 	object projectType extends JpaField[Project, ProjectType.ExtendedValue]
 }

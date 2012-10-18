@@ -5,7 +5,6 @@ import collection.JavaConversions.asScalaBuffer
 import javax.annotation.Resource
 import javax.persistence.criteria.CriteriaBuilder
 import collection.mutable.{ListBuffer, Buffer}
-import no.officenet.example.rpm.support.infrastructure.spring.aop.LazyInitState
 import net.sf.oval.Validator
 import no.officenet.example.rpm.support.infrastructure.errorhandling.{RpmConstraintsViolatedException, ObjectNotFoundByPrimaryKeyException}
 import org.springframework.stereotype.Repository
@@ -22,15 +21,9 @@ trait WritableRepository[T <: AnyRef, PK <: Serializable] extends RepositorySupp
 	def save(entity: T): T = {
 		if (entity == null) throw new IllegalArgumentException(getClass.getSimpleName + ": Cannot save null-object")
 		if (validateRepositories) {
-			val origLazyInitValue = LazyInitState.lazyInit.get
-			LazyInitState.lazyInit.set(true)
-			try {
-				val violations = validator.validate(entity, null.asInstanceOf[Array[String]]: _*)
-				if (!violations.isEmpty) {
-					throw new RpmConstraintsViolatedException(violations)
-				}
-			} finally {
-				LazyInitState.lazyInit.set(origLazyInitValue)
+			val violations = validator.validate(entity, null.asInstanceOf[Array[String]]: _*)
+			if (!violations.isEmpty) {
+				throw new RpmConstraintsViolatedException(violations)
 			}
 		}
 		entityManager.merge(entity)

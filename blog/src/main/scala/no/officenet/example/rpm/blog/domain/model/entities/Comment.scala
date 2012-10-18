@@ -30,7 +30,9 @@ class Comment(_created: DateTime,
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "parent_id")
-	var parent: Comment = _
+	private[this] var parent: Comment = null
+	def parentOpt = Option(parent)
+	def parentOpt_=(newVal:Option[Comment]) = parent = newVal.orNull
 
 	@OneToMany(fetch = FetchType.LAZY, mappedBy = "parent")
 	var children: juList[Comment] = new ArrayList[Comment]()

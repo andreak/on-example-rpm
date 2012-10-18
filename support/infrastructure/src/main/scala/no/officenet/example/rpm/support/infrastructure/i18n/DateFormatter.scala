@@ -5,7 +5,7 @@ import java.util.{Locale, Date}
 import org.springframework.context.i18n.LocaleContextHolder
 import Localizer._
 import java.text.{ParsePosition, SimpleDateFormat}
-import no.officenet.example.rpm.support.infrastructure.errorhandling.InvalidDateException
+import no.officenet.example.rpm.support.infrastructure.errorhandling.{InvalidDateFormatException, InvalidDateInputException}
 
 
 object DateFormatter {
@@ -13,13 +13,13 @@ object DateFormatter {
 
 	implicit def dateToDateTime(in: Date): DateTime = new DateTime(in.getTime)
 
-	private def format(pattern: String, date: Date, locale: Locale): String = {
+	def format(pattern: String, date: Date, locale: Locale): String = {
 		if (date == null) throw new IllegalArgumentException("date cannot be null. Use Option(date) with formatDate(pattern: String, date: Option[Date], locale: Locale) if you have nullable dates")
 		if (locale == null) throw new IllegalArgumentException("locale cannot be null")
 		try {
 			(new SimpleDateFormat(pattern, locale)).format(date)
 		} catch {
-			case e => throw new InvalidDateException("Unable to format date: " + date + " with pattern: " + pattern)
+			case e => throw new InvalidDateFormatException(pattern)
 		}
 	}
 
@@ -48,14 +48,14 @@ object DateFormatter {
 	}
 
 
-	private def parse(pattern: String, dateString: String): Date = {
-		try {
-			parseDate(dateString, pattern) match {
-				case Some(date) => date
-				case _ => throw new InvalidDateException("Invalid date-string: " + dateString)
-			}
+	def parse(pattern: String, dateString: String): Date = {
+		(try {
+			parseDate(dateString, pattern)
 		} catch {
-			case e => throw new InvalidDateException(e)
+			case e => throw new InvalidDateFormatException(pattern)
+		}) match {
+			case Some(date) => date
+			case _ => throw new InvalidDateInputException(dateString)
 		}
 	}
 

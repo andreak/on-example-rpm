@@ -4,7 +4,7 @@ import no.officenet.example.rpm.support.infrastructure.logging.Loggable
 import java.sql.SQLException
 import org.springframework.dao.DataAccessException
 import org.hibernate.exception.ConstraintViolationException
-import org.hibernate.cfg.Environment
+import org.hibernate.cfg.AvailableSettings
 import org.hibernate.dialect.Dialect
 import org.springframework.orm.jpa.vendor.{HibernateJpaVendorAdapter, HibernateJpaDialect}
 import javax.persistence.OptimisticLockException
@@ -18,7 +18,7 @@ class RpmPersistenceExceptionTranslator extends HibernateJpaDialect with Loggabl
 
 	private var vendorAdapter: HibernateJpaVendorAdapter = _
 
-	lazy val extractor = Class.forName(vendorAdapter.getJpaPropertyMap.get(Environment.DIALECT).asInstanceOf[String])
+	lazy val extractor = Class.forName(vendorAdapter.getJpaPropertyMap.get(AvailableSettings.DIALECT).asInstanceOf[String])
 		.newInstance.asInstanceOf[Dialect].getViolatedConstraintNameExtracter
 
 	val integrityViolationCodes = Set("23" // Integrity constraint violation

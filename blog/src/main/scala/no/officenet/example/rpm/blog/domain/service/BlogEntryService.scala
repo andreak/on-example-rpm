@@ -23,7 +23,7 @@ trait BlogEntryService extends GenericDomainService[BlogEntry] {
 	}
 
 	def updateBlogEntry(blogEntry: BlogEntry) = {
-		blogEntry.modified = new DateTime(DateTimeUtils.currentTimeMillis())
+		blogEntry.modified = Some(new DateTime(DateTimeUtils.currentTimeMillis()))
 		val persistentEntity = blogEntryRepository.save(blogEntry)
 		AfterCommitEventDispatcher.registerAfterCommitEvent(BlogEntryUpdatedEvent(OperationType.UPDATE, persistentEntity))
 		persistentEntity

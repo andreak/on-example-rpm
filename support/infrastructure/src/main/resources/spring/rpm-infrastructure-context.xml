@@ -22,9 +22,6 @@
 
 	<tx:annotation-driven order="5"/>
 
-	<bean id="lazyInitAspect" class="no.officenet.example.rpm.support.infrastructure.spring.aop.LazyInitAspect" factory-method="aspectOf"/>
-	<bean id="lazyInitActivationAspect" class="no.officenet.example.rpm.support.infrastructure.spring.aop.LazyInitActivationAspect" />
-
 	<bean id="jpaVendorAdapter"
 		  class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter">
 		<property name="database" value="${infrastructure.database.vendor}"/>
@@ -40,6 +37,13 @@
 		<property name="packagesToScan" value="no.officenet.example.rpm"/>
 		<property name="jpaVendorAdapter" ref="jpaVendorAdapter"/>
 		<property name="jpaDialect" ref="jpaDialect"/>
+		<property name="jpaProperties">
+			<props>
+				<prop key="jadira.usertype.autoRegisterUserTypes">true</prop>
+				<prop key="jadira.usertype.databaseZone">jvm</prop>
+				<prop key="hibernate.enable_lazy_load_no_trans">true</prop>
+			</props>
+		</property>
 	</bean>
 
 	<bean id="jpaDialect" class="no.officenet.example.rpm.support.infrastructure.jpa.RpmPersistenceExceptionTranslator">

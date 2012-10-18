@@ -26,11 +26,11 @@ object ProjectCometDto {
 			description = project.description,
 			created = project.created,
 			createdBy = UserCometDto(project.createdBy),
-			modified = ?(project.modified),
-			modifiedBy = ?(project.modifiedBy).map(UserCometDto(_)),
+			modified = project.modified,
+			modifiedBy = project.modifiedByOpt.map(UserCometDto(_)),
 			projectType = project.projectType,
 			budget = project.budget,
-			estimatedStartDate = ?(project.estimatedStartDate)
+			estimatedStartDate = project.estimatedStartDate
 		)
 	}
 }

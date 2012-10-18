@@ -27,10 +27,6 @@
 
 		<!-- External dependencies -->
 		<dependency>
-			<groupId>net.liftmodules</groupId>
-			<artifactId>textile_${version.scala}</artifactId>
-		</dependency>
-		<dependency>
 			<groupId>com.sun.faces</groupId>
 			<artifactId>jsf-api</artifactId>
 		</dependency>
@@ -92,8 +88,8 @@
 	<build>
 		<plugins>
 			<plugin>
-				<groupId>org.scala-tools</groupId>
-				<artifactId>maven-scala-plugin</artifactId>
+				<groupId>net.alchim31.maven</groupId>
+				<artifactId>scala-maven-plugin</artifactId>
 				<executions>
 					<execution>
 						<goals>
@@ -103,7 +99,7 @@
 					</execution>
 				</executions>
 			</plugin>
-            <plugin>
+			<plugin>
 				<groupId>org.apache.tomcat.maven</groupId>
 				<artifactId>tomcat7-maven-plugin</artifactId>
 				<configuration>

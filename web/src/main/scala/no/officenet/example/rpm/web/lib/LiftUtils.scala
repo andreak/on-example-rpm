@@ -8,9 +8,8 @@ import http.js.{JsExp, JsCmd}
 import http.SHtml
 import util.Helpers._
 import util.{PassThru, CssSel}
-import xml.NodeSeq
+import xml.{Text, NodeSeq}
 import no.officenet.example.rpm.support.domain.model.entities.User
-import net.liftmodules.textile.TextileParser
 
 object LiftUtils {
 
@@ -79,6 +78,6 @@ object LiftUtils {
 
 object WikiRenderer {
 	def render(rawString: String): NodeSeq = {
-		TextileParser.toHtml(rawString)
+		Text(rawString) // We don't have any proper wiki-parsers...
 	}
 }

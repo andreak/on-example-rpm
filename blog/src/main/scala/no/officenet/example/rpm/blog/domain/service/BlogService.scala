@@ -22,7 +22,7 @@ trait BlogService extends GenericDomainService[Blog] {
 	}
 
 	def updateBlog(blog: Blog) = {
-		blog.modified = new DateTime(DateTimeUtils.currentTimeMillis())
+		blog.modified = Some(new DateTime(DateTimeUtils.currentTimeMillis()))
 		val persistentEntity = blogRepository.save(blog)
 		persistentEntity
 	}
