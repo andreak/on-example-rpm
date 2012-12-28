@@ -45,14 +45,14 @@ class BlogViewSnippet(blogViewParam: BlogViewParam) extends ValidatableScreen wi
 			newBlogPost = new BlogEntry(blogVar.get.get, user)
 			val newBlogEntryDomID = nextFuncName
 			SHtml.idMemoize{idMemoize =>
-				".title" #> JpaTextField(newBlogPost, BlogEntryJPAFields.title, ?(newBlogPost.title), (v: String) => newBlogPost.title = v).
+				".title" #> JpaTextField(newBlogPost, BlogEntryJPAFields.title, ?(newBlogPost.title), (v: Option[String]) => newBlogPost.title = v.orNull).
 					withAttrs("onfocus" -> SlideDown(newBlogEntryDomID, "slow").toJsCmd, "placeholder" -> "New entry").
 					disableInPlaceValidation()  &
 				".blogDetailsInput [id]" #> newBlogEntryDomID &
 				".blogDetailsInput [style]" #> Full("display: none").filter(v => hideOnShow.get()) &
 				".blogDetailsInput" #> (
-					".summary" #> JpaTextAreaField(newBlogPost, BlogEntryJPAFields.summary, ?(newBlogPost.summary), (v: String) => newBlogPost.summary = v) &
-						".content" #> JpaTextAreaField(newBlogPost, BlogEntryJPAFields.content, ?(newBlogPost.content), (v: String) => newBlogPost.content = v) &
+					".summary" #> JpaTextAreaField(newBlogPost, BlogEntryJPAFields.summary, ?(newBlogPost.summary), (v: Option[String]) => newBlogPost.summary = v.orNull) &
+						".content" #> JpaTextAreaField(newBlogPost, BlogEntryJPAFields.content, ?(newBlogPost.content), (v: Option[String]) => newBlogPost.content = v.orNull) &
 						":submit" #> SHtml.ajaxSubmit("Save", () => saveBlogEntry(idMemoize, user, hideOnShow, newBlogEntryDomID)) &
 						".cancel [onclick]" #> SHtml.ajaxInvoke(() => {
 							newBlogPost = new BlogEntry(blogVar.get.get, user)

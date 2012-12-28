@@ -57,7 +57,7 @@ class ProjectEditSnippet extends ValidatableScreen with JpaFormFields with Trans
 	override protected def renderScreen() = {
 		trace("\n\n***** this: " + this)
 		val projectTypes: Seq[(ProjectType.ExtendedValue, List[SHtml.ElemAttr])] = ProjectType.getValues.zipWithIndex.map{case (v,index) => {
-			val attrs: List[SHtml.ElemAttr] = if (index % 2 == 0) List[SHtml.ElemAttr]("disabled" -> "disabled") else Nil
+			val attrs: List[SHtml.ElemAttr] = Nil
 			(v, attrs)
 		}}
 		var selectedColor = ProjectColor.BLACK.name
@@ -81,17 +81,15 @@ class ProjectEditSnippet extends ValidatableScreen with JpaFormFields with Trans
 			if (labelKeyForSelectedSuretyType == label) ""
 			else "display: none"
 		}
-		val firstOption: (ProjectType.ExtendedValue, scala.List[SHtml.ElemAttr]) =
-			(null.asInstanceOf[ProjectType.ExtendedValue], List[SHtml.ElemAttr]("disabled" -> "disabled"))
 
 		"*" #> SHtml.idMemoize(id => {
-			".projectName *" #> JpaTextField(project, Project.name, ?(project.name), (v:String) => project.name = v).
+			".projectName *" #> JpaTextField(project, Project.name, ?(project.name), (v: Option[String]) => project.name = v.orNull).
 				withContainer(TdInputContainer(L(ProjectTexts.D.name))) &
 			".projectDescription *" #> JpaTextAreaField(project, Project.description, project.description, (v: Option[String]) => project.description = v).
 				withContainer(TdInputContainer(L(ProjectTexts.D.description))) &
-			".projectType *" #> JpaSelectField(project, Project.projectType, firstOption :: projectTypes.toList, ?(project.projectType),
+			".projectType *" #> JpaSelectField(project, Project.projectType, projectTypes.toList, ?(project.projectType),
 											(pt: ProjectType.ExtendedValue) => project.projectType = pt,
-											(pt: ProjectType.ExtendedValue, idx) => if (idx == 0) L(GlobalTexts.select_noItemSelected) else L(pt.wrapped)).
+											(pt: ProjectType.ExtendedValue, idx) => L(pt.wrapped)).
 				withContainer(TdInputContainer(L(ProjectTexts.D.projectType))) &
 			".project_color_radio *" #> DisplayRadioWithLabelHorizontallyTemplate.toForm(
 				ritchRadioElem(radioValues,

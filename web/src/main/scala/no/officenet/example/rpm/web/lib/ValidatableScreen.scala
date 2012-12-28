@@ -240,55 +240,61 @@ trait ValidatableScreen extends Loggable with ErrorsAware {
 
 		def defaultReadOnlyValueFunc(k: K): Option[String] = Some(k)
 
-		private[this] def convertValue(inputValue: String, bean: AnyRef, fieldName: String)
+		private[this] def convertValue(inputValueOpt: Option[String], bean: AnyRef, fieldName: String)
 									  (implicit m: Manifest[T]): Box[T] = {
-			val newValue = if (inputValue == null || inputValue.trim().isEmpty) null else inputValue.trim()
-			try {
-				val convertedValue: T = InputStringConverter.convert[T](newValue)
-				trace("S.locale: " + S.locale + ", dateformat_fullDate: " + L(GlobalTexts.dateformat_fullDate))
-				Full(convertedValue)
-			} catch {
-				case e @ (_ : NumberFormatException | _: java.text.ParseException) =>
-					registerError(newValue)(bean, fieldName,
-						L(GlobalTexts.validation_notANumber_number_text, inputValue), errorsMap, nextFuncName)
-					Failure(inputValue)
-				case e: InvalidDateInputException =>
-					registerError(newValue)(bean, fieldName,
-						L(GlobalTexts.validation_invalidDate_text, inputValue), errorsMap, nextFuncName)
-					Failure(inputValue)
+			inputValueOpt.filterNot(_.isEmpty) match {
+				case None => Empty
+				case Some(inputValue) =>
+					val newValue = inputValue.trim
+					try {
+						val convertedValue: T = InputStringConverter.convert[T](newValue)
+						trace("S.locale: " + S.locale + ", dateformat_fullDate: " + L(GlobalTexts.dateformat_fullDate))
+						Full(convertedValue)
+					} catch {
+						case e @ (_ : NumberFormatException | _: java.text.ParseException) =>
+							registerError(Some(newValue))(bean, fieldName,
+								L(GlobalTexts.validation_notANumber_number_text, inputValue), errorsMap, nextFuncName)
+							Failure(inputValue)
+						case e: InvalidDateInputException =>
+							registerError(Some(newValue))(bean, fieldName,
+								L(GlobalTexts.validation_invalidDate_text, inputValue), errorsMap, nextFuncName)
+							Failure(inputValue)
+					}
 			}
 		}
 
-		protected def convertAndValidateInput(inputValue: String, bean: AnyRef, fieldName: String, assignmentCallback: (T) => Any)(implicit m: Manifest[T]): Box[T] = {
+		protected def convertAndValidateInput(inputValue: Option[String], bean: A, fieldName: String,
+											  assignmentCallback: Option[T] => Any)(implicit m: Manifest[T]): Box[T] = {
 			convertValue(inputValue, bean, fieldName) match {
-				case r@Full(convertedValue) =>
-					trace("Validating field: " + fieldName + " with value '" + convertedValue + "'")
-					if (doFieldValidation(bean, fieldName, convertedValue, inputValue)) {
-						assignmentCallback(convertedValue)
-						doExternalFieldValidation(bean, fieldName, convertedValue, inputValue)
-					} else if (skipValidationFunc.isDefined && skipValidationFunc.get.apply(convertedValue)) {
+				case r@Failure(_,_,_) =>
+					r
+				case r =>
+//					trace("Validating field: " + fieldName + " with value '" + convertedValue + "'")
+					if (doFieldValidation(bean, fieldName, r, inputValue)) {
+						assignmentCallback(r)
+						doExternalFieldValidation(bean, fieldName, r, inputValue)
+					} else if (skipValidationFunc.isDefined && skipValidationFunc.get.apply(r)) {
 						// Run assignment-callback if we're instructed to skip validation
-						assignmentCallback(convertedValue)
+						assignmentCallback(r)
 					}
 					r
-				case e => e
 			}
 		}
 
 		protected final def getInputElementDrus(fieldErrors: Buffer[FieldError])(implicit m: Manifest[T]): Elem = {
-			val func: (String) => Any = (s) => {
-				convertAndValidateInput(s, bean, fieldName, assignmentCallback)
+			val func: (Option[String]) => Any = (stringOpt) => {
+				convertAndValidateInput(stringOpt, bean, fieldName, assignmentCallback)
 			}
-			val inputSeq = getInputElement(tryo {fieldErrors(0).errorValue.toString}.or(defaultValue), func)
+			val inputSeq = getInputElement(tryo {fieldErrors(0).errorValue.map(_.toString).getOrElse("")}.or(defaultValue), func)
 			inputSeq
 		}
 
-		protected def onBlurForTextInput(bean: AnyRef, fieldName: String, func: (T) => Any,
-											ajaxCallbackFunc: Box[T => JsCmd] = Empty,
+		protected def onBlurForTextInput(bean: A, fieldName: String, func: (Option[T]) => Any,
+											ajaxCallbackFunc: Box[Box[T] => JsCmd] = Empty,
 											inputId: String, containerId: String)(implicit m: Manifest[T]): String = {
 			SHtml.onEvent((s) => {
 				cleanErrorsForProperty(bean, fieldName) // Important to clear errors for this field in case previous action was "submit" on form
-				val convertedValue: Box[T] = convertAndValidateInput(s, bean, fieldName, func)
+				val convertedValue: Box[T] = convertAndValidateInput(Option(s).filterNot(_.isEmpty), bean, fieldName, func)
 				val fieldErrors = getFieldErrors(bean, fieldName)
 				val errorSeq: NodeSeq = getErrorsSeq(fieldErrors)
 				cleanErrorsForProperty(bean, fieldName)
@@ -304,19 +310,19 @@ trait ValidatableScreen extends Loggable with ErrorsAware {
 					case _ => Noop
 				}
 				val ajaxCallbackFuncResult: JsCmd = convertedValue match {
-					case Full(cv) => ajaxCallbackFunc.map(f => f(cv)).openOr(Noop)
-					case _ => Noop
+					case Failure(_,_,_) => Noop
+					case r@(Full(_) | Empty) => ajaxCallbackFunc.map(f => f(r)).openOr(Noop)
 				}
 				errorHandlerCmd & extraCmd & ajaxCallbackFuncResult
 			})._2.toJsCmd
 		}
 
-		private[this] def getConversionOnBlurForTextInput(bean: AnyRef, fieldName: String, func: (T) => Any,
-														  ajaxCallbackFunc: Box[T => JsCmd] = Empty,
+		private[this] def getConversionOnBlurForTextInput(bean: AnyRef, fieldName: String, func: Option[T] => Any,
+														  ajaxCallbackFunc: Box[Box[T] => JsCmd] = Empty,
 														  inputId: String, containerId: String)(implicit m: Manifest[T]): String = {
 			SHtml.onEvent((s) => {
 				cleanErrorsForProperty(bean, fieldName) // Important to clear errors for this field in case previous action was "submit" on form
-				val convertedValue: Box[T] = convertValue(s, bean, fieldName)
+				val convertedValue: Box[T] = convertValue(Option(s), bean, fieldName)
 				val fieldErrors = getFieldErrors(bean, fieldName)
 				val errorSeq: NodeSeq = getErrorsSeq(fieldErrors)
 				cleanErrorsForProperty(bean, fieldName)
@@ -332,8 +338,8 @@ trait ValidatableScreen extends Loggable with ErrorsAware {
 					case _ => Noop
 				}
 				val ajaxCallbackFuncResult: JsCmd = convertedValue match {
-					case Full(cv) => ajaxCallbackFunc.map(f => f(cv)).openOr(Noop)
-					case _ => Noop
+					case Failure(_,_,_) => Noop
+					case r@(Full(_) | Empty) => ajaxCallbackFunc.map(f => f(r)).openOr(Noop)
 				}
 				errorHandlerCmd & extraCmd & ajaxCallbackFuncResult
 			})._2.toJsCmd
@@ -413,7 +419,7 @@ trait ValidatableScreen extends Loggable with ErrorsAware {
 			(additionalValidationFunc.isDefined && additionalErrorMessageFunc.isDefined) || hasExternalFieldValidation
 		}
 
-		def registerError(originalValue: K)(key: AnyRef, property: String, errorMessage: String,
+		def registerError(originalValue: Option[K])(key: AnyRef, property: String, errorMessage: String,
 						  errorsMap: IdentityHashMap[AnyRef, HashMap[String, Buffer[FieldError]]],
 						  uniqueErrorId: String) {
 			val errorsForKey = errorsMap.getOrElseUpdate(key, new HashMap[String, Buffer[FieldError]]())
@@ -453,10 +459,10 @@ trait ValidatableScreen extends Loggable with ErrorsAware {
 		}
 
 		// This only does external (JSR-303, Oval or other), empty by default
-		protected def doExternalFieldValidation(bean: AnyRef, fieldName: String, valueToValidate: T, originalValue: K) {
+		protected def doExternalFieldValidation(bean: A, fieldName: String, valueToValidate: Option[T], originalValue: Option[K]) {
 		}
 
-		final private[lib] def doFieldValidation(bean: AnyRef, fieldName: String, valueToValidate: T, inputValue: K): Boolean = {
+		final private[lib] def doFieldValidation(bean: AnyRef, fieldName: String, valueToValidate: Option[T], inputValue: Option[K]): Boolean = {
 			skipValidationFunc.map(f => !f(valueToValidate)).openOr(true) &&
 				additionalValidationFunc.map(f => {
 					if (!f(valueToValidate)) {
@@ -470,12 +476,21 @@ trait ValidatableScreen extends Loggable with ErrorsAware {
 
 		protected def getInputElementDrus(fieldErrors: Buffer[FieldError])(implicit m: Manifest[T]): Elem
 
-		protected def getInputElement(value: Option[K], func: K => Any): Elem
+		protected def getInputElement(value: Option[K], func: Option[K] => Any): Elem
 
 		protected def getOnEventValidation(inputSeq: Elem)(implicit m: Manifest[T]): Elem
 
-		val inputId = nextFuncName
-		val containerId = nextFuncName
+		var _inputId: Box[String] = Empty
+
+		def inputId: String = {
+			_inputId.openOr {
+				val newId = nextFuncName
+				_inputId = Full(newId)
+				newId
+			}
+		}
+
+		var containerId = nextFuncName
 
 		private[this] lazy val (fieldErrors, textElement, errorSeq) = getFormInputElement(manifest)
 
@@ -507,19 +522,19 @@ trait ValidatableScreen extends Loggable with ErrorsAware {
 			defaultValue.flatMap(defaultReadOnlyValueFunc(_))
 		}
 
-		def assignmentCallback: T => Any
+		def assignmentCallback: Option[T] => Any
 
 		def isMandatory = mandatory
 
 		protected[lib] def maxLengthOfFieldInChars(implicit m: Manifest[T]): Option[Long] = Empty
 
-		protected var skipValidationFunc: Box[(T) => Boolean] = Empty
+		protected var skipValidationFunc: Box[(Option[T]) => Boolean] = Empty
 		protected var mandatory = false
 		protected[lib] var maxLength: Box[Long] = Empty
 		var container: InputContainer[T] = InlineInputContainer[T](this)
-		private var additionalValidationFunc: Box[T => Boolean] = Empty
-		private var additionalErrorMessageFunc: Box[K => String] = Empty
-		var ajaxCallbackFunc: Box[T => JsCmd] = Empty
+		private var additionalValidationFunc: Box[Option[T] => Boolean] = Empty
+		private var additionalErrorMessageFunc: Box[Option[K] => String] = Empty
+		var ajaxCallbackFunc: Box[Box[T] => JsCmd] = Empty
 		protected var origAttrs: Seq[SHtml.ElemAttr] = Nil
 		private[this] var attrs: Seq[SHtml.ElemAttr] = Nil
 		var readOnlyFormatterFunc: Box[() => NodeSeq] = Empty
@@ -535,7 +550,7 @@ trait ValidatableScreen extends Loggable with ErrorsAware {
 			this
 		}
 
-		def withValidation(validationFunc: T => Boolean, errorMessageFunc: K => String): this.type = {
+		def withValidation(validationFunc: Option[T] => Boolean, errorMessageFunc: Option[K] => String): this.type = {
 			if ((validationFunc eq null) || (errorMessageFunc eq null)) {
 				throw new IllegalArgumentException("validationFunc AND errorMessageFunc cannot be null")
 			}
@@ -544,7 +559,7 @@ trait ValidatableScreen extends Loggable with ErrorsAware {
 			this
 		}
 
-		def withAjaxCallbackFunc(func: T => JsCmd): this.type = {
+		def withAjaxCallbackFunc(func: Box[T] => JsCmd): this.type = {
 			this.ajaxCallbackFunc = Full(func)
 			this
 		}
@@ -579,8 +594,13 @@ trait ValidatableScreen extends Loggable with ErrorsAware {
 			this
 		}
 
-		def withSkipValidationFunc(func: (T) => Boolean): this.type = {
+		def withSkipValidationFunc(func: Option[T] => Boolean): this.type = {
 			skipValidationFunc = Full(func)
+			this
+		}
+
+		def withInputId(id: String): this.type = {
+			_inputId = Full(id)
 			this
 		}
 
@@ -597,14 +617,14 @@ trait ValidatableScreen extends Loggable with ErrorsAware {
 
 	object TextField {
 		def apply[A <: AnyRef, T](bean: A, fieldName: String, defaultValue: Option[String],
-								  assignmentCallback: T => Any)(implicit m: Manifest[T]) = {
+								  assignmentCallback: Option[T] => Any)(implicit m: Manifest[T]) = {
 			val fn = fieldName
 			new TextField[A, T](bean, defaultValue, assignmentCallback) with StandardFormField[A, T] {
 				override val fieldName = fn
 			}
 		}
 		def apply[T](fieldName: String, defaultValue: Option[String],
-								  assignmentCallback: T => Any)(implicit m: Manifest[T]) = {
+								  assignmentCallback: Option[T] => Any)(implicit m: Manifest[T]) = {
 			val fn = fieldName
 			new TextField[this.type, T](this, defaultValue, assignmentCallback) with StandardFormField[this.type, T] {
 				override val fieldName = fn
@@ -614,23 +634,23 @@ trait ValidatableScreen extends Loggable with ErrorsAware {
 
 	abstract class TextField[A <: AnyRef, T](val bean: A,
 											 val defaultValue: Option[TextFormField[A, T]#K],
-											 val assignmentCallback: T => Any)(implicit m: Manifest[T])
+											 val assignmentCallback: Option[T] => Any)(implicit m: Manifest[T])
 		extends AbstractFormField[A, T] with TextFormField[A, T] {
-		override def getInputElement(value: Option[String], func: String => Any): Elem = {
-			SHtml.text(value.getOrElse(""), func, getAttributes: _*)
+		override def getInputElement(value: Option[String], func: Option[String] => Any): Elem = {
+			SHtml.text(value.getOrElse(""), s => func(if (s.isEmpty) None else Some(s)), getAttributes: _*)
 		}
 	}
 
 	abstract class DecimalField[A <: AnyRef](bean: A,
 									value: Option[java.math.BigDecimal],
-									assignmentCallback: java.math.BigDecimal => Any)(implicit m: Manifest[java.math.BigDecimal])
+									assignmentCallback: Option[java.math.BigDecimal] => Any)(implicit m: Manifest[java.math.BigDecimal])
 		extends TextField[A, java.math.BigDecimal](bean, value.map(formatBigDecimalNumber(_)), assignmentCallback) {
 
 	}
 
 	abstract class NaturalNumberField[A <: AnyRef](bean: A,
 									value: Option[java.lang.Integer],
-									assignmentCallback: java.lang.Integer => Any)(implicit m: Manifest[java.lang.Integer])
+									assignmentCallback: Option[java.lang.Integer] => Any)(implicit m: Manifest[java.lang.Integer])
 		extends TextField[A, java.lang.Integer](bean, value.map(formatWholeNumber(_)), assignmentCallback) {
 		withReadOnlyFormatter(value.map(v => Text(formatWholeNumber(v))).getOrElse(NodeSeq.Empty))
 		withInputMask(NaturalNumberMask())
@@ -640,7 +660,7 @@ trait ValidatableScreen extends Loggable with ErrorsAware {
 		def apply[A <: AnyRef](bean: A,
 							   fieldName: String,
 							   value: Option[java.math.BigDecimal],
-							   assignmentCallback: java.math.BigDecimal => Any) = {
+							   assignmentCallback: Option[java.math.BigDecimal] => Any) = {
 			val fn = fieldName
 			new PercentField[A](bean, value, assignmentCallback) with StandardFormField[A, java.math.BigDecimal] {
 				override val fieldName = fn
@@ -650,7 +670,7 @@ trait ValidatableScreen extends Loggable with ErrorsAware {
 
 	abstract class PercentField[A <: AnyRef](bean: A,
 									value: Option[java.math.BigDecimal],
-									assignmentCallback: java.math.BigDecimal => Any)
+									assignmentCallback: Option[java.math.BigDecimal] => Any)
 		extends DecimalField[A](bean, value, assignmentCallback) {
 		withReadOnlyFormatter(formatPercent(value).map(Text(_)).getOrElse(NodeSeq.Empty))
 		withInputMask(PercentMask())
@@ -659,14 +679,14 @@ trait ValidatableScreen extends Loggable with ErrorsAware {
 
 	object TextAreaField {
 		def apply[A <: AnyRef, T](bean: A, fieldName: String, defaultValue: Option[String],
-								  assignmentCallback: T => Any)(implicit m: Manifest[T]) = {
+								  assignmentCallback: Option[T] => Any)(implicit m: Manifest[T]) = {
 			val fn = fieldName
 			new TextAreaField[A, T](bean, defaultValue, assignmentCallback) with StandardFormField[A, T] {
 				override val fieldName = fn
 			}
 		}
 		def apply[T](fieldName: String, defaultValue: Option[String],
-								  assignmentCallback: T => Any)(implicit m: Manifest[T]) = {
+								  assignmentCallback: Option[T] => Any)(implicit m: Manifest[T]) = {
 			val fn = fieldName
 			new TextAreaField[this.type, T](this, defaultValue, assignmentCallback) with StandardFormField[this.type, T] {
 				override val fieldName = fn
@@ -676,10 +696,10 @@ trait ValidatableScreen extends Loggable with ErrorsAware {
 
 	abstract class TextAreaField[A <: AnyRef, T](override val bean: A,
 										override val defaultValue: Option[TextFormField[A, T]#K],
-										override val assignmentCallback: T => Any)(implicit m: Manifest[T])
+										override val assignmentCallback: Option[T] => Any)(implicit m: Manifest[T])
 		extends TextField[A, T](bean, defaultValue, assignmentCallback) with TextFormField[A, T] {
-		override def getInputElement(value: Option[String], func: String => Any): Elem = {
-			SHtml.textarea(value.getOrElse(""), func, getAttributes: _*)
+		override def getInputElement(value: Option[String], func: Option[String] => Any): Elem = {
+			SHtml.textarea(value.getOrElse(""), s => func(if (s.isEmpty) None else Some(s)), getAttributes: _*)
 		}
 	}
 
@@ -692,7 +712,7 @@ trait ValidatableScreen extends Loggable with ErrorsAware {
 								  valueLabel: (T, Int) => String)(implicit m: Manifest[T]) = {
 			val fn = fieldName
 			implicit val krafs = 0
-			new SelectField[A, T](bean, options.map(t => Some(t._1) -> t._2), defaultValue, assignmentCallback, valueLabel) with StandardFormField[A, T] {
+			new SelectField[A, T](bean, options.map(t => Some(t._1) -> t._2), defaultValue, (o: Option[T]) => o.map(v => assignmentCallback(v)), valueLabel) with StandardFormField[A, T] {
 				override val fieldName = fn
 			}
 		}
@@ -703,12 +723,24 @@ trait ValidatableScreen extends Loggable with ErrorsAware {
 								  fieldName: String,
 								  options: Seq[(T, List[SHtml.ElemAttr])],
 								  defaultValue: Option[T],
-								  assignmentCallback: T => Any,
-								  valueLabel: (T, Int) => String, notSelectedText: String = L(GlobalTexts.select_noItemSelected))(implicit m: Manifest[T]) = {
+								  assignmentCallback: Option[T] => Any,
+								  valueLabel: (T, Int) => String, notSelectedText: String)(implicit m: Manifest[T]) = {
 			val fn = fieldName
 			val valueLabelWithDefaultValue = (option: Option[T], idx: Int) => option.map(value => valueLabel(value, idx)).getOrElse(notSelectedText)
 			new SelectField[A, T](bean, options.map(t => Some(t._1) -> t._2), defaultValue, assignmentCallback,
 				valueLabelWithDefaultValue, includeUnselectedOption = true) with StandardFormField[A, T] {
+				override val fieldName = fn
+			}
+		}
+		def apply[T](fieldName: String,
+					 options: Seq[(T, List[SHtml.ElemAttr])],
+					 defaultValue: Option[T],
+					 assignmentCallback: Option[T] => Any,
+					 valueLabel: (T, Int) => String, notSelectedText: String)(implicit m: Manifest[T]) = {
+			val fn = fieldName
+			val valueLabelWithDefaultValue = (option: Option[T], idx: Int) => option.map(value => valueLabel(value, idx)).getOrElse(notSelectedText)
+			new SelectField[this.type, T](this, options.map(t => Some(t._1) -> t._2), defaultValue, assignmentCallback,
+				valueLabelWithDefaultValue, includeUnselectedOption = true) with StandardFormField[this.type, T] {
 				override val fieldName = fn
 			}
 		}
@@ -717,7 +749,7 @@ trait ValidatableScreen extends Loggable with ErrorsAware {
 	abstract class SelectField[A <: AnyRef, T](val bean: A,
 									  options: Seq[(Option[T], List[SHtml.ElemAttr])],
 									  val defaultValue: Option[T],
-									  val assignmentCallback: T => Any,
+									  val assignmentCallback: Option[T] => Any,
 									  valueLabel: (Option[T], Int) => String,
 									  includeUnselectedOption: Boolean = false)(implicit m: Manifest[T])
 		extends AbstractFormField[A, T] with PicableFormField[A, T] {
@@ -725,7 +757,7 @@ trait ValidatableScreen extends Loggable with ErrorsAware {
 		def this(bean: A,
 				 options: Seq[(Option[T], List[SHtml.ElemAttr])],
 				 defaultValue: Option[T],
-				 assignmentCallback: T => Any,
+				 assignmentCallback: Option[T] => Any,
 				 valueLabel: (T, Int) => String)(implicit m: Manifest[T], v: Int) { // The last 'v' is just to cope with type-erasure issues: Making this constructor's signature different
 			this(bean, options, defaultValue, assignmentCallback, (t: Option[T], idx: Int) => t.map(v => valueLabel(v, idx)).getOrElse(""))
 		}
@@ -746,48 +778,46 @@ trait ValidatableScreen extends Loggable with ErrorsAware {
 			}.map {case (obj, txt, oattrs) => (obj, randomString(20), txt, oattrs)}
 		}
 
-		override def getInputElement(defaultValue: Option[T], assignmentCallback: (T) => Any): Elem = {
+		override def getInputElement(defaultValue: Option[T], assignmentCallback: Option[T] => Any): Elem = {
 			val (nonces, defaultNonce, secureOnSubmit) =
-				secureOptionsWithDrus(secure, defaultValue, (selectedItem:T) => {
-					assignmentCallback(selectedItem)
-					if (doFieldValidation(bean, fieldName, selectedItem, selectedItem)) {
-						doExternalFieldValidation(bean, fieldName, selectedItem, selectedItem)
+				secureOptionsWithDrus(secure, defaultValue, (selectedOpt: Option[T]) => {
+					assignmentCallback(selectedOpt)
+					if (doFieldValidation(bean, fieldName, selectedOpt, selectedOpt)) {
+						doExternalFieldValidation(bean, fieldName, selectedOpt, selectedOpt)
 					}
 				})
 			val inputSeq = ritchSelect_*(nonces, defaultNonce, secureOnSubmit, getAttributes: _*)
 			inputSeq
 		}
 
-		private def onEventForSelect(secure: Seq[(Option[T], String, String)], bean: AnyRef, fieldName: String, assignmentCallback: (T) => Any,
-													   inputId: String, containerId: String, onSelectAjaxCallback: Box[T => JsCmd] = Empty)(implicit m: Manifest[T]) = {
+		private def onEventForSelect(secure: Seq[(Option[T], String, String)], bean: A, fieldName: String, assignmentCallback: Option[T] => Any,
+													   inputId: String, containerId: String, onSelectAjaxCallback: Box[Box[T] => JsCmd] = Empty)(implicit m: Manifest[T]) = {
 				SHtml.onEvent((s) => {
 					cleanErrorsForProperty(bean, fieldName) // Important to clear errors for this field in case previous action was "submit" on form
 					secure.find(_._2 == s).map{selected =>
 						val selectedOpt = selected._1
-						val selectedItem: T = selectedOpt.getOrElse(null.asInstanceOf[T])
-						assignmentCallback(selectedItem)
-						if (doFieldValidation(bean, fieldName, selectedItem, selectedItem)) {
-							doExternalFieldValidation(bean, fieldName, selectedItem, selectedItem)
+						assignmentCallback(selectedOpt)
+						if (doFieldValidation(bean, fieldName, selectedOpt, selectedOpt)) {
+							doExternalFieldValidation(bean, fieldName, selectedOpt, selectedOpt)
 						}
 						val fieldErrors = getFieldErrors(bean, fieldName)
 						val errorSeq: NodeSeq = getErrorsSeq(fieldErrors)
 						cleanErrorsForProperty(bean, fieldName)
 						if (fieldErrors.isEmpty) {
-							RemoveFieldError(containerId, inputId) & onSelectAjaxCallback.map(f => f(selectedItem)).openOr(Noop)
+							RemoveFieldError(containerId, inputId) & onSelectAjaxCallback.map(f => f(selectedOpt)).openOr(Noop)
 						} else {
-							AttachFieldError(containerId, inputId, errorSeq) & onSelectAjaxCallback.map(f => f(selectedItem)).openOr(Noop)
+							AttachFieldError(containerId, inputId, errorSeq) & onSelectAjaxCallback.map(f => f(selectedOpt)).openOr(Noop)
 						}
 					}.getOrElse(Noop)
 				})._2.toJsCmd
 			}
 
-		private def onChangeForSelect(secure: Seq[(Option[T], String, String)], bean: AnyRef, fieldName: String, assignmentCallback: (T) => Any,
-													   inputId: String, containerId: String, onSelectAjaxCallback: Box[T => JsCmd] = Empty)(implicit m: Manifest[T]) = {
+		private def onChangeForSelect(secure: Seq[(Option[T], String, String)], bean: AnyRef, fieldName: String, assignmentCallback: Option[T] => Any,
+													   inputId: String, containerId: String, onSelectAjaxCallback: Box[Box[T] => JsCmd] = Empty)(implicit m: Manifest[T]) = {
 				SHtml.onEvent((s) => {
 					secure.find(_._2 == s).flatMap{x =>
-						x._1.flatMap{selectedItem =>
-							assignmentCallback(selectedItem)
-							onSelectAjaxCallback.map(f => f(selectedItem))}
+							assignmentCallback(x._1)
+							onSelectAjaxCallback.map(f => f(x._1))
 					}.getOrElse(Noop)
 				})._2.toJsCmd
 		}
@@ -829,11 +859,11 @@ trait ValidatableScreen extends Loggable with ErrorsAware {
 		}
 
 		private def secureOptionsWithDrus(secure: Seq[(Option[T], String, String, List[SHtml.ElemAttr])], default: Option[T],
-											 onSubmit: T => Any): (Seq[(String, String, List[SHtml.ElemAttr])], Box[String], AFuncHolder) = {
+											 onSubmit: Option[T] => Any): (Seq[(String, String, List[SHtml.ElemAttr])], Box[String], AFuncHolder) = {
 			val defaultNonce = secure.find(_._1 == default).map(_._2)
 			val nonces = secure.map {case (obj, nonce, txt, oattrs) => (nonce, txt, oattrs)}
 			def process(nonce: String) {
-				secure.find(_._2 == nonce).map(x => onSubmit(x._1.getOrElse(null.asInstanceOf[T])))
+				secure.find(_._2 == nonce).map(x => onSubmit(x._1))
 			}
 			(nonces, defaultNonce, S.SFuncHolder(process))
 		}
@@ -842,7 +872,7 @@ trait ValidatableScreen extends Loggable with ErrorsAware {
 
 	abstract class DateField[A <: AnyRef, T](bean: A,
 											 defaultValue: Option[String],
-											 assignmentCallback: T => Any)(implicit m: Manifest[T])
+											 assignmentCallback: Option[T] => Any)(implicit m: Manifest[T])
 		extends TextField[A,T](bean, defaultValue, assignmentCallback) {
 
 		script = script ++ Script(Call("Rolf.DateSetup.setupDatePicker", inputId))
@@ -864,7 +894,7 @@ trait ValidatableScreen extends Loggable with ErrorsAware {
 
 	object DateField {
 		def apply[A <: AnyRef, T](bean: A, fieldName: String, defaultValue: Option[String],
-								  assignmentCallback: T => Any)(implicit m: Manifest[T]) = {
+								  assignmentCallback: Option[T] => Any)(implicit m: Manifest[T]) = {
 			val fn = fieldName
 			new DateField[A, T](bean, defaultValue, assignmentCallback) with StandardFormField[A, T] {
 				override val fieldName = fn
@@ -876,7 +906,10 @@ trait ValidatableScreen extends Loggable with ErrorsAware {
 		/**
 		 * Apply the attribute to the element
 		 */
-		def apply(in: Elem): Elem = in % (name -> ((s: T) => value(s)))
+		def apply(in: Elem): Elem = {
+			val snipp = (s:T) => value(s)
+			in % (name -> snipp)
+		}
 
 		def apply(in: T): SHtml.ElemAttr = (name -> value(in))
 	}
@@ -958,7 +991,7 @@ trait ValidatableScreen extends Loggable with ErrorsAware {
 			<div class="errorContainer">{
 				fieldErrors.map{fieldError =>
 					trace("Displaying error for fieldName '" + fieldError.fieldName + "' error-id: " + fieldError.errorId + " " +
-						  "input-string: " + fieldError.errorValue)
+						  "input-string: " + fieldError.errorValue.getOrElse(""))
 					<div>{fieldError.errorMessage}</div>
 							   }
 				}</div>

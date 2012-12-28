@@ -29,9 +29,9 @@ class NewBlogPostDialogSnippet extends ValidatableScreen with JpaFormFields with
 	override protected def renderScreen() = {
 			".inputContainer" #> SHtml.idMemoize {
 				idMemoize =>
-					".title" #> JpaTextField(blogPost, title, ?(blogPost.title), (v: String) => blogPost.title = v) &
-						".summary" #> JpaTextAreaField(blogPost, summary, ?(blogPost.summary), (v: String) => blogPost.summary = v) &
-						".content" #> JpaTextAreaField(blogPost, content, ?(blogPost.content), (v: String) => blogPost.content = v) &
+					".title" #> JpaTextField(blogPost, title, ?(blogPost.title), (v: Option[String]) => v.foreach(blogPost.title = _)) &
+						".summary" #> JpaTextAreaField(blogPost, summary, ?(blogPost.summary), (v: Option[String]) => v.foreach(blogPost.summary = _)) &
+						".content" #> JpaTextAreaField(blogPost, content, ?(blogPost.content), (v: Option[String]) => v.foreach(blogPost.content = _)) &
 						":submit" #> SHtml.ajaxSubmit("Save", () => saveBlogEntry(idMemoize))
 			}
 	}

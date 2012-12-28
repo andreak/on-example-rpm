@@ -40,7 +40,7 @@ class NewCommentDialogSnippet extends ValidatableScreen with JpaFormFields with 
 	override protected def renderScreen() = {
 		".inputContainer" #> SHtml.idMemoize {
 			idMemoize =>
-				".commentText" #> JpaTextAreaField(comment, commentText, ?(comment.commentText), (v: String) => comment.commentText = v) &
+				".commentText" #> JpaTextAreaField(comment, commentText, ?(comment.commentText), (v: Option[String]) => v.foreach(comment.commentText = _)) &
 				":submit" #> SHtml.ajaxSubmit("Save", () => saveComment(idMemoize))
 		}
 	}

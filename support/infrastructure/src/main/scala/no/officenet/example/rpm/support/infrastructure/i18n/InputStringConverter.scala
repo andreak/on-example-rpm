@@ -1,6 +1,6 @@
 package no.officenet.example.rpm.support.infrastructure.i18n
 
-import org.joda.time.DateTime
+import org.joda.time.{LocalDate, DateTime}
 
 object InputStringConverter {
 
@@ -19,6 +19,7 @@ object InputStringConverter {
 	val javaBigDcmlCls = classOf[java.math.BigDecimal]
 	val bigDcmlCls = classOf[BigDecimal]
 	val dateCls = classOf[java.util.Date]
+	val localDateCls = classOf[LocalDate]
 	val dateTimeCls = classOf[DateTime]
 	val optionCls = classOf[Option[_]]
 
@@ -36,34 +37,27 @@ object InputStringConverter {
 		val klass = m.erasure
 		val _isOption: Boolean = isOption(m)
 
-		if (fromValue == null) {
-			if (_isOption) {
-				None.asInstanceOf[T]
-			} else {
-				null.asInstanceOf[T]
-			}
-		} else {
-			val foundClass = if (_isOption && m.typeArguments.length > 0) m.typeArguments.head.erasure else klass
-			val converted = foundClass match {
-				case `stringCls` => fromValue
-				case `shortCls` | `shortPrimitiveCls` => NumberFormatter.parse(fromValue).shortValue()
-				case `intCls` | `intPrimitiveCls` => NumberFormatter.parse(fromValue).intValue()
-				case `longCls` | `longPrimitiveCls` => NumberFormatter.parse(fromValue).longValue()
-				case `floatCls` | `floatPrimitiveCls` => NumberFormatter.parse(fromValue).floatValue()
-				case `doubleCls` | `doublePrimitiveCls` => NumberFormatter.parse(fromValue).doubleValue()
-				case `javaBigDcmlCls` => NumberFormatter.parseBigDecimal(fromValue).bigDecimal
-				case `bigDcmlCls` => NumberFormatter.parseBigDecimal(fromValue)
-				case `dateCls` => DateFormatter.parseFullDate(fromValue)
-				case `dateTimeCls` => new DateTime(DateFormatter.parseFullDate(fromValue))
-				case _ => throw new IllegalArgumentException("Don't know how to convert value " + fromValue + " of type " + foundClass.getName)
-			}
-			val retValue = if (_isOption) {
-				Some(converted)
-			} else {
-				converted
-			}
-			retValue.asInstanceOf[T]
+		val foundClass = if (_isOption && m.typeArguments.length > 0) m.typeArguments.head.erasure else klass
+		val converted = foundClass match {
+			case `stringCls` => fromValue
+			case `shortCls` | `shortPrimitiveCls` => NumberFormatter.parse(fromValue).shortValue()
+			case `intCls` | `intPrimitiveCls` => NumberFormatter.parse(fromValue).intValue()
+			case `longCls` | `longPrimitiveCls` => NumberFormatter.parse(fromValue).longValue()
+			case `floatCls` | `floatPrimitiveCls` => NumberFormatter.parse(fromValue).floatValue()
+			case `doubleCls` | `doublePrimitiveCls` => NumberFormatter.parse(fromValue).doubleValue()
+			case `javaBigDcmlCls` => NumberFormatter.parseBigDecimal(fromValue).bigDecimal
+			case `bigDcmlCls` => NumberFormatter.parseBigDecimal(fromValue)
+			case `dateCls` => DateFormatter.parseFullDate(fromValue)
+			case `localDateCls` => new LocalDate(DateFormatter.parseFullDate(fromValue).getTime)
+			case `dateTimeCls` => new DateTime(DateFormatter.parseFullDate(fromValue).getTime)
+			case _ => throw new IllegalArgumentException("Don't know how to convert value " + fromValue + " of type " + foundClass.getName)
 		}
+		val retValue = if (_isOption) {
+			Some(converted)
+		} else {
+			converted
+		}
+		retValue.asInstanceOf[T]
 	}
 
 }

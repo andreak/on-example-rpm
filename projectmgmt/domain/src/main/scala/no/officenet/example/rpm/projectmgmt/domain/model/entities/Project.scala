@@ -59,8 +59,8 @@ class Project(_created: DateTime, _createdBy: User)
 
 object Project {
 	object name extends StringField[Project]
-	object description extends OptionStringField[Project]
-	object budget extends OptionLongField[Project]
-	object estimatedStartDate extends OptionalDateTimeField[Project]
+	object description extends StringField[Project]
+	object budget extends LongField[Project]
+	object estimatedStartDate extends DateTimeField[Project]
 	object projectType extends JpaField[Project, ProjectType.ExtendedValue]
 }

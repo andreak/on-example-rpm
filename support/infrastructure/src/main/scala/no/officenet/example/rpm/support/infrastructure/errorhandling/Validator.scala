@@ -12,6 +12,7 @@ import net.sf.oval.constraint._
 import java.lang.reflect.{Method, Field}
 import no.officenet.example.rpm.support.infrastructure.scala.lang.ControlHelpers.?
 import no.officenet.example.rpm.support.infrastructure.validation.{OptionalMaxCheck, OvalValidator}
+import no.officenet.example.rpm.support.infrastructure.i18n.InputStringConverter.optionCls
 
 private[errorhandling] object ValidationCache {
 	val sizeMap = new HashMap[String, Option[Long]]
@@ -23,11 +24,11 @@ trait Validator {
 
 	def mandatory[A <: AnyRef](bean: A, fieldName: String): Boolean
 
-	def getMaxLengthOfProperty[T](bean: AnyRef, fieldName: String)(implicit m: Manifest[T]): Option[Long]
+	def getMaxLengthOfProperty[A <: AnyRef, T](bean: A, fieldName: String)(implicit m: Manifest[T]): Option[Long]
 
-	def registerFieldViolations[T](registerErrorFunc: (AnyRef, String, String,
+	def registerFieldViolations[A <: AnyRef, T](registerErrorFunc: (AnyRef, String, String,
 		IdentityHashMap[AnyRef, HashMap[String, Buffer[FieldError]]], String) => Unit,
-								   bean: AnyRef, fieldName: String, newValue: T,
+								   bean: A, fieldName: String, newValue: Option[T],
 								   errorsMap: IdentityHashMap[AnyRef, HashMap[String, Buffer[FieldError]]],
 								   uniqueErrorId: String)
 
@@ -56,7 +57,7 @@ object OvalScreenValidator extends Validator with Loggable {
 		isMandatory
 	}
 
-	override def getMaxLengthOfProperty[T](bean: AnyRef, fieldName: String)(implicit m: Manifest[T]): Option[Long] = {
+	override def getMaxLengthOfProperty[A <: AnyRef, T](bean: A, fieldName: String)(implicit m: Manifest[T]): Option[Long] = {
 		val c = bean.getClass
 		val s = c.getName + "." + fieldName
 		val cached = ValidationCache.sizeMap.get(s)
@@ -88,12 +89,12 @@ object OvalScreenValidator extends Validator with Loggable {
 		hasFieldValidation
 	}
 
-	override def registerFieldViolations[T](registerErrorFunc: (AnyRef, String, String,
+	override def registerFieldViolations[A <: AnyRef, T](registerErrorFunc: (AnyRef, String, String,
 		IdentityHashMap[AnyRef, HashMap[String, Buffer[FieldError]]], String) => Unit,
-											bean: AnyRef, fieldName: String, newValue: T,
+											bean: A, fieldName: String, newValue: Option[T],
 											errorsMap: IdentityHashMap[AnyRef, HashMap[String, Buffer[FieldError]]],
 											uniqueErrorId: String) {
-		val fieldErrors = validateFieldValue(bean, fieldName, newValue)
+		val fieldErrors = validateFieldValue[A, T](bean, fieldName, newValue)
 		for (fieldError <- fieldErrors) {
 			trace("Validation-violation for "+bean.getClass.getName+ "("+System.identityHashCode(bean)+") field: "+fieldName+": "+fieldError)
 			registerErrorFunc(bean, fieldName, fieldError.getMessage,
@@ -103,8 +104,6 @@ object OvalScreenValidator extends Validator with Loggable {
 	}
 
 	private def findMax[T](checks: Array[Check])(implicit m: Manifest[T]): Option[Long] = {
-		import no.officenet.example.rpm.support.infrastructure.i18n.InputStringConverter.optionCls
-
 		def calculateMax(size: Long, classToCheck: Class[_]): Option[Long] = {
 					// Number
 			val isBigDecimal = classToCheck == classOf[java.math.BigDecimal] ||
@@ -125,7 +124,7 @@ object OvalScreenValidator extends Validator with Loggable {
 					val compileTimeType = check.getContext.getCompileTimeType
 					return compileTimeType match {
 						case `optionCls` =>
-							val classToCheck = m.typeArguments.head.erasure
+							val classToCheck = m.erasure
 							trace("We've got an option of type: " + classToCheck)
 							calculateMax(size, classToCheck)
 						case _ => throw new IllegalArgumentException("Invalid usage of " + optionalMaxCheck.getClass.getName + ": Expected " + optionCls.getName + ", got: " + compileTimeType.getName)
@@ -162,10 +161,18 @@ object OvalScreenValidator extends Validator with Loggable {
 		field.getDeclaringClass.getDeclaredMethods.find(isGetterForField(_))
 	}
 
-	private def validateFieldValue[A <: AnyRef](validatedObject: A, fieldName: String, valueToValidate: Any): java.util.List[net.sf.oval.ConstraintViolation] = {
+	private def validateFieldValue[A <: AnyRef, T](validatedObject: A, fieldName: String, valueToValidate: Option[T]): java.util.List[net.sf.oval.ConstraintViolation] = {
 		val field = ReflectionUtils.getFieldRecursive(validatedObject.getClass, fieldName)
-		val violations = validator.validateFieldValue(validatedObject, field, valueToValidate)
-		getterForField(field).foreach(getter => violations.addAll(validator.validateMethodReturnValue(validatedObject, getter, valueToValidate)))
+		val violations = field.getType match {
+			case `optionCls` =>
+				val vio = validator.validateFieldValue(validatedObject, field, valueToValidate)
+				getterForField(field).foreach(getter => vio.addAll(validator.validateMethodReturnValue(validatedObject, getter, valueToValidate)))
+				vio
+			case _ =>
+				val vio = validator.validateFieldValue(validatedObject, field, valueToValidate.orNull)
+				getterForField(field).foreach(getter => vio.addAll(validator.validateMethodReturnValue(validatedObject, getter, valueToValidate.orNull)))
+				vio
+		}
 		violations
 	}
 
