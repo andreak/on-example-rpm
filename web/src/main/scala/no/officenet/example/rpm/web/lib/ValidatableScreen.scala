@@ -245,10 +245,11 @@ trait ValidatableScreen extends Loggable with ErrorsAware {
 			inputValueOpt.filterNot(_.isEmpty) match {
 				case None => Empty
 				case Some(inputValue) =>
+					val locale = S.locale // todo: Needs to be here because S.locale delegates to your localCalculator which sets correct locale in LocaleContextHolder
+					trace("S.locale: " + locale + ", dateformat_fullDate: " + L(GlobalTexts.dateformat_fullDate))
 					val newValue = inputValue.trim
 					try {
 						val convertedValue: T = InputStringConverter.convert[T](newValue)
-						trace("S.locale: " + S.locale + ", dateformat_fullDate: " + L(GlobalTexts.dateformat_fullDate))
 						Full(convertedValue)
 					} catch {
 						case e @ (_ : NumberFormatException | _: java.text.ParseException) =>
