@@ -8,7 +8,7 @@ import org.joda.time.DateTime
 abstract class JpaField[A, T](implicit m: Manifest[T]) extends Attribute[A, T]{
 	def getName: String = {
 		val name = getClass.getSimpleName
-		name.substring(name.indexOf('$')+1, name.length() - 1)
+		name.substring(0, name.length() - 1)
 	}
 
 	def getJavaType = m.erasure.asInstanceOf[Class[T]]

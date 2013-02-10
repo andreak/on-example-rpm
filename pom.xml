@@ -18,16 +18,17 @@
 		<timestamp>${maven.build.timestamp}</timestamp>
 		<version.postgresql>9.0-801.jdbc4</version.postgresql>
 		<version.aspectj>1.7.1</version.aspectj>
-		<version.spring>3.1.2.RELEASE</version.spring>
+		<version.spring>3.2.1.RELEASE</version.spring>
 		<version.spring-security>3.1.3.RELEASE</version.spring-security>
 		<version.org.hibernate>4.1.7.Final</version.org.hibernate>
-		<version.usertype>3.0.0.CR5</version.usertype>
+		<version.usertype>3.0.0.GA</version.usertype>
 		<version.jodatime>2.1</version.jodatime>
 		<version.jodaconvert>1.2</version.jodaconvert>
 		<version.surefire>2.8</version.surefire>
-		<version.lift>2.5-M1</version.lift>
-		<version.scala-maven-plugin>3.1.0</version.scala-maven-plugin>
-		<version.scala>2.9.1</version.scala>
+		<version.lift>2.5-SNAPSHOT</version.lift>
+		<version.scala-maven-plugin>3.1.3</version.scala-maven-plugin>
+		<version.scala>2.10</version.scala>
+		<version.scalalibs>2.10.0</version.scalalibs>
 		<version.scalajpa>1.4</version.scalajpa>
 		<version.commons-logging>1.1.1</version.commons-logging>
 		<version.oval>1.80</version.oval>
@@ -296,7 +297,7 @@
 			<dependency>
 				<groupId>org.scala-lang</groupId>
 				<artifactId>scala-library</artifactId>
-				<version>${version.scala}</version>
+				<version>${version.scalalibs}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.scala-libs</groupId>

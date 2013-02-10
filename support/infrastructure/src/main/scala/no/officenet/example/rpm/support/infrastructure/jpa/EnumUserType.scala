@@ -49,7 +49,7 @@ abstract class EnumUserType(val et: Enumeration) extends UserType {
 
 	override def disassemble(value: Object) = value.asInstanceOf[Serializable]
 
-	override def assemble(cached: Serializable, owner: Object): Serializable = cached
+	override def assemble(cached: Serializable, owner: Object): AnyRef = cached.asInstanceOf[AnyRef]
 
 	override def replace(original: Object, target: Object, owner: Object) = original
 

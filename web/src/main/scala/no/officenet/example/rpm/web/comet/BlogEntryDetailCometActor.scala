@@ -61,7 +61,7 @@ class BlogEntryDetailCometActor extends RpmCometActor {
 			val domId = ("blogEntry_" + blogEntry.entityId)
 			partialUpdate(
 				Replace(domId, blogEntryTransform(blogEntry).apply(blogEntryTemplate)) &
-					Call("SyntaxHighlighter.highlight") &
+					Call("SyntaxHighlighter.highlight").cmd &
 					Hide(domId) & FadeIn(domId, 0 seconds, JsRules.fadeTime)
 			)
 		case (entry: Box[BlogEntryCometDto], CommentCreatedMessage(comment, vm)) =>
@@ -74,14 +74,14 @@ class BlogEntryDetailCometActor extends RpmCometActor {
 			if (comment.parentId.isEmpty) {
 				partialUpdate(
 					RolfAppendHtml("blogEntryComments", printComment(comment).apply(commentTemplate)) &
-						Call("SyntaxHighlighter.highlight") &
+						Call("SyntaxHighlighter.highlight").cmd &
 						showComment
 				)
 			} else {
 				val parentId = "commentContainer_" + comment.parentId.get
 				partialUpdate(
 					RolfAppendHtml(parentId, printComment(comment).apply(commentTemplate)) &
-						Call("SyntaxHighlighter.highlight") &
+						Call("SyntaxHighlighter.highlight").cmd &
 						showComment
 				)
 			}
@@ -90,7 +90,7 @@ class BlogEntryDetailCometActor extends RpmCometActor {
 			val commentID = "comment_" + comment.id
 			partialUpdate(
 				Replace(commentID, printCommentContent(comment).apply((".comment ^^" #> "ignore").apply(commentTemplate))) &
-					Call("SyntaxHighlighter.highlight") &
+					Call("SyntaxHighlighter.highlight").cmd &
 					Hide(commentID) & FadeIn(commentID, 0 seconds, JsRules.fadeTime)
 			)
 		case VotesUpdatedMessage(commentId, vm, userId, voteValue) =>
@@ -144,7 +144,7 @@ class BlogEntryDetailCometActor extends RpmCometActor {
 							"*" #> entry.comments.collect {
 								case comment if comment.parentId.isEmpty => printComment(comment)
 							}
-						}.apply(ns) ++ Script(Call("SyntaxHighlighter.highlight")))
+						}.apply(ns) ++ Script(Call("SyntaxHighlighter.highlight").cmd))
 						)
 		}.openOr(ClearNodes)
 		retval

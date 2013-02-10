@@ -195,6 +195,6 @@ class BigDecimalUserType extends UserType {
 
 	def disassemble(value: AnyRef) = value.asInstanceOf[Serializable]
 
-	def assemble(cached: Serializable, owner: AnyRef) = cached
+	def assemble(cached: Serializable, owner: AnyRef): AnyRef = cached.asInstanceOf[AnyRef]
 
 }
