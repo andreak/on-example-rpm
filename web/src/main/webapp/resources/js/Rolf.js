@@ -506,30 +506,25 @@ var Rolf = (function() {
 			$(inputId).removeClassName("value_error");
 		},
 
-        InputMask : (function() {
+		InputMask : (function() {
 
-            var applyMask = function(inputfieldId, options) {
-                var field = jQuery("#" + inputfieldId);
-                field.autoNumeric(options);
-            };
+			var applyMask = function(inputfieldId, options) {
+				var field = jQuery("#" + inputfieldId);
+				field.autoNumeric(options);
+			};
 
-            return {
-                percent: function(inputfieldId) {
-                    applyMask(inputfieldId, {aSep: '', aDec: ',', vMin: '0.00', vMax: '100.00'});
-                },
-                naturalNumber: function(inputfieldId, maxLength) {
-                    var max = "";
-                    if (Object.isUndefined(maxLength)) {
-                        max = undefined
-                    } else {
-                        for (var i = 0; i < maxLength; i++) {
-                            max = max + "9";
-                        }
-                    }
-                    applyMask(inputfieldId, {aSep: ' ', vMin: '0', mDec: '0', vMax: max});
-                }
-            };
-        })(),
+			return {
+				percent: function(inputfieldId) {
+					applyMask(inputfieldId, {aSep: '', aDec: ',', vMin: '0.00', vMax: '100.00'});
+				},
+				decimalNumber: function(inputfieldId) {
+					applyMask(inputfieldId, {aSep: ' ', mDec: '2'});
+				},
+				naturalNumber: function(inputfieldId) {
+					applyMask(inputfieldId, {aSep: ' ', vMin: '0', mDec: '0'});
+				}
+			};
+		})(),
 
         placeMenu : function(parent, element) {
             parent = $(parent);

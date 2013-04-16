@@ -32,9 +32,9 @@ trait WritableRepository[T <: AnyRef, PK <: Serializable] extends RepositorySupp
 
 trait ReadableRepository[T <: AnyRef, PK <: Serializable] extends RepositorySupport {
 
-	def retrieve(id: PK)(implicit m: Manifest[T]) = entityManager.find[T](m.erasure.asInstanceOf[Class[T]], id) match {
+	def retrieve(id: PK)(implicit m: Manifest[T]) = entityManager.find[T](m.runtimeClass.asInstanceOf[Class[T]], id) match {
 		case Some(e) => e
-		case _ => throw new ObjectNotFoundByPrimaryKeyException(m.erasure.getSimpleName, id.toString)
+		case _ => throw new ObjectNotFoundByPrimaryKeyException(m.runtimeClass.getSimpleName, id.toString)
 	}
 
 	def findAll(orderBy: OrderBy*)(implicit m: Manifest[T]): Buffer[T] = {
@@ -43,8 +43,8 @@ trait ReadableRepository[T <: AnyRef, PK <: Serializable] extends RepositorySupp
 
 	def findAll(offset: Option[Int], maxSize: Option[Int], orderBy: OrderBy*)(implicit m: Manifest[T]) = {
 		val criteriaBuilder = entityManager.getCriteriaBuilder
-		val criteriaQuery = criteriaBuilder.createQuery[T](m.erasure.asInstanceOf[Class[T]])
-		val c = criteriaQuery.from(m.erasure)
+		val criteriaQuery = criteriaBuilder.createQuery[T](m.runtimeClass.asInstanceOf[Class[T]])
+		val c = criteriaQuery.from(m.runtimeClass)
 		val orderByList = new ListBuffer[javax.persistence.criteria.Order]
 		for (ob <- orderBy) {
 			val orderByElement = ob.order match {
@@ -67,7 +67,7 @@ trait ReadableRepository[T <: AnyRef, PK <: Serializable] extends RepositorySupp
 	def size(implicit m: Manifest[T]) = {
 		val qb: CriteriaBuilder = entityManager.getCriteriaBuilder
 		val cq = qb.createQuery(classOf[java.lang.Long])
-		cq.select(qb.count(cq.from(m.erasure)))
+		cq.select(qb.count(cq.from(m.runtimeClass)))
 		entityManager.createQuery(cq).getSingleResult
 	}
 
@@ -82,7 +82,7 @@ trait DeletableRepository[T <: AnyRef, PK <: Serializable] extends RepositorySup
 
 	def remove(id: PK)(implicit m: Manifest[T]) {
 		// Note: getReference throws EntityNotFoundException if not found
-		entityManager.remove(entityManager.getReference(m.erasure, id).asInstanceOf[AnyRef])
+		entityManager.remove(entityManager.getReference(m.runtimeClass, id).asInstanceOf[AnyRef])
 	}
 }
 

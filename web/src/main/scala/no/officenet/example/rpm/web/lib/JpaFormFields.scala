@@ -47,10 +47,10 @@ trait JpaFormFields extends Validatable {
 
 	object JpaPercentField {
 		def apply[A <: AnyRef](bean: A,
-							   field: javax.persistence.metamodel.Attribute[A, java.math.BigDecimal],
-							   value: Option[java.math.BigDecimal],
-							   assignmentCallback: Option[java.math.BigDecimal] => Any) = {
-			new PercentField[A](bean, value, assignmentCallback) with JpaFormField[A, java.math.BigDecimal] {
+							   field: javax.persistence.metamodel.Attribute[A, BigDecimal],
+							   value: Option[BigDecimal],
+							   assignmentCallback: Option[BigDecimal] => Any) = {
+			new PercentField[A](bean, value, assignmentCallback) with JpaFormField[A, BigDecimal] {
 				override val fieldName = field.getName
 			}
 		}
@@ -58,10 +58,10 @@ trait JpaFormFields extends Validatable {
 
 	object JpaDecimalField {
 		def apply[A <: AnyRef](bean: A,
-							   field: javax.persistence.metamodel.Attribute[A, java.math.BigDecimal],
-							   value: Option[java.math.BigDecimal],
-							   assignmentCallback: Option[java.math.BigDecimal] => Any) = {
-			new DecimalField[A](bean, value, assignmentCallback) with JpaFormField[A, java.math.BigDecimal] {
+							   field: javax.persistence.metamodel.Attribute[A, BigDecimal],
+							   value: Option[BigDecimal],
+							   assignmentCallback: Option[BigDecimal] => Any) = {
+			new DecimalField[A](bean, value, assignmentCallback) with JpaFormField[A, BigDecimal] {
 				override val fieldName = field.getName
 			}
 		}
@@ -111,6 +111,42 @@ trait JpaFormFields extends Validatable {
 		def apply[A <: AnyRef, T](bean: A, field: javax.persistence.metamodel.Attribute[A, T], defaultValue: Option[String],
 								  assignmentCallback: Option[T] => Any)(implicit m: Manifest[T]) = {
 			new DateField[A, T](bean, defaultValue, assignmentCallback) with JpaFormField[A, T] {
+				override val fieldName = field.getName
+			}
+		}
+	}
+
+	object JpaTimeField {
+		def apply[A <: AnyRef, T](bean: A, field: javax.persistence.metamodel.Attribute[A, T], defaultValue: Option[String],
+								  assignmentCallback: Option[T] => Any)(implicit m: Manifest[T]) = {
+			new TimeField[A, T](bean, defaultValue, assignmentCallback) with JpaFormField[A, T] {
+				override val fieldName = field.getName
+			}
+		}
+	}
+
+	object JpaSelectGroupField {
+		def apply[A <: AnyRef, T](bean: A,
+								  field: javax.persistence.metamodel.Attribute[A, T],
+								  options: Seq[OptionGroupModel[T]],
+								  defaultValue: Option[T],
+								  assignmentCallback: T => Any,
+								  valueLabel: T => String)(implicit m: Manifest[T]) = {
+			new SelectGroupField[A, T](bean, options, defaultValue, (o: Option[T]) => o.map(v => assignmentCallback(v)), valueLabel) with StandardFormField[A, T] {
+				override val fieldName = field.getName
+			}
+		}
+	}
+
+	object JpaSelectGroupFieldWithUnselectedOption {
+		def apply[A <: AnyRef, T](bean: A,
+								  field: javax.persistence.metamodel.Attribute[A, T],
+								  options: Seq[OptionGroupModel[T]],
+								  defaultValue: Option[T],
+								  assignmentCallback: Option[T] => Any,
+								  valueLabel: T => String, notSelectedText: String)(implicit m: Manifest[T]) = {
+			val valueLabelWithDefaultValue = (option: Option[T]) => option.map(value => valueLabel(value)).getOrElse(notSelectedText)
+			new SelectGroupField[A, T](bean, options, defaultValue, assignmentCallback, valueLabelWithDefaultValue, true) with StandardFormField[A, T] {
 				override val fieldName = field.getName
 			}
 		}

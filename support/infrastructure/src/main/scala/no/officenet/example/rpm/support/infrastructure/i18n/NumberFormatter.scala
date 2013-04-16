@@ -90,12 +90,8 @@ object NumberFormatter {
 		bigDecimalFormat.format(value.bigDecimal)
 	}
 
-
-	def formatBigDecimalNumber(value: java.math.BigDecimal): String = formatBigDecimalNumber(BigDecimal(value))
-
-
-	def formatPercent(value: Option[java.math.BigDecimal]): Option[String] = {
-		value.map(v => "%s %%" format formatBigDecimalNumber(BigDecimal(v)))
+	def formatPercent(value: Option[BigDecimal]): Option[String] = {
+		value.map(v => "%s %%" format formatBigDecimalNumber(v))
 	}
 
 }

@@ -103,6 +103,7 @@
 				<groupId>org.apache.tomcat.maven</groupId>
 				<artifactId>tomcat7-maven-plugin</artifactId>
 				<configuration>
+					<!--<contextFile>${project.build.directory}/classes/META-INF/context.xml</contextFile>-->
 					<path>/rpm</path>
 					<uriEncoding>UTF-8</uriEncoding>
 					<systemProperties>
@@ -111,8 +112,8 @@
 				</configuration>
 				<dependencies>
                     <dependency>
-                        <groupId>postgresql</groupId>
-                        <artifactId>postgresql</artifactId>
+						<groupId>org.postgresql</groupId>
+						<artifactId>postgresql</artifactId>
                         <version>${version.postgresql}</version>
                         <scope>runtime</scope>
                     </dependency>

@@ -17,30 +17,18 @@ trait InputMask {
 
 }
 
-object NaturalNumberMask {
-	val JsFunction = "Rolf.InputMask.naturalNumber"
-
-	def apply() = {
-		new NaturalNumberMask
-	}
-}
-
-class NaturalNumberMask extends InputMask {
+case object NaturalNumberMask extends InputMask {
 	override def getExtraArgs(field: ValidatableScreen#FormField[_, _]): Seq[JsExp] = {
 		(field.maxLength or field.maxLengthOfFieldInChars).map(l => Seq(Num(l))).getOrElse(Seq.empty)
 	}
-	val getJsFunction = NaturalNumberMask.JsFunction
+	val getJsFunction = "Rolf.InputMask.naturalNumber"
 
 }
 
-object PercentMask {
-	val JsFunction = "Rolf.InputMask.percent"
-
-	def apply() = {
-		new PercentMask
-	}
+case object PercentMask extends InputMask {
+	def getJsFunction = "Rolf.InputMask.percent"
 }
 
-class PercentMask extends InputMask {
-	val getJsFunction = PercentMask.JsFunction
+case object DecimalNumberMask extends InputMask {
+	def getJsFunction = "Rolf.InputMask.decimalNumber"
 }

@@ -26,18 +26,18 @@ object InputStringConverter {
 	def isTypeOrOptionOfType[T](klass: Class[_], m: Manifest[T]): Boolean = {
 		klass == (
 			if (isOption(m) && m.typeArguments.length > 0) {
-				m.typeArguments.head.erasure
-			} else {m.erasure}
+				m.typeArguments.head.runtimeClass
+			} else {m.runtimeClass}
 			)
 	}
 
-	def isOption[T](m: Manifest[T]): Boolean = m.erasure == InputStringConverter.optionCls
+	def isOption[T](m: Manifest[T]): Boolean = m.runtimeClass == InputStringConverter.optionCls
 
 	def convert[T](fromValue: String)(implicit m: Manifest[T]): T = {
-		val klass = m.erasure
+		val klass = m.runtimeClass
 		val _isOption: Boolean = isOption(m)
 
-		val foundClass = if (_isOption && m.typeArguments.length > 0) m.typeArguments.head.erasure else klass
+		val foundClass = if (_isOption && m.typeArguments.length > 0) m.typeArguments.head.runtimeClass else klass
 		val converted = foundClass match {
 			case `stringCls` => fromValue
 			case `shortCls` | `shortPrimitiveCls` => NumberFormatter.parse(fromValue).shortValue()

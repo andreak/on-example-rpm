@@ -13,6 +13,7 @@ object GlobalTexts extends ResourceBundleEnum {
 	validation_notANumber_integer_text,
 	validation_notANumber_float_text,
 	validation_invalidDate_text,
+	validation_invalidTime_text,
 
 	decimalFormat_pattern,
 	numberFormat_groupingSeparator,

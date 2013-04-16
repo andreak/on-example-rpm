@@ -1,13 +1,12 @@
 package no.officenet.example.rpm.web.lib
 
 import net.liftweb._
-import common.{Failure, Empty, Full, Box}
+import net.liftweb.common._
 import http.js.JE._
 import http.js.JsCmd
 import http.js.JsCmds._
 import http.S.AFuncHolder
 import http.S.LFuncHolder
-import http.SHtml.ChoiceItem
 import http.{LiftRules, AjaxContext, S, SHtml}
 import util.Helpers._
 import xml._
@@ -20,7 +19,7 @@ import no.officenet.example.rpm.web.lib.LiftUtils._
 import no.officenet.example.rpm.web.lib.RolfJsCmds.{AttachFieldError, RemoveFieldError}
 import collection.mutable.{ArrayBuffer, HashMap, Buffer}
 import no.officenet.example.rpm.support.infrastructure.logging.Loggable
-import no.officenet.example.rpm.support.infrastructure.errorhandling.{InvalidDateInputException, FieldError}
+import no.officenet.example.rpm.support.infrastructure.errorhandling.{InvalidTimeInputException, InvalidDateInputException, FieldError}
 import no.officenet.example.rpm.support.infrastructure.i18n.{InputStringConverter, GlobalTexts}
 
 trait ValidatableScreen extends Loggable with ErrorsAware {
@@ -49,15 +48,15 @@ trait ValidatableScreen extends Loggable with ErrorsAware {
 	}
 
 	// Taken from net.liftweb.builtin.snippet.Form
-	private[this] def addAjaxForm(): MetaData = {
+	private[this] def addAjaxForm(attributes: Option[MetaData]): MetaData = {
 		val id = nextFuncName
 
 		// Note: Exclude the attribute-name we've choosen, 'type', here, unless it's added as an attribute to the form-element
 		val attr = S.currentAttrsToMetaData(name => name != "id" && name != "onsubmit" && name != "action" && name != "type")
 
-		val pre = S.attr.~("onsubmit").map(_.text + ";") getOrElse ""
+		val pre = attributes.flatMap(_.get("onsubmit")).map(_.text + ";") getOrElse ""
 
-		val post = S.attr.~("postsubmit").map("function() { " + _.text + "; }")
+		val post = attributes.flatMap(_.get("postsubmit")).map("function() { " + _.text + "; }")
 
 		val ajax: String = pre + SHtml.makeAjaxCall(LiftRules.jsArtifacts.serialize(id), AjaxContext.js(post)).toJsCmd + ";" + "return false;"
 
@@ -72,9 +71,9 @@ trait ValidatableScreen extends Loggable with ErrorsAware {
 			kids(0).isInstanceOf[Elem] &&
 			(kids(0).prefix eq null) &&
 			kids(0).label == "form") {
-			new Elem(null, "form", addAjaxForm(), TopScope, kids(0).child :_*)
+			new Elem(null, "form", addAjaxForm(Some(kids(0).attributes)), TopScope, clearErrors ++ renderScreen().apply(kids(0).child) :_*)
 		} else {
-			Elem(null, "form", addAjaxForm(), TopScope, kids : _*)
+			Elem(null, "form", addAjaxForm(None), TopScope, clearErrors ++ renderScreen().apply(kids) : _*)
 		}
 	}
 
@@ -97,7 +96,7 @@ trait ValidatableScreen extends Loggable with ErrorsAware {
 							}))
 				new Elem(null, "form", meta , e.scope, e.child :_*)
 			} else {
-				<form method="post" action={S.uri}>{kids}</form>
+				<form method="post" action={S.uri}>{clearErrors ++ renderScreen().apply(kids)}</form>
 			}
 
 		S.attr("multipart") match {
@@ -107,14 +106,13 @@ trait ValidatableScreen extends Loggable with ErrorsAware {
 	}
 
 	final def renderForm(kids: NodeSeq): NodeSeq = {
-		val formKids = clearErrors ++ renderScreen().apply(kids)
 		val form: NodeSeq = S.attr("type") match {
 			case Full(x) => x match {
-				case "ajax" => renderAjaxForm(formKids)
-				case "post" => renderPostForm(formKids)
+				case "ajax" => renderAjaxForm(kids)
+				case "post" => renderPostForm(kids)
 				case _ => throw new IllegalArgumentException("Invalid value '" + x + "' to 'type' parameter")
 			}
-			case _ => renderScreen().apply(kids)
+			case _ => clearErrors ++ renderScreen().apply(kids)
 		}
 		form
 	}
@@ -242,11 +240,11 @@ trait ValidatableScreen extends Loggable with ErrorsAware {
 
 		private[this] def convertValue(inputValueOpt: Option[String], bean: AnyRef, fieldName: String)
 									  (implicit m: Manifest[T]): Box[T] = {
+			val locale = S.locale // todo: Needs to be here because S.locale delegates to your localCalculator which sets correct locale in LocaleContextHolder
+			trace("S.locale: " + locale + ", dateformat_fullDate: " + L(GlobalTexts.dateformat_fullDate))
 			inputValueOpt.filterNot(_.isEmpty) match {
 				case None => Empty
 				case Some(inputValue) =>
-					val locale = S.locale // todo: Needs to be here because S.locale delegates to your localCalculator which sets correct locale in LocaleContextHolder
-					trace("S.locale: " + locale + ", dateformat_fullDate: " + L(GlobalTexts.dateformat_fullDate))
 					val newValue = inputValue.trim
 					try {
 						val convertedValue: T = InputStringConverter.convert[T](newValue)
@@ -260,6 +258,10 @@ trait ValidatableScreen extends Loggable with ErrorsAware {
 							registerError(Some(newValue))(bean, fieldName,
 								L(GlobalTexts.validation_invalidDate_text, inputValue), errorsMap, nextFuncName)
 							Failure(inputValue)
+						case e: InvalidTimeInputException =>
+							registerError(Some(newValue))(bean, fieldName,
+								L(GlobalTexts.validation_invalidTime_text, inputValue), errorsMap, nextFuncName)
+							Failure(inputValue)
 					}
 			}
 		}
@@ -270,13 +272,10 @@ trait ValidatableScreen extends Loggable with ErrorsAware {
 				case r@Failure(_,_,_) =>
 					r
 				case r =>
+					assignmentCallback(r)
 //					trace("Validating field: " + fieldName + " with value '" + convertedValue + "'")
 					if (doFieldValidation(bean, fieldName, r, inputValue)) {
-						assignmentCallback(r)
 						doExternalFieldValidation(bean, fieldName, r, inputValue)
-					} else if (skipValidationFunc.isDefined && skipValidationFunc.get.apply(r)) {
-						// Run assignment-callback if we're instructed to skip validation
-						assignmentCallback(r)
 					}
 					r
 			}
@@ -551,6 +550,11 @@ trait ValidatableScreen extends Loggable with ErrorsAware {
 			this
 		}
 
+		def withIsEditModeFunc(isEditMode: () => Boolean): this.type = {
+			this.container.isEditMode = isEditMode
+			this
+		}
+
 		def withValidation(validationFunc: Option[T] => Boolean, errorMessageFunc: Option[K] => String): this.type = {
 			if ((validationFunc eq null) || (errorMessageFunc eq null)) {
 				throw new IllegalArgumentException("validationFunc AND errorMessageFunc cannot be null")
@@ -575,8 +579,8 @@ trait ValidatableScreen extends Loggable with ErrorsAware {
 			this
 		}
 
-		def withReadOnlyFormatter(formatterFunc: NodeSeq): this.type = {
-			readOnlyFormatterFunc = Full(() => formatterFunc)
+		def withReadOnlyFormatter(formatterFunc: StringOrNodeSeq): this.type = {
+			readOnlyFormatterFunc = Full(() => formatterFunc.nodeSeq)
 			this
 		}
 
@@ -643,38 +647,42 @@ trait ValidatableScreen extends Loggable with ErrorsAware {
 	}
 
 	abstract class DecimalField[A <: AnyRef](bean: A,
-									value: Option[java.math.BigDecimal],
-									assignmentCallback: Option[java.math.BigDecimal] => Any)(implicit m: Manifest[java.math.BigDecimal])
-		extends TextField[A, java.math.BigDecimal](bean, value.map(formatBigDecimalNumber(_)), assignmentCallback) {
-
+									value: Option[BigDecimal],
+									assignmentCallback: Option[BigDecimal] => Any)(implicit m: Manifest[BigDecimal])
+		extends TextField[A, BigDecimal](bean, value.map(formatBigDecimalNumber(_)), assignmentCallback) {
+		private[this] val readOnlyValue = value.map(formatBigDecimalNumber(_)).map(Text(_)).getOrElse(NodeSeq.Empty)
+		withReadOnlyFormatter(readOnlyValue)
+		withInputMask(DecimalNumberMask)
 	}
 
 	abstract class NaturalNumberField[A <: AnyRef](bean: A,
 									value: Option[java.lang.Integer],
 									assignmentCallback: Option[java.lang.Integer] => Any)(implicit m: Manifest[java.lang.Integer])
 		extends TextField[A, java.lang.Integer](bean, value.map(formatWholeNumber(_)), assignmentCallback) {
-		withReadOnlyFormatter(value.map(v => Text(formatWholeNumber(v))).getOrElse(NodeSeq.Empty))
-		withInputMask(NaturalNumberMask())
+		private[this] val readOnlyValue = value.map(v => Text(formatWholeNumber(v))).getOrElse(NodeSeq.Empty)
+		withReadOnlyFormatter(readOnlyValue)
+		withInputMask(NaturalNumberMask)
 	}
 
 	object PercentField {
 		def apply[A <: AnyRef](bean: A,
 							   fieldName: String,
-							   value: Option[java.math.BigDecimal],
-							   assignmentCallback: Option[java.math.BigDecimal] => Any) = {
+							   value: Option[BigDecimal],
+							   assignmentCallback: Option[BigDecimal] => Any) = {
 			val fn = fieldName
-			new PercentField[A](bean, value, assignmentCallback) with StandardFormField[A, java.math.BigDecimal] {
+			new PercentField[A](bean, value, assignmentCallback) with StandardFormField[A, BigDecimal] {
 				override val fieldName = fn
 			}
 		}
 	}
 
 	abstract class PercentField[A <: AnyRef](bean: A,
-									value: Option[java.math.BigDecimal],
-									assignmentCallback: Option[java.math.BigDecimal] => Any)
+									value: Option[BigDecimal],
+									assignmentCallback: Option[BigDecimal] => Any)
 		extends DecimalField[A](bean, value, assignmentCallback) {
-		withReadOnlyFormatter(formatPercent(value).map(Text(_)).getOrElse(NodeSeq.Empty))
-		withInputMask(PercentMask())
+		private[this] val readOnlyValue = formatPercent(value).map(Text(_)).getOrElse(NodeSeq.Empty)
+		withReadOnlyFormatter(readOnlyValue)
+		withInputMask(PercentMask)
 	}
 
 
@@ -871,6 +879,163 @@ trait ValidatableScreen extends Loggable with ErrorsAware {
 
 	}
 
+	case class OptionModel[T](value: T, disabled: Boolean = false, attrs: List[SHtml.ElemAttr] = Nil)
+
+	case class OptionGroupModel[T](label: String, options: Seq[OptionModel[T]], disabled: Boolean = false, attrs: List[SHtml.ElemAttr] = Nil) {
+		def values = options map( _.value)
+	}
+
+	abstract class SelectGroupField[A <: AnyRef, T](val bean: A,
+									  optionGroups: Seq[OptionGroupModel[T]],
+									  val defaultValue: Option[T],
+									  val assignmentCallback: Option[T] => Any,
+									  valueLabel: Option[T] => String,
+									  includeUnselectedOption: Boolean = false)(implicit m: Manifest[T])
+		extends AbstractFormField[A, T] with PicableFormField[A, T] {
+
+		def this(bean: A,
+				 optionGroups: Seq[OptionGroupModel[T]],
+				 defaultValue: Option[T],
+				 assignmentCallback: Option[T] => Any,
+				 valueLabel: T => String)(implicit m: Manifest[T]) {
+			this(bean, optionGroups, defaultValue, assignmentCallback, (t: Option[T]) => t.map(v => valueLabel(v)).getOrElse(""))
+		}
+
+		def defaultReadOnlyValueFunc(value: T): Option[String] = defaultValue match {
+//			case Some(dv) => defaultValue.map(dval => valueLabel(defaultValue, options.flatMap(_.values).indexOf(dval)))
+			case Some(dv) => Some(valueLabel(defaultValue))
+			case _ => None
+		}
+
+		private[lib] case class SecureModel(model: Option[OptionModel[T]], name: String, nonce: String)
+		private[lib] case class InternalModelGroup(group: Option[OptionGroupModel[T]], options: Seq[SecureModel])
+
+		lazy val secure: Seq[InternalModelGroup] = {
+			val secOptions = optionGroups.map(ogr => InternalModelGroup(Some(ogr), ogr.options.map(m =>
+				SecureModel(Some(m), valueLabel(Some(m.value)), randomString(20))))
+			)
+			if (includeUnselectedOption) {
+				InternalModelGroup(None,
+					Seq(SecureModel(None, valueLabel(None), randomString(20)))) +:
+					secOptions
+			} else {
+				secOptions
+			}
+		}
+
+		override def getInputElement(defaultValue: Option[T], assignmentCallback: Option[T] => Any): Elem = {
+			val defaultSecure = secure.flatMap(_.options).find(sopt => sopt.model.flatMap(m => Some(m.value)) == defaultValue)
+			val (defaultNonce, secureOnSubmit) =
+				secureOptionsWithDrus(secure, defaultSecure, (selectedOpt: Option[T]) => {
+					assignmentCallback(selectedOpt)
+					if (doFieldValidation(bean, fieldName, selectedOpt, selectedOpt)) {
+						doExternalFieldValidation(bean, fieldName, selectedOpt, selectedOpt)
+					}
+				})
+			val inputSeq = ritchSelect_*(defaultNonce, secureOnSubmit, getAttributes: _*)
+			inputSeq
+		}
+
+		private def ritchSelect_*(deflt: Box[String],
+								  func: AFuncHolder, attrs: SHtml.ElemAttr*): Elem = {
+			def selected(in: Boolean) = if (in) new UnprefixedAttribute("selected", "selected", Null) else Null
+			def disabled(in: Boolean) = if (in) new UnprefixedAttribute("disabled", "disabled", Null) else Null
+			val vals = secure.flatMap(_.options).map(_.nonce)
+			val testFunc = LFuncHolder(in => in.filter(v => vals.contains(v)) match {case Nil => false case xs => func(xs)}, func.owner)
+			attrs.foldLeft(S.fmapFunc(testFunc)(fn => <select name={fn}>{secure.flatMap(internalGroup =>
+				internalGroup.group match {
+					case Some(group) =>
+						group.attrs.foldLeft(<optgroup label={group.label}>{
+							internalGroup.options.flatMap(secOption => secOption.model.map(model => model.attrs.foldLeft(
+								<option value={secOption.nonce}>{secOption.name}</option> %
+									selected(deflt.exists(_ == secOption.nonce)) %
+									disabled(secOption.model.map(_.disabled).getOrElse(false))
+							)(_ % _)).getOrElse(NodeSeq.Empty)
+							)
+							}</optgroup> % disabled(group.disabled))(_ % _)
+
+					case _ =>
+						// render unselected option
+						internalGroup.options.map(secOption=>
+							<option value={secOption.nonce}>{secOption.name}</option> %
+								selected(deflt.exists(_ == secOption.nonce)) %
+								disabled(isMandatory)
+						)
+				}
+			)}</select>))(_ % _)
+		}
+
+		private def secureOptionsWithDrus(secure: Seq[InternalModelGroup], default: Option[SecureModel],
+											 onSubmit: Option[T] => Any): (Box[String], AFuncHolder) = {
+			val defaultNonce = default.flatMap(d => secure.flatMap(_.options).find(_.model == d.model).map(_.nonce))
+			def process(nonce: String) {
+				secure.flatMap(_.options).find(_.nonce == nonce).map(x => onSubmit(x.model.map(_.value)))
+			}
+			(defaultNonce, S.SFuncHolder(process))
+		}
+
+		private def onChangeForSelect(secure: Seq[InternalModelGroup], bean: AnyRef, fieldName: String, assignmentCallback: Option[T] => Any,
+									  inputId: String, containerId: String, onSelectAjaxCallback: Box[Box[T] => JsCmd] = Empty)(implicit m: Manifest[T]) = {
+			SHtml.onEvent((s) => {
+				val valueOpt = secure.flatMap(_.options).find(_.nonce == s).flatMap(_.model.map(_.value))
+				assignmentCallback(valueOpt)
+				onSelectAjaxCallback.map(f => f(valueOpt)).openOr(Noop)
+			})._2.toJsCmd
+		}
+
+		override protected final def getOnChange(inputSeq: Elem, convertIfStringInput: Boolean)(implicit m: Manifest[T]): Elem = {
+			val validationOnChange = onChangeForSelect(secure,
+				bean, fieldName, assignmentCallback,
+				inputId, containerId, ajaxCallbackFunc)
+			onSnabelCallback(inputSeq, validationOnChange)
+		}
+
+		protected def onSnabelCallback(inputSeq: Elem, onChangeFunc: String): Elem = {
+			val oldOnChangeAttribute = inputSeq.attribute("onchange")
+			if (oldOnChangeAttribute.isDefined) {
+				val oldOnChange = oldOnChangeAttribute.get.text
+				if (oldOnChange.trim().length() > 0) {
+					inputSeq % ("onchange" -> ("if (" + getAsAnonFunc(oldOnChange) + " !== false) {" + onChangeFunc + "}"))
+				} else inputSeq
+			} else {
+				inputSeq % ("onchange" -> onChangeFunc)
+			}
+		}
+
+		protected def getOnEventValidation(inputSeq: Elem)(implicit m: Manifest[T]): Elem = inputSeq
+
+	}
+
+	object SelectGroupField {
+		def apply[A <: AnyRef, T](bean: A,
+								  fieldName: String,
+								  options: Seq[OptionGroupModel[T]],
+								  defaultValue: Option[T],
+								  assignmentCallback: T => Any,
+								  valueLabel: T => String)(implicit m: Manifest[T]) = {
+			val fn = fieldName
+			new SelectGroupField[A, T](bean, options, defaultValue, (o: Option[T]) => o.map(v => assignmentCallback(v)), valueLabel) with StandardFormField[A, T] {
+				override val fieldName = fn
+			}
+		}
+	}
+
+	object SelectGroupFieldWithUnselectedOption {
+		def apply[A <: AnyRef, T](bean: A,
+								  fieldName: String,
+								  options: Seq[OptionGroupModel[T]],
+								  defaultValue: Option[T],
+								  assignmentCallback: Option[T] => Any,
+								  valueLabel: T => String, notSelectedText: String)(implicit m: Manifest[T]) = {
+			val fn = fieldName
+			val valueLabelWithDefaultValue = (option: Option[T]) => option.map(value => valueLabel(value)).getOrElse(notSelectedText)
+			new SelectGroupField[A, T](bean, options, defaultValue, assignmentCallback, valueLabelWithDefaultValue, true) with StandardFormField[A, T] {
+				override val fieldName = fn
+			}
+		}
+	}
+
+
 	abstract class DateField[A <: AnyRef, T](bean: A,
 											 defaultValue: Option[String],
 											 assignmentCallback: Option[T] => Any)(implicit m: Manifest[T])
@@ -903,58 +1068,21 @@ trait ValidatableScreen extends Loggable with ErrorsAware {
 		}
 	}
 
-	final case class StrFuncElemAttr[T](name: String, value: (T) => String) extends SHtml.ElemAttr {
-		/**
-		 * Apply the attribute to the element
-		 */
-		def apply(in: Elem): Elem = {
-			val snipp = (s:T) => value(s)
-			in % (name -> snipp)
-		}
+	abstract class TimeField[A <: AnyRef, T](bean: A,
+											 defaultValue: Option[String],
+											 assignmentCallback: Option[T] => Any)(implicit m: Manifest[T])
+		extends TextField[A,T](bean, defaultValue, assignmentCallback) {
 
-		def apply(in: T): SHtml.ElemAttr = (name -> value(in))
+		origAttrs = origAttrs ++ Set(SHtml.BasicElemAttr("size", "5"), SHtml.BasicElemAttr("class", "time"), SHtml.BasicElemAttr("onblur", "return Rolf.DateSetup.fixTime(this)"))
+
 	}
 
-	def ritchRadioElem[T](opts: Seq[T], deflt: Box[T], attrs: SHtml.ElemAttr*)
-						 (onSubmit: Box[T] => Any): SHtml.ChoiceHolder[T] = {
-
-		def checked(in: Boolean) = if (in) new UnprefixedAttribute("checked", "checked", Null) else Null
-
-		val possible = opts.map(v => nextFuncName -> v).toList
-
-		val hiddenId = nextFuncName
-
-		S.fmapFunc(LFuncHolder(lst => lst.filter(_ != hiddenId) match {
-			case Nil => onSubmit(Empty)
-			case x :: _ => onSubmit(possible.filter(_._1 == x).
-				headOption.map(_._2))
-		})) {
-			name => {
-				val items = possible.zipWithIndex.map {
-					case ((id, value), idx) => {
-						val radio =
-							attrs.foldLeft(<input type="radio"
-												  name={name} value={id}/>) {
-								(b, a) =>
-									b % (if (a.isInstanceOf[StrFuncElemAttr[T]]) {
-										a.asInstanceOf[StrFuncElemAttr[T]].apply(value)
-									} else {
-										a
-									})
-							} %
-								checked(deflt.filter(_ == value).isDefined)
-
-						val elem = if (idx == 0) {
-							radio ++ <input type="hidden" value={hiddenId} name={name}/>
-						} else {
-							radio
-						}
-
-						ChoiceItem(value, elem)
-					}
-				}
-
-				SHtml.ChoiceHolder(items)
+	object TimeField {
+		def apply[A <: AnyRef, T](bean: A, fieldName: String, defaultValue: Option[String],
+								  assignmentCallback: Option[T] => Any)(implicit m: Manifest[T]) = {
+			val fn = fieldName
+			new TimeField[A, T](bean, defaultValue, assignmentCallback) with StandardFormField[A, T] {
+				override val fieldName = fn
 			}
 		}
 	}

@@ -21,6 +21,7 @@ import no.officenet.example.rpm.support.infrastructure.i18n.{Localizer, Bundle, 
 import no.officenet.example.rpm.support.infrastructure.i18n.Localizer.L
 import no.officenet.example.rpm.web.lib.{NaturalNumberMask, JpaFormFields, ValidatableScreen}
 import no.officenet.example.rpm.support.infrastructure.scala.lang.ControlHelpers.?
+import no.officenet.example.rpm.web.lib.LiftUtils
 
 object DisplayRadioWithLabelHorizontallyTemplate {
 	def buildElement(item: SHtml.ChoiceItem[(String, String)]): NodeSeq = {
@@ -92,9 +93,9 @@ class ProjectEditSnippet extends ValidatableScreen with JpaFormFields with Trans
 											(pt: ProjectType.ExtendedValue, idx) => L(pt.wrapped)).
 				withContainer(TdInputContainer(L(ProjectTexts.D.projectType))) &
 			".project_color_radio *" #> DisplayRadioWithLabelHorizontallyTemplate.toForm(
-				ritchRadioElem(radioValues,
+				LiftUtils.ritchRadioElem(radioValues,
 						 checkedColor,
-						 StrFuncElemAttr[(String, String)]("onchange", {(t:(String, String)) =>
+					LiftUtils.StrFuncElemAttr[(String, String)]("onchange", {(t:(String, String)) =>
 							 val key = t._1
 							 colorLabelMap.keys.map(k => Hide(colorLabelMap(k))).toList &
 							 Show(colorLabelMap(key))
@@ -107,7 +108,7 @@ class ProjectEditSnippet extends ValidatableScreen with JpaFormFields with Trans
 			".bad_color_id [style]" #> getStyleForLabel(badColorIdKey) &
 			".budget *" #> JpaTextField(project, Project.budget, project.budget.map(d => d.toString), (v: Option[Long]) => project.budget = v).
 				withContainer(TdInputContainer(L(ProjectTexts.V.projectDialog_details_label_budget))).
-				withInputMask(NaturalNumberMask()) &
+				withInputMask(NaturalNumberMask) &
 			".estimatedStart *" #> JpaDateField(project, Project.estimatedStartDate,
 											 Localizer.formatDateTime(L(GlobalTexts.dateformat_fullDate),
 																	  project.estimatedStartDate),

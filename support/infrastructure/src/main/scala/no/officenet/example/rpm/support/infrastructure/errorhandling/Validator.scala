@@ -124,7 +124,7 @@ object OvalScreenValidator extends Validator with Loggable {
 					val compileTimeType = check.getContext.getCompileTimeType
 					return compileTimeType match {
 						case `optionCls` =>
-							val classToCheck = m.erasure
+							val classToCheck = m.runtimeClass
 							trace("We've got an option of type: " + classToCheck)
 							calculateMax(size, classToCheck)
 						case _ => throw new IllegalArgumentException("Invalid usage of " + optionalMaxCheck.getClass.getName + ": Expected " + optionCls.getName + ", got: " + compileTimeType.getName)
