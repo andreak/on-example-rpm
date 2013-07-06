@@ -6,18 +6,19 @@ package no.officenet.example.rpm.support.infrastructure.validation
 
 import net.sf.oval.configuration.Configurer
 import net.sf.oval.internal.ContextCache
-import java.lang.reflect.{Field, Method}
+import java.lang.reflect.Method
 import collection.JavaConversions._
 import collection.mutable.HashMap
 import net.sf.oval.localization.message.MessageResolver
 import java.util.{MissingResourceException, Locale, Collections}
 import org.springframework.context.i18n.LocaleContextHolder
 import no.officenet.example.rpm.support.infrastructure.i18n.ResourceBundleHelper
-import net.sf.oval.{Check, ConstraintViolation, Validator}
-import net.sf.oval.context.OValContext
+import net.sf.oval.Validator
 import javax.annotation.Resource
 import javax.persistence.EntityManagerFactory
 import net.sf.oval.internal.util.{FieldGetter, ReflectionUtils}
+import reflect.runtime._
+import universe._
 
 /**
  * Custom validator based on Oval's {@link Validator}}
@@ -59,13 +60,20 @@ class OvalValidator(configurers: java.util.Collection[Configurer])
 }
 
 object ScalaFieldGetter extends FieldGetter {
-	def getField(field: Field, value: Any): AnyRef = {
-		try {
-			field.getDeclaringClass.getDeclaredMethod(field.getName).invoke(value)
-		} catch {
-			case t: NoSuchMethodException =>
-				field.get(value)
-		}
+	val mirror = currentMirror
+
+	def getField(field: java.lang.reflect.Field, value: Any): AnyRef = {
+		val c = field.getDeclaringClass
+		val classMirror = mirror.classSymbol(c)
+		val fieldType = mirror.classSymbol(field.getType).toType
+		val im = mirror.reflect(value)
+		(classMirror.toType.declaration(newTermName(field.getName)) match {
+			case ms: MethodSymbol => Some(ms)
+			case _ => None
+		}).filter(_.returnType == fieldType).map{m =>
+			val mm = im.reflectMethod(m)
+			mm.apply().asInstanceOf[AnyRef]
+		}.getOrElse(field.get(value))
 	}
 }
 

@@ -301,6 +301,11 @@
 				<version>${version.scalalibs}</version>
 			</dependency>
 			<dependency>
+				<groupId>org.scala-lang</groupId>
+				<artifactId>scala-reflect</artifactId>
+				<version>${version.scalalibs}</version>
+			</dependency>
+			<dependency>
 				<groupId>org.scala-libs</groupId>
 				<artifactId>scalajpa_${version.scala}</artifactId>
 				<version>${version.scalajpa}</version>
