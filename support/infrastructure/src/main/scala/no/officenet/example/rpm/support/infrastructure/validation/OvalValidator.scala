@@ -6,7 +6,7 @@ package no.officenet.example.rpm.support.infrastructure.validation
 
 import net.sf.oval.configuration.Configurer
 import net.sf.oval.internal.ContextCache
-import java.lang.reflect.Method
+import java.lang.reflect.{Field, Method}
 import collection.JavaConversions._
 import collection.mutable.HashMap
 import net.sf.oval.localization.message.MessageResolver
@@ -15,7 +15,9 @@ import org.springframework.context.i18n.LocaleContextHolder
 import no.officenet.example.rpm.support.infrastructure.i18n.ResourceBundleHelper
 import net.sf.oval.{Check, ConstraintViolation, Validator}
 import net.sf.oval.context.OValContext
-import org.hibernate.Hibernate
+import javax.annotation.Resource
+import javax.persistence.EntityManagerFactory
+import net.sf.oval.internal.util.{FieldGetter, ReflectionUtils}
 
 /**
  * Custom validator based on Oval's {@link Validator}}
@@ -32,6 +34,11 @@ import org.hibernate.Hibernate
  */
 class OvalValidator(configurers: java.util.Collection[Configurer])
 	extends net.sf.oval.Validator(configurers) {
+	@Resource
+	val entityManagerFactory: EntityManagerFactory = null
+	lazy val persistenceUnitUtil = entityManagerFactory.getPersistenceUnitUtil
+
+	ReflectionUtils.setFieldGetter(ScalaFieldGetter)
 
 	net.sf.oval.Validator.setMessageResolver(OvalMessageResolver)
 	net.sf.oval.Validator.setContextRenderer(RpmResourceBundleValidationContextRenderer.INSTANCE)
@@ -44,19 +51,22 @@ class OvalValidator(configurers: java.util.Collection[Configurer])
 		val violations = Validator.getCollectionFactory.createList[net.sf.oval.ConstraintViolation]()
 		val ctx = ContextCache.getMethodReturnValueContext(method)
 		for (check <- checksForMethod) {
-			checkConstraint(violations, check, validatedObject, valueToValidate, ctx, null /* profiles */, false, false)
+			checkConstraint(violations, check, validatedObject, valueToValidate, ctx, null /* profiles */, false)
 		}
 		violations
 	}
 
-	override def checkConstraint(violations: java.util.List[ConstraintViolation], check: Check, validatedObject: AnyRef,
-								 valueToValidate: Any, context: OValContext, profiles: Array[String],
-								 isContainerValue: Boolean, ignoreTarget: Boolean) {
-		if (Hibernate.isInitialized(valueToValidate)) {
-			super.checkConstraint(violations, check, validatedObject, valueToValidate, context, profiles, isContainerValue, ignoreTarget)
+}
+
+object ScalaFieldGetter extends FieldGetter {
+	def getField(field: Field, value: Any): AnyRef = {
+		try {
+			field.getDeclaringClass.getDeclaredMethod(field.getName).invoke(value)
+		} catch {
+			case t: NoSuchMethodException =>
+				field.get(value)
 		}
 	}
-
 }
 
 object OvalMessageResolver extends MessageResolver {

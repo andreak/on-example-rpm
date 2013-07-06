@@ -3,17 +3,14 @@
 	   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	   xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
 
-	<bean id="rpmDataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource"
-		  destroy-method="close">
-		<property name="driverClass" value="${infrastructure.datasource.RPM.driver}" />
-		<property name="jdbcUrl" value="${infrastructure.datasource.RPM.url}" />
-		<property name="user" value="${infrastructure.datasource.RPM.username}" />
+	<bean id="rpmDataSource" class="org.apache.tomcat.dbcp.dbcp.BasicDataSource">
+		<property name="driverClassName" value="${infrastructure.datasource.RPM.driver}" />
+		<property name="url" value="${infrastructure.datasource.RPM.url}" />
+		<property name="username" value="${infrastructure.datasource.RPM.username}" />
 		<property name="password" value="${infrastructure.datasource.RPM.password}" />
-
-		<!-- these are C3P0 properties -->
-		<property name="minPoolSize" value="${infrastructure.datasource.RPM.minPoolSize}" />
-		<property name="maxPoolSize" value="${infrastructure.datasource.RPM.maxPoolSize}" />
-		<property name="maxIdleTime" value="${infrastructure.datasource.RPM.maxIdle}" />
+		<property name="minIdle" value="${infrastructure.datasource.RPM.minPoolSize}" />
+		<property name="maxActive" value="${infrastructure.datasource.RPM.maxPoolSize}" />
+		<property name="maxWait" value="${infrastructure.datasource.RPM.maxIdle}" />
 	</bean>
 
 </beans>

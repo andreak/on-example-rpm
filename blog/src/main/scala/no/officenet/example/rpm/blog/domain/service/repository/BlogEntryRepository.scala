@@ -13,7 +13,7 @@ trait BlogEntryRepository extends GenericEntityRepository[BlogEntry] {
 	def findBlogEntrySummariesForUser(userName: String): Buffer[BlogEntrySummary] = {
 		val query = entityManager.createQuery[BlogEntrySummary]("""
 		SELECT new no.officenet.example.rpm.blog.domain.model.entities.BlogEntrySummary(be.blog.id, be.id, be.created, be.createdBy,
-		be.title, be.summary, be.content, be.comments.size) FROM BlogEntry be
+		be.title, be.summary, be.content, (SELECT COUNT(c) FROM Comment c WHERE c.commentedId = be.id)) FROM BlogEntry be
 		WHERE be.createdBy.userName = :userName
 		ORDER BY be.created DESC
 		""")

@@ -4,23 +4,30 @@ import org.apache.commons.lang.builder.ToStringBuilder
 import org.joda.time.DateTime
 import java.util.ArrayList
 import javax.persistence._
-import no.officenet.example.rpm.projectmgmt.domain.model.enums.ProjectType
+import no.officenet.example.rpm.projectmgmt.domain.model.enums.{ProjectTypeConverter, ProjectType}
 
 import no.officenet.example.rpm.support.infrastructure.jpa.types._
 import net.sf.oval.constraint.ValidateWithMethod
-import no.officenet.example.rpm.support.infrastructure.jpa.CustomJpaType
+import no.officenet.example.rpm.support.infrastructure.jpa._
 import no.officenet.example.rpm.support.domain.model.entities.{AbstractChangableEntity, User}
 import no.officenet.example.rpm.support.infrastructure.validation.OptionalMax
+import org.eclipse.persistence.annotations.Customizer
+import no.officenet.example.rpm.projectmgmt.domain.model.customizers.ProjectDescriptorCustomizer
 
 @Entity
 @Table(name = "project")
-@SequenceGenerator(name = "SEQ_STORE", sequenceName = "project_id_seq", allocationSize = 1)
+@SequenceGenerator(name = "ProjectSEQ_STORE", sequenceName = "project_id_seq", allocationSize = 1)
+@Customizer(classOf[ProjectDescriptorCustomizer])
 class Project(_created: DateTime, _createdBy: User)
 	extends AbstractChangableEntity(_created, _createdBy) {
 
 	def this() {
 		this(null, null)
 	}
+	@Id
+	@Column(name = "id")
+	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "ProjectSEQ_STORE")
+	var id: java.lang.Long = null
 
 	@Column(name = "name", nullable = false)
 	@net.sf.oval.constraint.NotNull
@@ -30,24 +37,23 @@ class Project(_created: DateTime, _createdBy: User)
 	@Column(name = "description")
 	@ValidateWithMethod(methodName = "validateDescription", parameterType = classOf[Option[String]],
 	message = "validation_error_methodValidation_Project_description")
-	@org.hibernate.annotations.Type(`type` = CustomJpaType.StringOptionUserType)
+	@Convert(converter = classOf[OptionStringConverter])
 	var description: Option[String] = None
 
 	@OneToMany(fetch = FetchType.LAZY, mappedBy = "project", orphanRemoval = true)
 	var activityList: java.util.List[Activity] = new ArrayList[Activity]()
 
 	@Column(name = "project_type", nullable = false)
-	@org.hibernate.annotations.Type(`type` = CustomJpaType.ProjectUserType)
 	@net.sf.oval.constraint.NotNull
 	var projectType: ProjectType.ExtendedValue = null
 
 	@Column(name = "budget")
 	@OptionalMax(value = 999999.0)
-	@org.hibernate.annotations.Type(`type` = CustomJpaType.LongOptionUserType)
+	@Convert(converter = classOf[OptionLongConverter])
 	var budget: Option[Long] = None
 
 	@Column(name = "estimated_start_date")
-	@org.hibernate.annotations.Type(`type` = CustomJpaType.DateTimeOptionType)
+	@Convert(converter = classOf[OptionDateTimeConverter])
 	var estimatedStartDate: Option[DateTime] = None
 
 	override def toString = new ToStringBuilder(this).append("id", id).append("name", name).toString

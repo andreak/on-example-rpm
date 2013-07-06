@@ -10,4 +10,4 @@ case class BlogEntrySummary(blogId: java.lang.Long,
 							title: String,
 							summary: String,
 							content: String,
-							numComments: Int)
+							numComments: Long)

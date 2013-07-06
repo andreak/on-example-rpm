@@ -4,17 +4,22 @@ import org.apache.commons.lang.builder.ToStringBuilder
 import javax.persistence._
 import org.joda.time.DateTime
 import net.sf.oval.constraint.ValidateWithMethod
-import no.officenet.example.rpm.support.infrastructure.jpa.CustomJpaType
+import no.officenet.example.rpm.support.infrastructure.jpa.OptionStringConverter
 
 @Entity
 @Table(name = "rpm_user")
-@SequenceGenerator(name = "SEQ_STORE", sequenceName = "rpm_user_id_seq", allocationSize = 1)
+@SequenceGenerator(name = "UserSEQ_STORE", sequenceName = "rpm_user_id_seq", allocationSize = 1)
 class User(_created: DateTime, _createdBy: User, _userName: String, _plainTextPassword: String)
 	extends AbstractChangableEntity (_created, _createdBy) {
 
 	def this() {
 		this(null, null, null, null)
 	}
+	@Id
+	@Column(name = "id")
+	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "UserSEQ_STORE")
+	var id: java.lang.Long = null
+
 
 	@Column(name = "username", unique = true, nullable = false)
 	@net.sf.oval.constraint.NotNull
@@ -25,16 +30,16 @@ class User(_created: DateTime, _createdBy: User, _userName: String, _plainTextPa
 	var password: String = _
 
 	@Column(name = "first_name")
-	@ValidateWithMethod(methodName = "validateFirstName", parameterType = classOf[String])
-	@org.hibernate.annotations.Type(`type` = CustomJpaType.StringOptionUserType)
+	@ValidateWithMethod(methodName = "validateFirstName", parameterType = classOf[Option[String]])
+	@Convert(converter = classOf[OptionStringConverter])
 	var firstName: Option[String] = None
 
 	@Column(name = "last_name")
-	@org.hibernate.annotations.Type(`type` = CustomJpaType.StringOptionUserType)
+	@Convert(converter = classOf[OptionStringConverter])
 	var lastName: Option[String] = None
 
 	@Column(name = "image_icon_path")
-	@org.hibernate.annotations.Type(`type` = CustomJpaType.StringOptionUserType)
+	@Convert(converter = classOf[OptionStringConverter])
 	var imageIconPath: Option[String] = None
 
 	@Transient
@@ -44,7 +49,7 @@ class User(_created: DateTime, _createdBy: User, _userName: String, _plainTextPa
 
 	def displayName = firstName.getOrElse("") + (if (firstName.isDefined && lastName.isDefined) " " else "") + lastName.getOrElse("")
 	
-	private def validateFirstName(_firstName: String): Boolean = {
+	private def validateFirstName(_firstName: Option[String]): Boolean = {
 		true
 	}
 

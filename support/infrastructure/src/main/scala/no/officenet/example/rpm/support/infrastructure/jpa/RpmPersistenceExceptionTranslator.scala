@@ -1,25 +1,19 @@
 package no.officenet.example.rpm.support.infrastructure.jpa
 
 import no.officenet.example.rpm.support.infrastructure.logging.Loggable
-import java.sql.SQLException
+import java.sql.{SQLIntegrityConstraintViolationException, SQLException}
 import org.springframework.dao.DataAccessException
-import org.hibernate.exception.ConstraintViolationException
-import org.hibernate.cfg.AvailableSettings
-import org.hibernate.dialect.Dialect
-import org.springframework.orm.jpa.vendor.{HibernateJpaVendorAdapter, HibernateJpaDialect}
+import org.springframework.orm.jpa.vendor.{EclipseLinkJpaVendorAdapter, EclipseLinkJpaDialect}
 import javax.persistence.OptimisticLockException
 import no.officenet.example.rpm.support.infrastructure.errorhandling.{RpmOptimisticLockException, RpmDataIntegrityViolationException}
 
-class RpmPersistenceExceptionTranslator extends HibernateJpaDialect with Loggable {
+class RpmPersistenceExceptionTranslator extends EclipseLinkJpaDialect with Loggable {
 
-	def setVendorAdapter(vendorAdapter: HibernateJpaVendorAdapter) {
+	def setVendorAdapter(vendorAdapter: EclipseLinkJpaVendorAdapter) {
 		this.vendorAdapter = vendorAdapter
 	}
 
-	private var vendorAdapter: HibernateJpaVendorAdapter = _
-
-	lazy val extractor = Class.forName(vendorAdapter.getJpaPropertyMap.get(AvailableSettings.DIALECT).asInstanceOf[String])
-		.newInstance.asInstanceOf[Dialect].getViolatedConstraintNameExtracter
+	private var vendorAdapter: EclipseLinkJpaVendorAdapter = _
 
 	val integrityViolationCodes = Set("23" // Integrity constraint violation
 									  , "27" // Trigger violation
@@ -34,8 +28,10 @@ class RpmPersistenceExceptionTranslator extends HibernateJpaDialect with Loggabl
 			}
 			return dataAccessException
 		}
-		if (ex.isInstanceOf[OptimisticLockException])  {
-			return new RpmOptimisticLockException(ex.asInstanceOf[OptimisticLockException])
+		ex match {
+			case lockException: OptimisticLockException =>
+				return new RpmOptimisticLockException(lockException)
+			case _ =>
 		}
 		log.debug("No translation performed. Fall-back to " + getClass.getSimpleName + " JPA Dialect and its exception translator.")
 		super.translateExceptionIfPossible(ex)
@@ -44,29 +40,20 @@ class RpmPersistenceExceptionTranslator extends HibernateJpaDialect with Loggabl
 
 
 	def extractConstraintViolationExceptionIfPossible(ex: RuntimeException ): DataAccessException = {
-		if (ex.isInstanceOf[ConstraintViolationException]) {
-			var constraintName = ex.asInstanceOf[ConstraintViolationException].getConstraintName
-			val dotPos = constraintName.indexOf('.')
-			if (dotPos > 0) constraintName = constraintName.substring(dotPos + 1)
-			return new RpmDataIntegrityViolationException(constraintName, ex)
-		}
 		localTranslateExceptionIfPossible(ex)
 	}
 
 	def localTranslateExceptionIfPossible(ex: RuntimeException ): DataAccessException = {
 		var cause = ex.getCause
 		while (cause != null) {
-			if (cause.isInstanceOf[SQLException]) {
-				return customTranslate(cause.asInstanceOf[SQLException], ex)
+			cause match {
+				case sqlException: SQLException =>
+					return customTranslate(sqlException, ex)
+				case _ =>
 			}
 			cause = cause.getCause
 		}
 		null
-	}
-
-	private def getConstraintKeyName(ex: SQLException): String = {
-		val constraintName = extractor.extractConstraintName(ex)
-		constraintName
 	}
 
 	private def customTranslate(sqlException: SQLException , ex: RuntimeException): DataAccessException = {
@@ -74,9 +61,14 @@ class RpmPersistenceExceptionTranslator extends HibernateJpaDialect with Loggabl
 		if (sqlstate != null) {
 			val classCode = sqlstate.substring(0, 2)
 			if (integrityViolationCodes.contains(classCode)) {
-				val constraintName = getConstraintKeyName(sqlException)
-				if (constraintName != null) {
-					return new RpmDataIntegrityViolationException(constraintName, ex)
+				sqlException match {
+					case integretyEx: SQLIntegrityConstraintViolationException =>
+						val constraintName = integretyEx.getMessage
+						if (constraintName ne null) {
+							return new RpmDataIntegrityViolationException(constraintName, ex)
+						}
+					case _ =>
+
 				}
 			}
 		}

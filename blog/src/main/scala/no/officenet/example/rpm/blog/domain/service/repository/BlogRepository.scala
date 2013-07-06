@@ -21,10 +21,10 @@ trait BlogRepository extends GenericEntityRepository[Blog] {
 	def retrieveBlogSummaries(id: Long): Buffer[BlogEntrySummary] = {
 		val query = entityManager.createQuery[BlogEntrySummary]("""
 		SELECT new no.officenet.example.rpm.blog.domain.model.entities.BlogEntrySummary(be.blog.id, be.id, be.created, be.createdBy,
-		be.title, be.summary, be.content, be.comments.size) FROM BlogEntry be
+		be.title, be.summary, be.content, (SELECT COUNT(c) FROM Comment c WHERE c.commentedId = be.id)) FROM BlogEntry be
 		WHERE be.blog.id = :blogId
 		ORDER BY be.created DESC
-		""")
+																""")
 		query.setParams("blogId" -> id).
 			setMaxResults(10)
 		val results = query.getResultList()

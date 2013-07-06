@@ -4,9 +4,9 @@ package no.officenet.example.rpm.support.domain.model.entities
  * Copyright OfficeNet AS
  */
 
-import javax.persistence.{FetchType, JoinColumn, ManyToOne, Column, MappedSuperclass}
+import javax.persistence._
 import org.joda.time.DateTime
-import no.officenet.example.rpm.support.infrastructure.jpa.CustomJpaType
+import no.officenet.example.rpm.support.infrastructure.jpa.OptionDateTimeConverter
 
 @MappedSuperclass
 abstract class AbstractChangableEntity(_created: DateTime, _createdBy: User)
@@ -22,7 +22,7 @@ abstract class AbstractChangableEntity(_created: DateTime, _createdBy: User)
 	var createdBy = _createdBy
 
 	@Column(name = "modified")
-	@org.hibernate.annotations.Type(`type` = CustomJpaType.DateTimeOptionType)
+	@Convert(converter = classOf[OptionDateTimeConverter])
 	var modified: Option[DateTime] = None
 
 	@ManyToOne(fetch = FetchType.LAZY)

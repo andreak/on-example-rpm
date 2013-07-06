@@ -4,17 +4,21 @@ import javax.persistence._
 import org.apache.commons.lang.builder.ToStringBuilder
 import org.joda.time.DateTime
 import no.officenet.example.rpm.support.domain.model.entities.{User, AbstractDomainObject}
-import no.officenet.example.rpm.support.infrastructure.jpa.CustomJpaType
 
 @Entity
 @Table(name = "comment_vote_owner")
-@SequenceGenerator(name = "SEQ_STORE", sequenceName = "comment_vote_owner_id_seq", allocationSize = 1)
+@SequenceGenerator(name = "CommentVoteOwnerSEQ_STORE", sequenceName = "comment_vote_owner_id_seq", allocationSize = 1)
 class CommentVoteOwner(_created: DateTime, _comment: Comment, _voter: User, _voteValue: Boolean)
 	extends AbstractDomainObject {
 
 	def this() {
 		this(null, null, null, false)
 	}
+
+	@Id
+	@Column(name = "id")
+	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "CommentVoteOwnerSEQ_STORE")
+	var id: java.lang.Long = null
 
 	@Column(name = "created", nullable = false, updatable = false)
 	var created = _created

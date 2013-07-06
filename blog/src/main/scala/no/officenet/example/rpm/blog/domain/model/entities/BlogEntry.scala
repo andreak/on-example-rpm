@@ -9,7 +9,7 @@ import no.officenet.example.rpm.support.domain.model.entities.{AbstractChangable
 
 @Entity
 @Table(name = "blog_entry")
-@SequenceGenerator(name = "SEQ_STORE", sequenceName = "blog_entry_id_seq", allocationSize = 1)
+@SequenceGenerator(name = "BlogEntrySEQ_STORE", sequenceName = "blog_entry_id_seq", allocationSize = 1)
 class BlogEntry(_blog: Blog, _created: DateTime,
 			  _createdBy: User,
 			  _title: String,
@@ -28,6 +28,10 @@ class BlogEntry(_blog: Blog, _created: DateTime,
 	def this(blog: Blog, createdBy: User) {
 		this(blog, null, createdBy, null, null, null)
 	}
+	@Id
+	@Column(name = "id")
+	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "BlogEntrySEQ_STORE")
+	var id: java.lang.Long = null
 
 	@ManyToOne(optional = false)
 	@net.sf.oval.constraint.NotNull

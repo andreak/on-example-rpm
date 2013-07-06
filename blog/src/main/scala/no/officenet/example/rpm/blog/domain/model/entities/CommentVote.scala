@@ -6,8 +6,13 @@ import no.officenet.example.rpm.support.domain.model.entities.AbstractDomainObje
 
 @Entity
 @Table(name = "comment_vote")
-@SequenceGenerator(name = "SEQ_STORE", sequenceName = "comment_vote_id_seq", allocationSize = 1)
+@SequenceGenerator(name = "CommentVoteSEQ_STORE", sequenceName = "comment_vote_id_seq", allocationSize = 1)
 class CommentVote extends AbstractDomainObject {
+
+	@Id
+	@Column(name = "id")
+	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "CommentVoteSEQ_STORE")
+	var id: java.lang.Long = null
 
 	@Column(name = "vote_value", nullable = false)
 	var voteValue: Int = 0

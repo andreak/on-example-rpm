@@ -23,9 +23,8 @@
 	<tx:annotation-driven order="5"/>
 
 	<bean id="jpaVendorAdapter"
-		  class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter">
+		  class="org.springframework.orm.jpa.vendor.EclipseLinkJpaVendorAdapter">
 		<property name="database" value="${infrastructure.database.vendor}"/>
-		<property name="databasePlatform" value="${infrastructure.database.platform}"/>
 		<property name="showSql" value="${infrastructure.jpa.showSql}"/>
 		<property name="generateDdl" value="${infrastructure.jpa.generateDdl}"/>
 	</bean>
@@ -35,15 +34,19 @@
 		<property name="dataSource" ref="rpmDataSource"/>
 		<property name="persistenceUnitName" value="RPM"/>
 		<property name="packagesToScan" value="no.officenet.example.rpm"/>
+		<property name="persistenceUnitPostProcessors" ref="puPosProcessor"/>
 		<property name="jpaVendorAdapter" ref="jpaVendorAdapter"/>
 		<property name="jpaDialect" ref="jpaDialect"/>
 		<property name="jpaProperties">
 			<props>
-				<prop key="jadira.usertype.autoRegisterUserTypes">true</prop>
-				<prop key="jadira.usertype.databaseZone">jvm</prop>
-				<prop key="hibernate.enable_lazy_load_no_trans">true</prop>
+				<prop key="eclipselink.cache.shared.default">false</prop>
+				<prop key="javax.persistence.sharedCache.mode">ENABLE_SELECTIVE</prop>
 			</props>
 		</property>
+	</bean>
+
+	<bean id="puPosProcessor" class="no.officenet.example.rpm.support.infrastructure.jpa.ClasspathScanningPersistenceUnitPostProcessor">
+		<constructor-arg value="no.officenet.example.rpm"/>
 	</bean>
 
 	<bean id="jpaDialect" class="no.officenet.example.rpm.support.infrastructure.jpa.RpmPersistenceExceptionTranslator">

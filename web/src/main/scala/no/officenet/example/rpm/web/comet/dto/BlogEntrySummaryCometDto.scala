@@ -12,7 +12,7 @@ case class BlogEntrySummaryCometDto(blogId: Long,
 									title: String,
 									summary: String,
 									content: String,
-									numComments: Int)
+									numComments: Long)
 
 object BlogEntrySummaryCometDto {
 	def apply(blogEntrySummary: BlogEntrySummary): BlogEntrySummaryCometDto = {

@@ -1,28 +1,45 @@
 package no.officenet.example.rpm.support.infrastructure.jpa
 
-import org.hibernate.`type`._
+import javax.persistence.{Converter, AttributeConverter}
+import java.lang
+import java.sql.Timestamp
+import org.joda.time.DateTime
 
-import org.hibernate.engine.spi.SessionImplementor
-import java.sql.{Timestamp, PreparedStatement, ResultSet}
-import org.hibernate.SessionFactory
-import org.jadira.usertype.spi.shared.{AbstractUserType, IntegratorConfiguredType, ConfigurationHelper, AbstractColumnMapper}
-import org.hibernate.usertype.{ParameterizedType, UserType}
-import java.util.Properties
-import org.joda.time.{LocalDate, DateTimeZone, DateTime}
-import org.jadira.usertype.dateandtime.joda.columnmapper.{DateColumnLocalDateMapper, TimestampColumnDateTimeMapper}
-import java.io.Serializable
-import java.math.{BigDecimal => JBigDecimal}
+@Converter
+class OptionLongConverter extends AttributeConverter[Option[Long], lang.Long]{
 
-class OptionBigDecimalUserType extends OptionBasicUserType[BigDecimal, java.math.BigDecimal] {
+	def convertToDatabaseColumn(attribute: Option[Long]): lang.Long = {
+		attribute.map(long2Long).orNull
+	}
 
-	def getBasicType = StandardBasicTypes.BIG_DECIMAL
-
-	def fromJdbcType(value: java.math.BigDecimal) = BigDecimal(value)
-
-	def fromStringType(s: String) = BigDecimal(s)
-
-	def toJdbcType(value: BigDecimal) = value.bigDecimal
+	def convertToEntityAttribute(dbData: lang.Long): Option[Long] = {
+		if (dbData eq null) None
+		else Some(dbData)
+	}
 }
+
+@Converter
+class OptionStringConverter extends AttributeConverter[Option[String], String] {
+
+	def convertToDatabaseColumn(attribute: Option[String]): String = {
+		attribute.orNull
+	}
+
+	def convertToEntityAttribute(dbData: String): Option[String] = Option(dbData)
+}
+
+@Converter
+class OptionDateTimeConverter extends AttributeConverter[Option[DateTime], Timestamp] {
+	def convertToDatabaseColumn(attribute: Option[DateTime]): Timestamp = {
+		attribute.map(v => new Timestamp(v.getMillis)).orNull
+	}
+
+	def convertToEntityAttribute(dbData: Timestamp): Option[DateTime] = {
+		Option(dbData).map(v => new DateTime(v.getTime))
+	}
+}
+
+/*
 
 class OptionLongUserType extends OptionBasicUserType[Long, java.lang.Long] {
 
@@ -33,17 +50,6 @@ class OptionLongUserType extends OptionBasicUserType[Long, java.lang.Long] {
 	def fromStringType(s: String) = java.lang.Long.parseLong(s)
 
 	def toJdbcType(value: Long) = java.lang.Long.valueOf(value)
-}
-
-class OptionDoubleUserType extends OptionBasicUserType[Double, java.lang.Double] {
-
-	def getBasicType = StandardBasicTypes.DOUBLE
-
-	def fromJdbcType(value: java.lang.Double) = value.doubleValue()
-
-	def fromStringType(s: String) = java.lang.Double.parseDouble(s)
-
-	def toJdbcType(value: Double) = java.lang.Double.valueOf(value)
 }
 
 class OptionStringUserType extends OptionBasicUserType[String, String] {
@@ -110,14 +116,15 @@ class OptionLocalDateUserType extends OptionUserType[LocalDate, java.sql.Date] {
 	val columnMapper = new DateColumnLocalDateMapper
 }
 
-abstract class OptionUserType[T, JDBCType] extends AbstractUserType with UserType with ParameterizedType {
-	var parameterValues: Properties = null
+abstract class OptionUserType[T, JDBCType] extends AttributeConverter[T, JDBCType] {
 
-	def columnMapper: AbstractColumnMapper[T, JDBCType]
+	def convertToDatabaseColumn(attribute: T): JDBCType = {
 
-	def returnedClass = classOf[Option[T]]
+	}
 
-	def sqlTypes = Array(columnMapper.getSqlType)
+	def convertToEntityAttribute(dbData: JDBCType): T = {
+
+	}
 
 	override def nullSafeGet(resultSet: ResultSet, names: Array[String], session: SessionImplementor, owner: AnyRef): Option[T] = {
 		beforeNullSafeOperation(session)
@@ -139,10 +146,6 @@ abstract class OptionUserType[T, JDBCType] extends AbstractUserType with UserTyp
 			afterNullSafeOperation(session)
 		}
 	}
-
-	def setParameterValues(parameters: Properties) {
-		this.parameterValues = parameters
-	}
 }
 
 abstract class OptionBasicUserType[T, JDBCType] extends OptionUserType[T, JDBCType] {
@@ -161,40 +164,4 @@ abstract class OptionBasicUserType[T, JDBCType] extends OptionUserType[T, JDBCTy
 	def fromStringType(s: String): T
 	def toJdbcType(value: T): JDBCType
 }
-
-/**
- * Helper class to translate scala.bigDecimal for hibernate
- */
-class BigDecimalUserType extends UserType {
-
-	val `type` = StandardBasicTypes.BIG_DECIMAL
-
-	override def sqlTypes() = Array(`type`.sqlType)
-
-	override def returnedClass = classOf[BigDecimal]
-
-	override def equals(x: Object, y: Object): Boolean = x == y
-
-	override def hashCode(x: Object) = x.hashCode
-
-	override def nullSafeGet(resultSet: ResultSet, names: Array[String], session: SessionImplementor, owner: Object): Object = {
-		val x = `type`.nullSafeGet(resultSet, names(0), session)
-		if (x == null) null else BigDecimal(x)
-	}
-
-	override def nullSafeSet(statement: PreparedStatement, value: Object, index: Int, session: SessionImplementor) {
-		val bd = if (value == null) null.asInstanceOf[JBigDecimal] else value.asInstanceOf[BigDecimal].bigDecimal
-		`type`.nullSafeSet(statement, bd, index, session)
-	}
-
-	def isMutable = false
-
-	def deepCopy(value: AnyRef) = value
-
-	def replace(original: AnyRef, target: AnyRef, owner: AnyRef) = original
-
-	def disassemble(value: AnyRef) = value.asInstanceOf[Serializable]
-
-	def assemble(cached: Serializable, owner: AnyRef): AnyRef = cached.asInstanceOf[AnyRef]
-
-}
+*/

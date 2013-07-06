@@ -1,9 +1,8 @@
 package no.officenet.example.rpm.projectmgmt.domain.model.enums
 
-import no.officenet.example.rpm.support.infrastructure.jpa.EnumUserType
 import no.officenet.example.rpm.support.infrastructure.enums.EnumWithDescriptionAndObject
 
-class ActivityUserType extends EnumUserType(ActivityType)
+//class ActivityUserType extends EnumUserType(ActivityType)
 
 object ActivityType extends EnumWithDescriptionAndObject[ActivityTexts.D.ExtendedValue] {
 
