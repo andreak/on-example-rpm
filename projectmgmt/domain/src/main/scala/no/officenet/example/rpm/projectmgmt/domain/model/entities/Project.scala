@@ -11,13 +11,10 @@ import net.sf.oval.constraint.ValidateWithMethod
 import no.officenet.example.rpm.support.infrastructure.jpa._
 import no.officenet.example.rpm.support.domain.model.entities.{AbstractChangableEntity, User}
 import no.officenet.example.rpm.support.infrastructure.validation.OptionalMax
-import org.eclipse.persistence.annotations.Customizer
-import no.officenet.example.rpm.projectmgmt.domain.model.customizers.ProjectDescriptorCustomizer
 
 @Entity
 @Table(name = "project")
 @SequenceGenerator(name = "ProjectSEQ_STORE", sequenceName = "project_id_seq", allocationSize = 1)
-@Customizer(classOf[ProjectDescriptorCustomizer])
 class Project(_created: DateTime, _createdBy: User)
 	extends AbstractChangableEntity(_created, _createdBy) {
 
@@ -37,7 +34,6 @@ class Project(_created: DateTime, _createdBy: User)
 	@Column(name = "description")
 	@ValidateWithMethod(methodName = "validateDescription", parameterType = classOf[Option[String]],
 	message = "validation_error_methodValidation_Project_description")
-	@Convert(converter = classOf[OptionStringConverter])
 	var description: Option[String] = None
 
 	@OneToMany(fetch = FetchType.LAZY, mappedBy = "project", orphanRemoval = true)
@@ -45,15 +41,14 @@ class Project(_created: DateTime, _createdBy: User)
 
 	@Column(name = "project_type", nullable = false)
 	@net.sf.oval.constraint.NotNull
+	@Convert(converter = classOf[ProjectTypeConverter])
 	var projectType: ProjectType.ExtendedValue = null
 
 	@Column(name = "budget")
 	@OptionalMax(value = 999999.0)
-	@Convert(converter = classOf[OptionLongConverter])
 	var budget: Option[Long] = None
 
 	@Column(name = "estimated_start_date")
-	@Convert(converter = classOf[OptionDateTimeConverter])
 	var estimatedStartDate: Option[DateTime] = None
 
 	override def toString = new ToStringBuilder(this).append("id", id).append("name", name).toString

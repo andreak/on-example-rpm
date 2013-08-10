@@ -27,7 +27,6 @@ class Blog(_created: DateTime, _createdBy: User, _key: String, _description: Opt
 	var key: String = _key
 
 	@Column(name = "description")
-	@Convert(converter = classOf[OptionStringConverter])
 	var description: Option[String] = _description
 
 	override def toString = new ToStringBuilder(this).append("id", id).append("key", key).toString

@@ -6,7 +6,7 @@ package no.officenet.example.rpm.support.infrastructure.validation
 
 import net.sf.oval.configuration.Configurer
 import net.sf.oval.internal.ContextCache
-import java.lang.reflect.Method
+import java.lang.reflect.{Field, Method}
 import collection.JavaConversions._
 import collection.mutable.HashMap
 import net.sf.oval.localization.message.MessageResolver
@@ -16,9 +16,9 @@ import no.officenet.example.rpm.support.infrastructure.i18n.ResourceBundleHelper
 import net.sf.oval.Validator
 import javax.annotation.Resource
 import javax.persistence.EntityManagerFactory
-import net.sf.oval.internal.util.{FieldGetter, ReflectionUtils}
 import reflect.runtime._
 import universe._
+import net.sf.oval.context.FieldContext
 
 /**
  * Custom validator based on Oval's {@link Validator}}
@@ -38,8 +38,7 @@ class OvalValidator(configurers: java.util.Collection[Configurer])
 	@Resource
 	val entityManagerFactory: EntityManagerFactory = null
 	lazy val persistenceUnitUtil = entityManagerFactory.getPersistenceUnitUtil
-
-	ReflectionUtils.setFieldGetter(ScalaFieldGetter)
+	val mirror = currentMirror
 
 	net.sf.oval.Validator.setMessageResolver(OvalMessageResolver)
 	net.sf.oval.Validator.setContextRenderer(RpmResourceBundleValidationContextRenderer.INSTANCE)
@@ -57,23 +56,22 @@ class OvalValidator(configurers: java.util.Collection[Configurer])
 		violations
 	}
 
-}
-
-object ScalaFieldGetter extends FieldGetter {
-	val mirror = currentMirror
-
-	def getField(field: java.lang.reflect.Field, value: Any): AnyRef = {
+	override def resolveValue(ctx: FieldContext, validatedObject: scala.Any): AnyRef = {
+		val field: Field = ctx.getField
+		if (!field.isAccessible) {
+			field.setAccessible(true)
+		}
 		val c = field.getDeclaringClass
 		val classMirror = mirror.classSymbol(c)
 		val fieldType = mirror.classSymbol(field.getType).toType
-		val im = mirror.reflect(value)
+		val im = mirror.reflect(validatedObject)
 		(classMirror.toType.declaration(newTermName(field.getName)) match {
 			case ms: MethodSymbol => Some(ms)
 			case _ => None
 		}).filter(_.returnType == fieldType).map{m =>
 			val mm = im.reflectMethod(m)
 			mm.apply().asInstanceOf[AnyRef]
-		}.getOrElse(field.get(value))
+		}.getOrElse(field.get(validatedObject))
 	}
 }
 

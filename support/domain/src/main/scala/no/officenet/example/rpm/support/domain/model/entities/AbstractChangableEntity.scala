@@ -22,7 +22,6 @@ abstract class AbstractChangableEntity(_created: DateTime, _createdBy: User)
 	var createdBy = _createdBy
 
 	@Column(name = "modified")
-	@Convert(converter = classOf[OptionDateTimeConverter])
 	var modified: Option[DateTime] = None
 
 	@ManyToOne(fetch = FetchType.LAZY)

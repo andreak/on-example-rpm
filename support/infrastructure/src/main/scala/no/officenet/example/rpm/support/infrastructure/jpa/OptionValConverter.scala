@@ -5,7 +5,7 @@ import java.lang
 import java.sql.Timestamp
 import org.joda.time.DateTime
 
-@Converter
+@Converter(autoApply = true)
 class OptionLongConverter extends AttributeConverter[Option[Long], lang.Long]{
 
 	def convertToDatabaseColumn(attribute: Option[Long]): lang.Long = {
@@ -18,7 +18,7 @@ class OptionLongConverter extends AttributeConverter[Option[Long], lang.Long]{
 	}
 }
 
-@Converter
+@Converter(autoApply = true)
 class OptionStringConverter extends AttributeConverter[Option[String], String] {
 
 	def convertToDatabaseColumn(attribute: Option[String]): String = {
@@ -28,7 +28,7 @@ class OptionStringConverter extends AttributeConverter[Option[String], String] {
 	def convertToEntityAttribute(dbData: String): Option[String] = Option(dbData)
 }
 
-@Converter
+@Converter(autoApply = true)
 class OptionDateTimeConverter extends AttributeConverter[Option[DateTime], Timestamp] {
 	def convertToDatabaseColumn(attribute: Option[DateTime]): Timestamp = {
 		attribute.map(v => new Timestamp(v.getMillis)).orNull

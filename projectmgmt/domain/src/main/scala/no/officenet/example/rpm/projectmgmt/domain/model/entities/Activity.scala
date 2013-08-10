@@ -1,11 +1,10 @@
 package no.officenet.example.rpm.projectmgmt.domain.model.entities
 
 import org.joda.time.DateTime
-import no.officenet.example.rpm.projectmgmt.domain.model.enums.ActivityType
+import no.officenet.example.rpm.projectmgmt.domain.model.enums.{ActivityTypeConverter, ActivityType}
 import org.apache.commons.lang.builder.ToStringBuilder
 import javax.persistence._
 import java.util.{List => JUList, ArrayList => JUArrayList}
-import no.officenet.example.rpm.support.infrastructure.jpa.OptionStringConverter
 import no.officenet.example.rpm.support.domain.model.entities.{AbstractChangableEntity, User}
 
 @Entity
@@ -30,7 +29,6 @@ class Activity(_created: DateTime, _createdBy: User, _name: String, _project: Pr
 
 	@Column(name = "description", nullable = true)
 //	@net.sf.oval.constraint.Size(max = 100)
-	@Convert(converter = classOf[OptionStringConverter])
 	var description: Option[String] = None
 
 	@ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -39,6 +37,7 @@ class Activity(_created: DateTime, _createdBy: User, _name: String, _project: Pr
 
 	@Column(name = "activity_type", nullable = false)
 	@net.sf.oval.constraint.NotNull
+	@Convert(converter = classOf[ActivityTypeConverter])
 	var activityType: ActivityType.ExtendedValue = null
 
 	@ManyToOne(fetch = FetchType.LAZY, optional = true)

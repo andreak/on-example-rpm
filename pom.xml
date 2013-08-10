@@ -21,7 +21,7 @@
 		<version.aspectj>1.7.2</version.aspectj>
 		<version.spring>3.2.2.RELEASE</version.spring>
 		<version.spring-security>3.1.3.RELEASE</version.spring-security>
-		<version.eclipselink>2.5.0</version.eclipselink>
+		<version.eclipselink>2.5.1-SNAPSHOT</version.eclipselink>
 		<version.jodatime>2.1</version.jodatime>
 		<version.jodaconvert>1.2</version.jodaconvert>
 		<version.surefire>2.8</version.surefire>

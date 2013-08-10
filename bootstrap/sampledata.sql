@@ -14,3 +14,6 @@ insert into rpm_user(id, version, created, created_by, username, password, first
 insert into blog(id, version, created, created_by, key) values(nextval('blog_id_seq'), 0, current_timestamp, (select id from rpm_user where username = 'admin'), 'main');
 -- Create a "main"-blog for user liftco
 insert into blog(id, version, created, created_by, key) values(nextval('blog_id_seq'), 0, current_timestamp, (select id from rpm_user where username = 'liftco'), 'main');
+
+
+-- insert into activity (id, activity_type, created, project_id, name) values(nextval('activity_id_seq'), 'feature', current_timestamp, 1, 'Activity 3');

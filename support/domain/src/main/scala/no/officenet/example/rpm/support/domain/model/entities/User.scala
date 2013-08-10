@@ -31,15 +31,12 @@ class User(_created: DateTime, _createdBy: User, _userName: String, _plainTextPa
 
 	@Column(name = "first_name")
 	@ValidateWithMethod(methodName = "validateFirstName", parameterType = classOf[Option[String]])
-	@Convert(converter = classOf[OptionStringConverter])
 	var firstName: Option[String] = None
 
 	@Column(name = "last_name")
-	@Convert(converter = classOf[OptionStringConverter])
 	var lastName: Option[String] = None
 
 	@Column(name = "image_icon_path")
-	@Convert(converter = classOf[OptionStringConverter])
 	var imageIconPath: Option[String] = None
 
 	@Transient
