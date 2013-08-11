@@ -4,7 +4,7 @@ import javax.persistence.{Converter, AttributeConverter}
 import no.officenet.example.rpm.support.infrastructure.enums.EnumWithDescriptionAndObject
 
 /**
- * Helper class to translate enum for hibernate
+ * Helper class to translate enum for JPA-2.1
  */
 
 abstract class EnumConverter[T,D](et: EnumWithDescriptionAndObject[_]) extends AttributeConverter[T, String] {
