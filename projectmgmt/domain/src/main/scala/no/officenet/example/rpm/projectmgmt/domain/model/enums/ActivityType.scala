@@ -1,28 +1,11 @@
 package no.officenet.example.rpm.projectmgmt.domain.model.enums
 
 import no.officenet.example.rpm.support.infrastructure.enums.EnumWithDescriptionAndObject
-import javax.persistence.{AttributeConverter, Converter}
+import javax.persistence.Converter
+import no.officenet.example.rpm.support.infrastructure.jpa.EnumConverter
 
-//class ActivityUserType extends EnumUserType(ActivityType)
-
-@Converter(autoApply=true)
-class ActivityTypeConverter extends AttributeConverter[ActivityType.ExtendedValue, String] {
-	def convertToDatabaseColumn(attribute: ActivityType.ExtendedValue): String = {
-		if (attribute eq null) {
-			null
-		} else {
-			attribute.name
-		}
-	}
-
-	def convertToEntityAttribute(dbData: String): ActivityType.ExtendedValue = {
-		if (dbData eq null) {
-			null
-		} else {
-			ActivityType.valueOf(dbData).get
-		}
-	}
-}
+@Converter
+class ActivityTypeConverter extends EnumConverter[ActivityType.ExtendedValue, String](ActivityType)
 
 object ActivityType extends EnumWithDescriptionAndObject[ActivityTexts.D.ExtendedValue] {
 

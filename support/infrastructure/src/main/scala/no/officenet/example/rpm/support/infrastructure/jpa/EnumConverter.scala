@@ -1,12 +1,13 @@
 package no.officenet.example.rpm.support.infrastructure.jpa
 
 import javax.persistence.{Converter, AttributeConverter}
+import no.officenet.example.rpm.support.infrastructure.enums.EnumWithDescriptionAndObject
 
 /**
  * Helper class to translate enum for hibernate
  */
 
-trait EnumConverter[T] extends AttributeConverter[T, String] {
+abstract class EnumConverter[T,D](et: EnumWithDescriptionAndObject[_]) extends AttributeConverter[T, String] {
 	def convertToDatabaseColumn(attribute: T): String = {
 		if (attribute == null) {
 			null
@@ -19,11 +20,9 @@ trait EnumConverter[T] extends AttributeConverter[T, String] {
 		if (dbData == null) {
 			null.asInstanceOf[T]
 		} else {
-			valueOf(dbData)
+			et.valueOf(dbData).get.asInstanceOf[T]
 		}
 	}
-
-	def valueOf(dbData: String): T
 
 }
 
