@@ -26,7 +26,6 @@
 		  class="org.springframework.orm.jpa.vendor.EclipseLinkJpaVendorAdapter">
 		<property name="database" value="${infrastructure.database.vendor}"/>
 		<property name="showSql" value="${infrastructure.jpa.showSql}"/>
-		<property name="generateDdl" value="${infrastructure.jpa.generateDdl}"/>
 	</bean>
 
 	<bean id="RPM"
