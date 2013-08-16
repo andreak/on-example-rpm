@@ -5,7 +5,7 @@ import javax.persistence.Converter
 import no.officenet.example.rpm.support.infrastructure.jpa.EnumConverter
 
 @Converter
-class ActivityTypeConverter extends EnumConverter[ActivityType.ExtendedValue, String](ActivityType)
+class ActivityTypeConverter extends EnumConverter[ActivityType.ExtendedValue](ActivityType)
 
 object ActivityType extends EnumWithDescriptionAndObject[ActivityTexts.D.ExtendedValue] {
 

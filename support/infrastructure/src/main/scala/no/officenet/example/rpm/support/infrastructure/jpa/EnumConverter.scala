@@ -7,7 +7,7 @@ import no.officenet.example.rpm.support.infrastructure.enums.EnumWithDescription
  * Helper class to translate enum for JPA-2.1
  */
 
-abstract class EnumConverter[T,D](et: EnumWithDescriptionAndObject[_]) extends AttributeConverter[T, String] {
+abstract class EnumConverter[T](et: Enumeration) extends AttributeConverter[T, String] {
 	def convertToDatabaseColumn(attribute: T): String = {
 		if (attribute == null) {
 			null
@@ -20,7 +20,7 @@ abstract class EnumConverter[T,D](et: EnumWithDescriptionAndObject[_]) extends A
 		if (dbData == null) {
 			null.asInstanceOf[T]
 		} else {
-			et.valueOf(dbData).get.asInstanceOf[T]
+			et.withName(dbData).asInstanceOf[T]
 		}
 	}
 
