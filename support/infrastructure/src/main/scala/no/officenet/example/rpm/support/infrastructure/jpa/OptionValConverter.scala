@@ -2,166 +2,81 @@ package no.officenet.example.rpm.support.infrastructure.jpa
 
 import javax.persistence.{Converter, AttributeConverter}
 import java.lang
-import java.sql.Timestamp
-import org.joda.time.DateTime
+import java.sql.{Time, Date, Timestamp}
+import org.joda.time.{LocalTime, LocalDate, DateTime}
+import java.math.{BigDecimal => JBigDecimal}
+
+abstract class OptionConverter[T, JDBCType] extends AttributeConverter[Option[T], JDBCType] {
+	def convertToDatabaseColumn(attribute: Option[T]): JDBCType = {
+		attribute match {
+			case Some(e) => toJdbcType(e)
+			case _ => null.asInstanceOf[JDBCType]
+		}
+	}
+
+	def convertToEntityAttribute(dbData: JDBCType): Option[T] = {
+		if (dbData == null) {
+			None
+		} else {
+			Some(fromJdbcType(dbData))
+		}
+	}
+
+	def fromJdbcType(dbData: JDBCType): T
+	def toJdbcType(attribute: T): JDBCType
+
+}
 
 @Converter(autoApply = true)
-class OptionLongConverter extends AttributeConverter[Option[Long], lang.Long]{
-
-	def convertToDatabaseColumn(attribute: Option[Long]): lang.Long = {
-		attribute.map(long2Long).orNull
-	}
-
-	def convertToEntityAttribute(dbData: lang.Long): Option[Long] = {
-		if (dbData eq null) None
-		else Some(dbData)
-	}
+class OptionLongConverter extends OptionConverter[Long, lang.Long]{
+	def fromJdbcType(dbData: lang.Long): Long = dbData
+	def toJdbcType(attribute: Long): lang.Long = attribute
 }
 
 @Converter(autoApply = true)
-class OptionStringConverter extends AttributeConverter[Option[String], String] {
-
-	def convertToDatabaseColumn(attribute: Option[String]): String = {
-		attribute.orNull
-	}
-
-	def convertToEntityAttribute(dbData: String): Option[String] = Option(dbData)
+class OptionIntConverter extends OptionConverter[Int, lang.Integer]{
+	def fromJdbcType(dbData: Integer): Int = dbData
+	def toJdbcType(attribute: Int): Integer = attribute
 }
 
 @Converter(autoApply = true)
-class OptionDateTimeConverter extends AttributeConverter[Option[DateTime], Timestamp] {
-	def convertToDatabaseColumn(attribute: Option[DateTime]): Timestamp = {
-		attribute.map(v => new Timestamp(v.getMillis)).orNull
-	}
-
-	def convertToEntityAttribute(dbData: Timestamp): Option[DateTime] = {
-		Option(dbData).map(v => new DateTime(v.getTime))
-	}
+class OptionFloatConverter extends OptionConverter[Float, lang.Float]{
+	def fromJdbcType(dbData: lang.Float): Float = dbData
+	def toJdbcType(attribute: Float): lang.Float = attribute
 }
 
-/*
-
-class OptionLongUserType extends OptionBasicUserType[Long, java.lang.Long] {
-
-	def getBasicType = StandardBasicTypes.LONG
-
-	def fromJdbcType(value: java.lang.Long) = value.longValue()
-
-	def fromStringType(s: String) = java.lang.Long.parseLong(s)
-
-	def toJdbcType(value: Long) = java.lang.Long.valueOf(value)
+@Converter(autoApply = true)
+class OptionDoubleConverter extends OptionConverter[Double, lang.Double]{
+	def fromJdbcType(dbData: lang.Double): Double = dbData
+	def toJdbcType(attribute: Double): lang.Double = attribute
 }
 
-class OptionStringUserType extends OptionBasicUserType[String, String] {
-
-	def getBasicType = StandardBasicTypes.STRING
-
-	def fromJdbcType(value: String) = value
-
-	def fromStringType(s: String) = s
-
-	def toJdbcType(value: String) = value
+@Converter(autoApply = true)
+class OptionBigDecimalConverter extends OptionConverter[BigDecimal, JBigDecimal]{
+	def fromJdbcType(dbData: JBigDecimal): BigDecimal = dbData
+	def toJdbcType(attribute: BigDecimal): JBigDecimal = attribute.bigDecimal
 }
 
-abstract class OptionEnumUserType(val et: Enumeration) extends OptionBasicUserType[Enumeration#Value, String] {
-
-	def getBasicType = StandardBasicTypes.STRING
-
-	def fromJdbcType(value: String) = et.withName(value)
-
-	def fromStringType(s: String) = et.withName(s)
-
-	def toJdbcType(value: Enumeration#Value) = value.toString
+@Converter(autoApply = true)
+class OptionStringConverter extends OptionConverter[String, String] {
+	def fromJdbcType(dbData: String): String = dbData
+	def toJdbcType(attribute: String): String = attribute
 }
 
-class OptionDateTimeUserType extends OptionUserType[DateTime, Timestamp] with IntegratorConfiguredType {
-	val columnMapper = new TimestampColumnDateTimeMapper
-
-	override def applyConfiguration(sessionFactory: SessionFactory) {
-//		super.applyConfiguration(sessionFactory)
-		var databaseZone: String = null
-		if (parameterValues != null) {
-			databaseZone = parameterValues.getProperty("databaseZone")
-		}
-		if (databaseZone == null) {
-			databaseZone = ConfigurationHelper.getProperty("databaseZone")
-		}
-		if (databaseZone != null) {
-			if ("jvm" == databaseZone) {
-				columnMapper.setDatabaseZone(null)
-			}
-			else {
-				columnMapper.setDatabaseZone(DateTimeZone.forID(databaseZone))
-			}
-		}
-		var javaZone: String = null
-		if (parameterValues != null) {
-			javaZone = parameterValues.getProperty("javaZone")
-		}
-		if (javaZone == null) {
-			javaZone = ConfigurationHelper.getProperty("javaZone")
-		}
-		if (javaZone != null) {
-			if ("jvm" == javaZone) {
-				columnMapper.setJavaZone(null)
-			}
-			else {
-				columnMapper.setJavaZone(DateTimeZone.forID(javaZone))
-			}
-		}
-	}
+@Converter(autoApply = true)
+class OptionDateTimeConverter extends OptionConverter[DateTime, Timestamp] {
+	def fromJdbcType(dbData: Timestamp): DateTime = new DateTime(dbData.getTime)
+	def toJdbcType(attribute: DateTime): Timestamp = new Timestamp(attribute.getMillis)
 }
 
-class OptionLocalDateUserType extends OptionUserType[LocalDate, java.sql.Date] {
-	val columnMapper = new DateColumnLocalDateMapper
+@Converter(autoApply = true)
+class OptionLocalDateConverter extends OptionConverter[LocalDate, Date] {
+	def fromJdbcType(dbData: Date): LocalDate = new LocalDate(dbData.getTime)
+	def toJdbcType(attribute: LocalDate): Date = new Date(attribute.toDateMidnight.getMillis)
 }
 
-abstract class OptionUserType[T, JDBCType] extends AttributeConverter[T, JDBCType] {
-
-	def convertToDatabaseColumn(attribute: T): JDBCType = {
-
-	}
-
-	def convertToEntityAttribute(dbData: JDBCType): T = {
-
-	}
-
-	override def nullSafeGet(resultSet: ResultSet, names: Array[String], session: SessionImplementor, owner: AnyRef): Option[T] = {
-		beforeNullSafeOperation(session)
-		try {
-			val x = columnMapper.getHibernateType.nullSafeGet(resultSet, names(0), session)
-			if (x == null) None else Some(columnMapper.fromNonNullValue(x.asInstanceOf[JDBCType]))
-		} finally {
-			afterNullSafeOperation(session)
-		}
-	}
-
-	def nullSafeSet(preparedStatement: PreparedStatement, value: AnyRef, index: Int, session: SessionImplementor) {
-		beforeNullSafeOperation(session)
-		try {
-			columnMapper.getHibernateType.nullSafeSet(preparedStatement,
-				value.asInstanceOf[Option[T]].map(columnMapper.toNonNullValue).getOrElse(null),
-				index, session)
-		} finally {
-			afterNullSafeOperation(session)
-		}
-	}
+@Converter(autoApply = true)
+class OptionLocalTimeConverter extends OptionConverter[LocalTime, Time] {
+	def fromJdbcType(dbData: Time): LocalTime = new LocalTime(dbData.getTime)
+	def toJdbcType(attribute: LocalTime): Time = new Time(attribute.toDateTimeToday.getMillis)
 }
-
-abstract class OptionBasicUserType[T, JDBCType] extends OptionUserType[T, JDBCType] {
-
-	override final val columnMapper = new AbstractColumnMapper[T, JDBCType] {
-		final def getSqlType = getBasicType.sqlType()
-		final def getHibernateType = getBasicType
-		final def fromNonNullValue(value: JDBCType): T = fromJdbcType(value)
-		final def fromNonNullString(s: String): T = fromStringType(s)
-		final def toNonNullValue(value: T): JDBCType = toJdbcType(value)
-		final def toNonNullString(value: T) = value.toString
-	}
-
-	def getBasicType: AbstractSingleColumnStandardBasicType[JDBCType]
-	def fromJdbcType(value: JDBCType): T
-	def fromStringType(s: String): T
-	def toJdbcType(value: T): JDBCType
-}
-*/
