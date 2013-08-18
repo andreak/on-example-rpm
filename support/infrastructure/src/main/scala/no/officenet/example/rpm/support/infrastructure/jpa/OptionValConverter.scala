@@ -27,7 +27,11 @@ abstract class OptionConverter[T, JDBCType] extends AttributeConverter[Option[T]
 
 }
 
-@Converter(autoApply = true)
+//// START converters for Option of primitive-types.
+/*
+Note: They are not autoApply because Scala generates byte-code for Option[java.lang.Object] so EL isn't able to apply them automatically.
+ */
+@Converter
 class OptionLongConverter extends AttributeConverter[Option[Long], lang.Long]{
 
 	def convertToDatabaseColumn(attribute: Option[Long]): lang.Long = {
@@ -40,7 +44,7 @@ class OptionLongConverter extends AttributeConverter[Option[Long], lang.Long]{
 	}
 }
 
-@Converter(autoApply = true)
+@Converter
 class OptionIntConverter extends AttributeConverter[Option[Int], lang.Integer]{
 
 	def convertToDatabaseColumn(attribute: Option[Int]): lang.Integer = {
@@ -53,7 +57,7 @@ class OptionIntConverter extends AttributeConverter[Option[Int], lang.Integer]{
 	}
 }
 
-@Converter(autoApply = true)
+@Converter
 class OptionFloatConverter extends AttributeConverter[Option[Float], lang.Float]{
 
 	def convertToDatabaseColumn(attribute: Option[Float]): lang.Float = {
@@ -66,7 +70,7 @@ class OptionFloatConverter extends AttributeConverter[Option[Float], lang.Float]
 	}
 }
 
-@Converter(autoApply = true)
+@Converter
 class OptionDoubleConverter extends AttributeConverter[Option[Double], lang.Double]{
 
 	def convertToDatabaseColumn(attribute: Option[Double]): lang.Double = {
@@ -74,6 +78,45 @@ class OptionDoubleConverter extends AttributeConverter[Option[Double], lang.Doub
 	}
 
 	def convertToEntityAttribute(dbData: lang.Double): Option[Double] = {
+		if (dbData eq null) None
+		else Some(dbData)
+	}
+}
+
+@Converter
+class OptionShortConverter extends AttributeConverter[Option[Short], lang.Short]{
+
+	def convertToDatabaseColumn(attribute: Option[Short]): lang.Short = {
+		attribute.map(short2Short).orNull
+	}
+
+	def convertToEntityAttribute(dbData: lang.Short): Option[Short] = {
+		if (dbData eq null) None
+		else Some(dbData)
+	}
+}
+
+@Converter
+class OptionByteConverter extends AttributeConverter[Option[Byte], lang.Byte]{
+
+	def convertToDatabaseColumn(attribute: Option[Byte]): lang.Byte = {
+		attribute.map(byte2Byte).orNull
+	}
+
+	def convertToEntityAttribute(dbData: lang.Byte): Option[Byte] = {
+		if (dbData eq null) None
+		else Some(dbData)
+	}
+}
+
+@Converter
+class OptionCharConverter extends AttributeConverter[Option[Char], lang.Character]{
+
+	def convertToDatabaseColumn(attribute: Option[Char]): lang.Character = {
+		attribute.map(char2Character).orNull
+	}
+
+	def convertToEntityAttribute(dbData: lang.Character): Option[Char] = {
 		if (dbData eq null) None
 		else Some(dbData)
 	}

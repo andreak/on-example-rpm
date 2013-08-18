@@ -46,7 +46,13 @@ class Project(_created: DateTime, _createdBy: User)
 
 	@Column(name = "budget")
 	@OptionalMax(value = 999999.0)
+	@Convert(converter = classOf[OptionLongConverter])
 	var budget: Option[Long] = None
+
+	@Column(name = "estimate_hours")
+	@OptionalMax(value = 999999.0)
+	@Convert(converter = classOf[OptionIntConverter])
+	var estimateHours: Option[Int] = None
 
 	@Column(name = "estimated_start_date")
 	var estimatedStartDate: Option[DateTime] = None
