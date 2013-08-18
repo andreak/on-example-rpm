@@ -5,7 +5,7 @@ import javax.persistence.{AttributeConverter, Converter}
 import no.officenet.example.rpm.support.infrastructure.jpa.EnumConverter
 
 @Converter
-class ProjectTypeConverter extends EnumConverter[ProjectType.ExtendedValue](ProjectType)
+class ProjectTypeConverter extends EnumConverter[ProjectType.ExtendedValue, String](ProjectType)
 
 object ProjectType extends EnumWithDescriptionAndObject[ProjectTexts.D.ExtendedValue] {
 	val scrum = Value(ProjectTexts.D.type_scrum)

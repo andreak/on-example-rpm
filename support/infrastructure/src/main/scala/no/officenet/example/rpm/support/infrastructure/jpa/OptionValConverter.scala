@@ -28,55 +28,109 @@ abstract class OptionConverter[T, JDBCType] extends AttributeConverter[Option[T]
 }
 
 @Converter(autoApply = true)
-class OptionLongConverter extends OptionConverter[Long, lang.Long]{
-	def fromJdbcType(dbData: lang.Long): Long = dbData
-	def toJdbcType(attribute: Long): lang.Long = attribute
+class OptionLongConverter extends AttributeConverter[Option[Long], lang.Long]{
+
+	def convertToDatabaseColumn(attribute: Option[Long]): lang.Long = {
+		attribute.map(long2Long).orNull
+	}
+
+	def convertToEntityAttribute(dbData: lang.Long): Option[Long] = {
+		if (dbData eq null) None
+		else Some(dbData)
+	}
 }
 
 @Converter(autoApply = true)
-class OptionIntConverter extends OptionConverter[Int, lang.Integer]{
-	def fromJdbcType(dbData: Integer): Int = dbData
-	def toJdbcType(attribute: Int): Integer = attribute
+class OptionIntConverter extends AttributeConverter[Option[Int], lang.Integer]{
+
+	def convertToDatabaseColumn(attribute: Option[Int]): lang.Integer = {
+		attribute.map(int2Integer).orNull
+	}
+
+	def convertToEntityAttribute(dbData: lang.Integer): Option[Int] = {
+		if (dbData eq null) None
+		else Some(dbData)
+	}
 }
 
 @Converter(autoApply = true)
-class OptionFloatConverter extends OptionConverter[Float, lang.Float]{
-	def fromJdbcType(dbData: lang.Float): Float = dbData
-	def toJdbcType(attribute: Float): lang.Float = attribute
+class OptionFloatConverter extends AttributeConverter[Option[Float], lang.Float]{
+
+	def convertToDatabaseColumn(attribute: Option[Float]): lang.Float = {
+		attribute.map(float2Float).orNull
+	}
+
+	def convertToEntityAttribute(dbData: lang.Float): Option[Float] = {
+		if (dbData eq null) None
+		else Some(dbData)
+	}
 }
 
 @Converter(autoApply = true)
-class OptionDoubleConverter extends OptionConverter[Double, lang.Double]{
-	def fromJdbcType(dbData: lang.Double): Double = dbData
-	def toJdbcType(attribute: Double): lang.Double = attribute
+class OptionDoubleConverter extends AttributeConverter[Option[Double], lang.Double]{
+
+	def convertToDatabaseColumn(attribute: Option[Double]): lang.Double = {
+		attribute.map(double2Double).orNull
+	}
+
+	def convertToEntityAttribute(dbData: lang.Double): Option[Double] = {
+		if (dbData eq null) None
+		else Some(dbData)
+	}
 }
 
 @Converter(autoApply = true)
-class OptionBigDecimalConverter extends OptionConverter[BigDecimal, JBigDecimal]{
-	def fromJdbcType(dbData: JBigDecimal): BigDecimal = dbData
-	def toJdbcType(attribute: BigDecimal): JBigDecimal = attribute.bigDecimal
+class OptionBigDecimalConverter extends AttributeConverter[Option[BigDecimal], JBigDecimal]{
+
+	def convertToDatabaseColumn(attribute: Option[BigDecimal]): JBigDecimal = {
+		attribute.map(_.bigDecimal).orNull
+	}
+
+	def convertToEntityAttribute(dbData: JBigDecimal): Option[BigDecimal] = {
+		if (dbData eq null) None
+		else Some(dbData)
+	}
 }
 
 @Converter(autoApply = true)
-class OptionStringConverter extends OptionConverter[String, String] {
-	def fromJdbcType(dbData: String): String = dbData
-	def toJdbcType(attribute: String): String = attribute
+class OptionStringConverter extends AttributeConverter[Option[String], String] {
+
+	def convertToDatabaseColumn(attribute: Option[String]): String = {
+		attribute.orNull
+	}
+
+	def convertToEntityAttribute(dbData: String): Option[String] = Option(dbData)
 }
 
 @Converter(autoApply = true)
-class OptionDateTimeConverter extends OptionConverter[DateTime, Timestamp] {
-	def fromJdbcType(dbData: Timestamp): DateTime = new DateTime(dbData.getTime)
-	def toJdbcType(attribute: DateTime): Timestamp = new Timestamp(attribute.getMillis)
+class OptionDateTimeConverter extends AttributeConverter[Option[DateTime], Timestamp] {
+	def convertToDatabaseColumn(attribute: Option[DateTime]): Timestamp = {
+		attribute.map(v => new Timestamp(v.getMillis)).orNull
+	}
+
+	def convertToEntityAttribute(dbData: Timestamp): Option[DateTime] = {
+		Option(dbData).map(v => new DateTime(v.getTime))
+	}
 }
 
 @Converter(autoApply = true)
-class OptionLocalDateConverter extends OptionConverter[LocalDate, Date] {
-	def fromJdbcType(dbData: Date): LocalDate = new LocalDate(dbData.getTime)
-	def toJdbcType(attribute: LocalDate): Date = new Date(attribute.toDateMidnight.getMillis)
+class OptionLocalDateConverter extends AttributeConverter[Option[LocalDate], Date] {
+	def convertToDatabaseColumn(attribute: Option[LocalDate]): Date = {
+		attribute.map(v => new Date(v.toDateMidnight.getMillis)).orNull
+	}
+
+	def convertToEntityAttribute(dbData: Date): Option[LocalDate] = {
+		Option(dbData).map(v => new LocalDate(v.getTime))
+	}
 }
 
 @Converter(autoApply = true)
-class OptionLocalTimeConverter extends OptionConverter[LocalTime, Time] {
-	def fromJdbcType(dbData: Time): LocalTime = new LocalTime(dbData.getTime)
-	def toJdbcType(attribute: LocalTime): Time = new Time(attribute.toDateTimeToday.getMillis)
+class OptionLocalTimeConverter extends AttributeConverter[Option[LocalTime], Time] {
+	def convertToDatabaseColumn(attribute: Option[LocalTime]): Time = {
+		attribute.map(v => new Time(v.toDateTimeToday.getMillis)).orNull
+	}
+
+	def convertToEntityAttribute(dbData: Time): Option[LocalTime] = {
+		Option(dbData).map(v => new LocalTime(v.getTime))
+	}
 }
