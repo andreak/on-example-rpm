@@ -39,6 +39,7 @@
 		<property name="jpaProperties">
 			<props>
 				<prop key="eclipselink.cache.shared.default">false</prop>
+				<prop key="eclipselink.session.customizer">no.officenet.example.rpm.support.infrastructure.jpa.RpmSessionCustomizer</prop>
 				<prop key="javax.persistence.sharedCache.mode">ENABLE_SELECTIVE</prop>
 				<prop key="javax.persistence.schema-generation.database.action">${infrastructure.jpa.schema-generation.database.action}</prop>
 			</props>
