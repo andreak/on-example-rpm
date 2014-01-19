@@ -19,6 +19,7 @@ import javax.persistence.EntityManagerFactory
 import reflect.runtime._
 import universe._
 import net.sf.oval.context.FieldContext
+import net.sf.oval.localization.context.ResourceBundleValidationContextRenderer
 
 /**
  * Custom validator based on Oval's {@link Validator}}
@@ -41,7 +42,8 @@ class OvalValidator(configurers: java.util.Collection[Configurer])
 	val mirror = currentMirror
 
 	net.sf.oval.Validator.setMessageResolver(OvalMessageResolver)
-	net.sf.oval.Validator.setContextRenderer(RpmResourceBundleValidationContextRenderer.INSTANCE)
+	net.sf.oval.Validator.setContextRenderer(ResourceBundleValidationContextRenderer.INSTANCE)
+	net.sf.oval.Validator.setLocaleProvider(RpmLocaleProvider)
 
 	def validateMethodReturnValue(validatedObject: AnyRef, method: Method, valueToValidate: Any): java.util.List[net.sf.oval.ConstraintViolation] = {
 		val checksForMethod = getChecks(method)
@@ -62,16 +64,18 @@ class OvalValidator(configurers: java.util.Collection[Configurer])
 			field.setAccessible(true)
 		}
 		val c = field.getDeclaringClass
+		mirror.synchronized { // TODO M andreak: Unsynchronize when https://issues.scala-lang.org/browse/SI-6240 is fixed
 		val classMirror = mirror.classSymbol(c)
-		val fieldType = mirror.classSymbol(field.getType).toType
-		val im = mirror.reflect(validatedObject)
-		(classMirror.toType.declaration(newTermName(field.getName)) match {
-			case ms: MethodSymbol => Some(ms)
-			case _ => None
-		}).filter(_.returnType == fieldType).map{m =>
-			val mm = im.reflectMethod(m)
-			mm.apply().asInstanceOf[AnyRef]
-		}.getOrElse(field.get(validatedObject))
+			val fieldType = mirror.classSymbol(field.getType).toType
+			val im = mirror.reflect(validatedObject)
+			(classMirror.toType.declaration(newTermName(field.getName)) match {
+				case ms: MethodSymbol => Some(ms)
+				case _ => None
+			}).filter(_.returnType == fieldType).map{m =>
+				val mm = im.reflectMethod(m)
+				mm.apply().asInstanceOf[AnyRef]
+			}.getOrElse(field.get(validatedObject))
+		}
 	}
 }
 

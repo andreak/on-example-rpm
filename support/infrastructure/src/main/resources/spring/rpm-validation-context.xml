@@ -23,7 +23,7 @@
     <bean id="ovalValidator" class="no.officenet.example.rpm.support.infrastructure.validation.OvalValidator">
         <constructor-arg index="0">
             <set>
-                <bean class="no.officenet.example.rpm.support.infrastructure.validation.RpmAnnotationsConfigurer"/>
+				<bean class="net.sf.oval.configuration.annotation.AnnotationsConfigurer"/>
             </set>
         </constructor-arg>
         <property name="exceptionTranslator" ref="rpmOvalExceptionTranslator"/>

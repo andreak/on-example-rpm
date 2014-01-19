@@ -2,7 +2,7 @@ package no.officenet.example.rpm.web.comet.dto
 
 import no.officenet.example.rpm.projectmgmt.domain.model.entities.Project
 import org.joda.time.DateTime
-import no.officenet.example.rpm.support.infrastructure.scala.lang.ControlHelpers.?
+import no.officenet.example.rpm.macros.Macros.?
 import no.officenet.example.rpm.projectmgmt.domain.model.enums.ProjectType
 
 case class ProjectCometDto(id: Long,

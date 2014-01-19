@@ -10,7 +10,7 @@ import net.sf.oval.internal.util.ReflectionUtils
 import net.sf.oval.Check
 import net.sf.oval.constraint._
 import java.lang.reflect.{Method, Field}
-import no.officenet.example.rpm.support.infrastructure.scala.lang.ControlHelpers.?
+import no.officenet.example.rpm.macros.Macros.?
 import no.officenet.example.rpm.support.infrastructure.validation.{OptionalMaxCheck, OvalValidator}
 import no.officenet.example.rpm.support.infrastructure.i18n.InputStringConverter.optionCls
 

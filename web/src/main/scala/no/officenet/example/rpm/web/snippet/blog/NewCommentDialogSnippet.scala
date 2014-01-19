@@ -13,7 +13,7 @@ import no.officenet.example.rpm.blog.domain.model.entities.Comment
 import no.officenet.example.rpm.web.lib.ContextVars.{CommentVar, CommentedEntityVar}
 import no.officenet.example.rpm.blog.domain.model.entities.CommentJPAFields._
 import no.officenet.example.rpm.web.lib.{LiftUtils, JpaFormFields, ValidatableScreen}
-import no.officenet.example.rpm.support.infrastructure.scala.lang.ControlHelpers.?
+import no.officenet.example.rpm.macros.Macros.?
 
 object afterCommentSaveVar extends RequestVar[() => JsCmd](() => JsCmds.Noop)
 

@@ -2,7 +2,7 @@ package no.officenet.example.rpm.support.infrastructure.i18n
 
 import java.text.{DecimalFormatSymbols, DecimalFormat}
 import Localizer._
-import no.officenet.example.rpm.support.infrastructure.scala.lang.ControlHelpers.?
+import no.officenet.example.rpm.macros.Macros.?
 
 
 object NumberFormatter {

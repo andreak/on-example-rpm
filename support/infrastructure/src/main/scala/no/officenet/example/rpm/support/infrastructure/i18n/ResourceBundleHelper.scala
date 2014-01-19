@@ -18,6 +18,7 @@ object ResourceBundleHelper {
 			formats.clear()
 			formatsForLocale.clear()
 		}
+		ResourceBundle.clearCache()
 	}
 
 	def getMessage(resourceBundleName: String, resourceKey: String, arguments: Any*): String = {
@@ -53,7 +54,7 @@ object ResourceBundleHelper {
 					format = formatsForBundle.get(formatKey)
 					if (format == null) {
 						val formatString = getFormatMessage(resourceBundleName, locale, resourceKey)
-						format = new MessageFormat(formatString)
+						format = new MessageFormat(formatString, locale)
 						formatsForBundle.put(formatKey, format)
 						formats.put(resourceBundleName, formatsForBundle)
 					}

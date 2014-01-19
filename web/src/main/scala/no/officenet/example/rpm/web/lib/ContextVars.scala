@@ -6,15 +6,13 @@ import no.officenet.example.rpm.projectmgmt.application.service.ProjectAppServic
 import org.springframework.beans.factory.annotation.Configurable
 import net.liftweb.http.{S, RequestVar}
 import javax.annotation.Resource
-import java.lang.IllegalArgumentException
 import no.officenet.example.rpm.support.domain.service.UserService
 import org.springframework.security.core.context.SecurityContextHolder
-import no.officenet.example.rpm.support.infrastructure.scala.lang.ControlHelpers.?
+import no.officenet.example.rpm.macros.Macros.?
 import net.liftweb.common.{Empty, Box}
 import no.officenet.example.rpm.support.domain.model.entities.{AbstractDomainObject, User}
 import no.officenet.example.rpm.blog.domain.model.entities.{Blog, Comment, BlogEntry}
 import no.officenet.example.rpm.blog.domain.service.BlogService
-import java.util.concurrent.ExecutorService
 
 @Configurable
 object ContextVars {

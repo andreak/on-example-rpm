@@ -12,7 +12,7 @@ import no.officenet.example.rpm.web.lib.ContextVars._
 import no.officenet.example.rpm.support.infrastructure.logging.Loggable
 import no.officenet.example.rpm.blog.domain.service.BlogEntryService
 import no.officenet.example.rpm.web.lib.{LiftUtils, JpaFormFields, ValidatableScreen}
-import no.officenet.example.rpm.support.infrastructure.scala.lang.ControlHelpers.?
+import no.officenet.example.rpm.macros.Macros.?
 
 object afterBlogEntrySaveVar extends RequestVar[() => JsCmd](() => JsCmds.Noop)
 

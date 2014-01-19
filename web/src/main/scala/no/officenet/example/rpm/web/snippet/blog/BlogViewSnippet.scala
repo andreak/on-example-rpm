@@ -16,7 +16,7 @@ import no.officenet.example.rpm.support.domain.model.entities.User
 import no.officenet.example.rpm.web.lib.ContextVars._
 import net.liftweb.common.Full
 import java.util.concurrent.atomic.AtomicBoolean
-import no.officenet.example.rpm.support.infrastructure.scala.lang.ControlHelpers.?
+import no.officenet.example.rpm.macros.Macros.?
 
 @Configurable
 class BlogViewSnippet(blogViewParam: BlogViewParam) extends ValidatableScreen with JpaFormFields {

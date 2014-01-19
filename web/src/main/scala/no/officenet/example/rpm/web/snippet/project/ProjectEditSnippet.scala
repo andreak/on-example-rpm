@@ -18,9 +18,8 @@ import no.officenet.example.rpm.support.domain.service.UserService
 import xml.NodeSeq
 import no.officenet.example.rpm.projectmgmt.domain.model.enums.{ProjectColor, ProjectType, ProjectTexts}
 import no.officenet.example.rpm.support.infrastructure.i18n.{Localizer, Bundle, GlobalTexts}
-import no.officenet.example.rpm.support.infrastructure.i18n.Localizer.L
 import no.officenet.example.rpm.web.lib.{NaturalNumberMask, JpaFormFields, ValidatableScreen}
-import no.officenet.example.rpm.support.infrastructure.scala.lang.ControlHelpers.?
+import no.officenet.example.rpm.macros.Macros.?
 import no.officenet.example.rpm.web.lib.LiftUtils
 
 object DisplayRadioWithLabelHorizontallyTemplate {
@@ -62,7 +61,7 @@ class ProjectEditSnippet extends ValidatableScreen with JpaFormFields with Trans
 			(v, attrs)
 		}}
 		var selectedColor = ProjectColor.BLACK.name
-		val radioValues = ProjectColor.getValues.map(st => (st.name, L(st.wrapped)))
+		val radioValues = ProjectColor.getValues.map(st => (st.name, st.wrapped.localize))
 		val niceColorIdKey = nextFuncName
 		val badColorIdKey = nextFuncName
 
@@ -74,7 +73,7 @@ class ProjectEditSnippet extends ValidatableScreen with JpaFormFields with Trans
 			ProjectColor.ORANGE.name -> badColorIdKey
 		)
 
-		val checkedColor = Full(ProjectColor.valueOf(selectedColor).get.name, L(ProjectColor.valueOf(selectedColor).get.wrapped))
+		val checkedColor = Full(ProjectColor.valueOf(selectedColor).get.name, ProjectColor.valueOf(selectedColor).get.wrapped.localize)
 
 		val labelKeyForSelectedSuretyType = colorLabelMap.get(selectedColor).get
 
@@ -85,13 +84,13 @@ class ProjectEditSnippet extends ValidatableScreen with JpaFormFields with Trans
 
 		"*" #> SHtml.idMemoize(id => {
 			".projectName *" #> JpaTextField(project, Project.name, ?(project.name), (v: Option[String]) => project.name = v.orNull).
-				withContainer(TdInputContainer(L(ProjectTexts.D.name))) &
+				withContainer(TdInputContainer(ProjectTexts.D.name.localize)) &
 			".projectDescription *" #> JpaTextAreaField(project, Project.description, project.description, (v: Option[String]) => project.description = v).
-				withContainer(TdInputContainer(L(ProjectTexts.D.description))) &
+				withContainer(TdInputContainer(ProjectTexts.D.description.localize)) &
 			".projectType *" #> JpaSelectField(project, Project.projectType, projectTypes.toList, ?(project.projectType),
 											(pt: ProjectType.ExtendedValue) => project.projectType = pt,
-											(pt: ProjectType.ExtendedValue, idx) => L(pt.wrapped)).
-				withContainer(TdInputContainer(L(ProjectTexts.D.projectType))) &
+											(pt: ProjectType.ExtendedValue, idx) => pt.wrapped.localize).
+				withContainer(TdInputContainer(ProjectTexts.D.projectType.localize)) &
 			".project_color_radio *" #> DisplayRadioWithLabelHorizontallyTemplate.toForm(
 				LiftUtils.ritchRadioElem(radioValues,
 						 checkedColor,
@@ -107,15 +106,15 @@ class ProjectEditSnippet extends ValidatableScreen with JpaFormFields with Trans
 			".bad_color_id [id]" #> badColorIdKey &
 			".bad_color_id [style]" #> getStyleForLabel(badColorIdKey) &
 			".budget *" #> JpaTextField(project, Project.budget, project.budget.map(d => d.toString), (v: Option[Long]) => project.budget = v).
-				withContainer(TdInputContainer(L(ProjectTexts.V.projectDialog_details_label_budget))).
+				withContainer(TdInputContainer(ProjectTexts.V.projectDialog_details_label_budget.localize)).
 				withInputMask(NaturalNumberMask) &
 			".estimatedStart *" #> JpaDateField(project, Project.estimatedStartDate,
-											 Localizer.formatDateTime(L(GlobalTexts.dateformat_fullDate),
+											 Localizer.formatDateTime(GlobalTexts.dateformat_fullDate.localize,
 																	  project.estimatedStartDate),
 											 (v: Option[DateTime]) => project.estimatedStartDate = v).
-				withContainer(TdInputContainer(L(ProjectTexts.V.projectDialog_details_label_estimatedStartDate) +
-											   "(%s)".format(L(GlobalTexts.dateformat_fullDate)))) &
-			".saveButton" #> SHtml.ajaxSubmit(L(ProjectTexts.V.projectDialog_button_save), () => {
+				withContainer(TdInputContainer(ProjectTexts.V.projectDialog_details_label_estimatedStartDate.localize +
+											   "(%s)".format(GlobalTexts.dateformat_fullDate.localize))) &
+			".saveButton" #> SHtml.ajaxSubmit(ProjectTexts.V.projectDialog_button_save.localize, () => {
 				trace("Saving")
 				if (!hasErrors) {
 					projectDto = if (isNewEntity) {

@@ -11,7 +11,7 @@ import net.liftweb.http.{JavaScriptResponse, XhtmlResponse, LiftRules, S}
 import no.officenet.example.rpm.support.infrastructure.logging.Loggable
 import no.officenet.example.rpm.support.infrastructure.errorhandling.{RpmConstraintsViolatedException, Localizable, ApplicationException, SystemException, InternalErrorException}
 import net.sf.oval.ConstraintViolation
-import no.officenet.example.rpm.support.infrastructure.scala.lang.ControlHelpers.?
+import no.officenet.example.rpm.macros.Macros.?
 
 object ExceptionHandlerDelegate extends Loggable {
 
